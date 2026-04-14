@@ -20,6 +20,13 @@ Desenvolvido por Ademar1967.
 ## Licença
 Este projeto está sob a licença MIT.
 
+## Como acessar localmente
+
+- Interface principal: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- Admin Django: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+
+Após rodar o servidor local com `python manage.py runserver`, acesse os links acima no navegador.
+
 ---
 
 # Patient Transport System
