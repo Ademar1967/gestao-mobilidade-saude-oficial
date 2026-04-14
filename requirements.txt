@@ -1,0 +1,9 @@
+django
+pandas
+openpyxl
+djangorestframework
+djangorestframework-simplejwt
+django-crispy-forms
+crispy-bootstrap5
+requests
+rapidfuzz
