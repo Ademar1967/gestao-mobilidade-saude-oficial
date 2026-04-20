@@ -1,0 +1,405 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+/* Centralização absoluta do título */
+.card-header {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+.titulo-impressao {
+  display: inline-block !important;
+  text-align: center !important;
+  font-size: 26px !important;
+  color: #1976d2 !important;
+  font-weight: bold !important;
+  margin-top: 18px !important;
+  margin-bottom: 18px !important;
+  letter-spacing: 1px;
+  width: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+/* Botão de impressão na tela */
+.btn-print {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 12px 28px !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.18) !important;
+  cursor: pointer !important;
+  transition: box-shadow 0.1s, transform 0.1s !important;
+  margin-bottom: 20px !important;
+  margin-right: 14px !important;
+  outline: none !important;
+  display: inline-block !important;
+  min-width: 180px !important;
+  min-height: 48px !important;
+}
+.btn-novo {
+  background: #388e3c !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 12px 28px !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 8px rgba(56, 142, 60, 0.13) !important;
+  cursor: pointer !important;
+  transition: box-shadow 0.1s, transform 0.1s !important;
+  margin-bottom: 20px !important;
+  margin-right: 0 !important;
+  outline: none !important;
+  display: inline-block !important;
+  min-width: 180px !important;
+  min-height: 48px !important;
+}
+.btn-novo:active {
+  box-shadow: 0 1px 2px rgba(56, 142, 60, 0.18) !important;
+  transform: translateY(2px) scale(0.98) !important;
+.btn-print:active {
+  box-shadow: 0 1px 2px rgba(25, 118, 210, 0.22) !important;
+  transform: translateY(2px) scale(0.98) !important;
+}
+@media print {
+  .btn-print, .btn-novo, .no-print, .no-print *, button[aria-hidden="true"], a.btn-novo, button.btn-print {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+  }
+  body, html {
+    background: #fff !important;
+    color: #222 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 15px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  table, th, td, tr, tbody, thead {
+    font-size: 15px !important;
+  }
+  .container, .row, .col-lg-10, .col-md-12, .col-12, .card, .card-body, .table-responsive {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #222 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .card-header, .alert, .no-print, nav, footer, a {
+    display: none !important;
+  }
+  /* Botão de impressão na tela */
+  .btn-print {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 22px;
+    font-size: 17px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: box-shadow 0.1s, transform 0.1s;
+    margin-bottom: 18px;
+    margin-right: 12px;
+  }
+  .btn-print:active {
+    box-shadow: 0 1px 1px rgba(0,0,0,0.10);
+    transform: translateY(2px) scale(0.98);
+  }
+  @media print {
+    .btn-print { display: none !important; }
+  }
+  .titulo-impressao {
+    display: block !important;
+    text-align: center !important;
+    font-size: 26px !important;
+    color: #1976d2 !important;
+    font-weight: bold !important;
+    margin-top: 18px !important;
+    margin-bottom: 18px !important;
+    letter-spacing: 1px;
+    width: 100%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .table-responsive {
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+  th, td.acao-coluna {
+    display: table-cell !important;
+    visibility: visible !important;
+  }
+</style>
+<script>
+// Remove os botões do DOM imediatamente antes da impressão
+function removePrintButtons() {
+  var botoes = document.getElementById('botoes-acoes');
+  if (botoes) {
+    botoes.parentNode.removeChild(botoes);
+  }
+}
+if (window.matchMedia) {
+  window.matchMedia('print').addEventListener('change', function(e) {
+    if (e.matches) { removePrintButtons(); }
+  });
+}
+window.onbeforeprint = function() { removePrintButtons(); };
+</script>
+<!-- Listagem de transportes realizados -->
+<!-- TEMPLATE ATIVO: listar_transportes.html - ÚLTIMA VERSÃO 2026-04-05 -->
+
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12 col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
+        </div>
+        <div class="card-body">
+          <div id="botoes-acoes" class="no-print" style="margin-bottom: 18px;">
+            <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true">Imprimir</button>
+            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="margin-left: 10px;">Novo Transporte</a>
+
+            <button type="button" class="btn-novo" style="margin-left: 10px; background: #1976d2; color: #fff;" onclick="abrirModalPrevia()">Prévia Excel/Imprimir</button>
+
+          <!-- Modal de pré-visualização -->
+          <div id="modalPrevia" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;" onclick="fecharModalPreviaFora(event)">
+            <div id="modalPreviaConteudo" style="background:#fff; max-width:98vw; width:98vw; max-height:90vh; overflow:auto; margin:40px auto; border-radius:12px; padding:24px; box-shadow:0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 8px 0 rgba(0,0,0,0.10); border:1.5px solid #1976d2; box-sizing:border-box;">
+              </style>
+              <style>
+              @media (max-width: 700px) {
+                #modalPreviaConteudo {
+                  padding: 8px !important;
+                  max-width: 99vw !important;
+                  width: 99vw !important;
+                  border-radius: 6px !important;
+                }
+              }
+              </style>
+              <script>
+              function fecharModalPreviaFora(event) {
+                if (event.target && event.target.id === 'modalPrevia') {
+                  fecharModalPrevia();
+                }
+              }
+              </script>
+              <h3 style="text-align:center; color:#1976d2; margin-bottom:10px;">Prévia da Tabela de Transportes</h3>
+              <div style="margin-bottom:12px; background:#fffbe7; border:1.5px solid #fbc02d; border-radius:7px; padding:10px 18px; font-size:16px; color:#b26a00; text-align:center; font-weight:bold;">
+                Atenção: confira todos os dados antes de imprimir. Entregue esta folha ao condutor. <span style="color:#d32f2f;">Destaque qualquer observação importante!</span>
+              </div>
+              <div id="tabelaPreviaContainer"></div>
+              <div style="text-align:center; margin-top:18px;">
+                <button onclick="imprimirPrevia()" style="background:#388e3c; color:#fff; border:none; border-radius:6px; padding:10px 28px; font-size:17px; font-weight:bold; margin-right:10px;">Imprimir</button>
+                <button onclick="fecharModalPrevia()" style="background:#b71c1c; color:#fff; border:none; border-radius:6px; padding:10px 28px; font-size:17px; font-weight:bold;">Fechar</button>
+              </div>
+            </div>
+          </div>
+                    <!-- Busca e contador na interface principal -->
+                    <div id="busca-contador-interface" style="margin: 18px 0 8px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 18px;" class="nao-imprimir">
+                      <input id="buscaTabelaPrincipal" type="text" placeholder="Buscar na tabela..." style="width:260px; max-width:90vw; padding:6px 12px; border:1px solid #bbb; border-radius:5px; font-size:15px;" oninput="filtrarTabelaPrincipal()">
+                      <span id="contagemRegistrosPrincipal" style="font-size:15px; color:#444;"></span>
+                    </div>
+          </style>
+          <style>
+          @media print {
+            .nao-imprimir { display: none !important; }
+          }
+          </style>
+          <script>
+          function filtrarTabelaPrincipal() {
+            var termo = document.getElementById('buscaTabelaPrincipal').value.toLowerCase();
+            var table = document.querySelector('.table-responsive table');
+            var n = 0;
+            if (table) {
+              var tbody = table.querySelector('tbody');
+              if (tbody) {
+                var linhas = tbody.querySelectorAll('tr');
+                linhas.forEach(function(tr) {
+                  var texto = tr.innerText.toLowerCase();
+                  if (texto.indexOf(termo) !== -1) {
+                    tr.style.display = '';
+                    n++;
+                  } else {
+                    tr.style.display = 'none';
+                  }
+                });
+              }
+            }
+            document.getElementById('contagemRegistrosPrincipal').innerText = n + ' registro' + (n === 1 ? '' : 's') + ' encontrado' + (n === 1 ? '' : 's');
+          }
+          window.addEventListener('DOMContentLoaded', function() {
+            filtrarTabelaPrincipal(); // Inicializa contador ao carregar
+          });
+          </script>
+          </style>
+          <script>
+          function abrirModalPrevia() {
+            // Copia a tabela da tela para o modal
+            var tabela = document.querySelector('.table-responsive').innerHTML;
+            // Remove a coluna "Ações" e o botão Excluir da prévia
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = tabela;
+            var table = tempDiv.querySelector('table');
+            if (table) {
+              // Descobre o índice da coluna "Ações"
+              var ths = table.querySelectorAll('th');
+              var acoesIdx = -1;
+              ths.forEach(function(th, idx) {
+                if (th.textContent.trim().toLowerCase() === 'ações') {
+                  acoesIdx = idx;
+                }
+              });
+              if (acoesIdx !== -1) {
+                // Remove a coluna de todas as linhas
+                table.querySelectorAll('tr').forEach(function(tr) {
+                  if (tr.children[acoesIdx]) tr.removeChild(tr.children[acoesIdx]);
+                });
+              }
+            }
+            document.getElementById('tabelaPreviaContainer').innerHTML = tempDiv.innerHTML;
+            // Aplica estilo para header fixo
+            var table = document.getElementById('tabelaPreviaContainer').querySelector('table');
+            if (table) {
+              table.style.width = '100%';
+              table.style.borderCollapse = 'collapse';
+              table.style.tableLayout = 'fixed';
+              table.style.display = 'block';
+              table.style.maxHeight = '60vh';
+              table.style.overflowY = 'auto';
+              var thead = table.querySelector('thead');
+              if (thead) {
+                thead.style.position = 'sticky';
+                thead.style.top = '0';
+                thead.style.zIndex = '2';
+                thead.style.background = '#1976d2';
+                thead.style.color = '#fff';
+              }
+            }
+            document.getElementById('modalPrevia').style.display = 'flex';
+          }
+          function fecharModalPrevia() {
+            document.getElementById('modalPrevia').style.display = 'none';
+          }
+          function imprimirPrevia() {
+            // Monta a tabela manualmente, sem truncamento, fonte maior e destaque em observações
+            var tabelaOriginal = document.getElementById('tabelaPreviaContainer').querySelector('table');
+            if (!tabelaOriginal) return;
+            var thead = tabelaOriginal.querySelector('thead');
+            var tbody = tabelaOriginal.querySelector('tbody');
+            var htmlTabela = '<table>';
+            if (thead) htmlTabela += thead.outerHTML;
+            if (tbody) {
+              // Destaca observações críticas
+              var linhas = tbody.querySelectorAll('tr');
+              htmlTabela += '<tbody>';
+              linhas.forEach(function(tr) {
+                htmlTabela += '<tr>';
+                var tds = tr.querySelectorAll('td');
+                tds.forEach(function(td, idx) {
+                  var texto = td.innerText || td.textContent;
+                  // Coluna Observações (penúltima coluna)
+                  if (idx === tds.length - 2) {
+                    var obs = texto.trim();
+                    if (obs && obs !== '-' && obs.length > 2) {
+                      htmlTabela += '<td style="color:#b71c1c; font-weight:bold; background:#fff3e0; font-size:15px;">' + obs + '</td>';
+                    } else {
+                      htmlTabela += '<td style="font-size:15px;">' + obs + '</td>';
+                    }
+                  } else {
+                    htmlTabela += '<td style="font-size:15px;">' + texto + '</td>';
+                  }
+                });
+                htmlTabela += '</tr>';
+              });
+              htmlTabela += '</tbody>';
+            }
+            htmlTabela += '</table>';
+            htmlTabela = htmlTabela.replace(/fecharModalPreviaFora/gi, '');
+            var win = window.open('', '', 'width=1000,height=800');
+            win.document.write('<html><head><title>Imprimir Tabela</title>');
+            win.document.write('<style>body{font-family:Arial,sans-serif;}table{width:100%;border-collapse:collapse;table-layout:auto;}th,td{border:1.5px solid #222;padding:8px 6px;font-size:15px;word-break:break-word;}th{background:#1976d2;color:#fff;font-size:16px;}tr:nth-child(even) td{background:#f4f8fb;}tr:nth-child(odd) td{background:#fff;}');
+            win.document.write('td,th{max-width:unset !important; white-space:normal !important; overflow:visible !important; text-overflow:unset !important;}');
+            win.document.write('</style></head><body>');
+            win.document.write('<div style="margin-bottom:14px; background:#fffbe7; border:1.5px solid #fbc02d; border-radius:7px; padding:10px 18px; font-size:17px; color:#b26a00; text-align:center; font-weight:bold;">Atenção: confira todos os dados antes de imprimir. Entregue esta folha ao condutor. <span style="color:#d32f2f;">Destaque qualquer observação importante!</span></div>');
+            win.document.write(htmlTabela);
+            win.document.write('</body></html>');
+            win.document.close();
+            win.focus();
+            setTimeout(function(){ win.print(); win.close(); }, 500);
+          }
+          </script>
+          </div>
+          <noscript>
+            <style>
+              #botoes-acoes, #botoes-acoes * { display: none !important; }
+            </style>
+          </noscript>
+          {% if transportes %}
+              <div class="table-responsive" style="width:100%; min-width:0; max-width:100%; overflow-x:auto;">
+                <table class="table table-striped table-bordered align-middle" style="width:100%; min-width:0; max-width:100%; table-layout:fixed;">
+                <thead class="table-light">
+                  <tr>
+                    <th style="min-width:70px; max-width:80px; white-space:nowrap; text-align:center;">Data</th>
+                    <th style="min-width:110px; max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Paciente</th>
+                    <th style="min-width:110px; max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Clínica</th>
+                    <th style="min-width:90px; max-width:110px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Veículo</th>
+                    <th style="min-width:80px; max-width:90px; white-space:nowrap; text-align:center;">Condutor</th>
+                    <th style="min-width:60px; max-width:70px; white-space:nowrap; text-align:center;">Enf.</th>
+                    <th style="min-width:60px; max-width:70px; white-space:nowrap; text-align:center;">Saída</th>
+                    <!-- Coluna Chegada removida -->
+                    <th style="min-width:90px; max-width:120px; word-break:break-word; text-align:left;">Obs.</th>
+                    <th class="acao-coluna no-print" style="min-width:60px; max-width:70px; white-space:nowrap; text-align:center;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in transportes %}
+                  <tr>
+                    <td style="white-space:nowrap; text-align:center;">{{ t.data_transporte|date:'d/m/Y' }}</td>
+                    <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;" title="{{ t.paciente }}">{{ t.paciente }}</td>
+                    <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;" title="{{ t.clinica }}">{{ t.clinica }}</td>
+                    <td style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;" title="{{ t.veiculo }}">{{ t.veiculo }}</td>
+                    <td style="white-space:nowrap; text-align:center; max-width:90px; overflow:hidden; text-overflow:ellipsis;" title="{{ t.condutor }}">{{ t.condutor }}</td>
+                    <td style="white-space:nowrap; text-align:center; max-width:70px; overflow:hidden; text-overflow:ellipsis;" title="{{ t.enfermagem }}">{{ t.enfermagem }}</td>
+                    <td style="white-space:nowrap; text-align:center; max-width:70px;">{{ t.hora_saida|default:'-' }}</td>
+                    <!-- Coluna Chegada removida -->
+                    <td style="word-break:break-word; text-align:left; max-width:120px;" title="{{ t.observacoes|default:'-' }}">{{ t.observacoes|default:'-' }}</td>
+                    <td class="acao-coluna no-print" style="white-space:nowrap; text-align:center; max-width:70px;">
+                      <form method="post" action="/transportes/excluir/{{ t.id }}/" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" style="font-weight:bold; box-shadow:0 0 6px #dc3545;" onclick="return confirm('Tem certeza que deseja excluir este transporte?');">
+                          <span class="bi bi-trash"></span> Excluir
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-warning">Nenhum transporte cadastrado ainda.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

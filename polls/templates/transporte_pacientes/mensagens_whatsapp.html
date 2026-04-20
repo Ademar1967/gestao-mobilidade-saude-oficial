@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Mensagens WhatsApp Recebidas</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; }
+        .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 24px; }
+        h1 { text-align: center; color: #007b83; }
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background: #e9ecef; }
+        tr:nth-child(even) { background: #f2f2f2; }
+        .numero { color: #007b83; font-weight: bold; }
+        .corpo { font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mensagens WhatsApp Recebidas</h1>
+        <table>
+            <tr>
+                <th>Data/Hora</th>
+                <th>Número</th>
+                <th>Mensagem</th>
+            </tr>
+            {% for msg in mensagens %}
+            <tr>
+                <td>{{ msg.data_recebimento|date:"d/m/Y H:i" }}</td>
+                <td class="numero">{{ msg.numero }}</td>
+                <td class="corpo">{{ msg.corpo }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">Nenhuma mensagem recebida ainda.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

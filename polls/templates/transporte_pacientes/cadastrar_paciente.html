@@ -1,0 +1,710 @@
+
+{% extends 'base.html' %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'transporte_pacientes/form-clean.css' %}">
+<style>
+  .campo-obrigatorio-erro {
+    border: 2.5px solid #d32f2f !important;
+    box-shadow: 0 0 0 3px #ffcdd2 !important;
+    animation: shake 0.18s 2;
+    border-radius: 6px !important;
+    background: #fff8f8 !important;
+    transition: border 0.2s, box-shadow 0.2s;
+  }
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Destaca campos obrigatórios com erro
+  document.querySelectorAll('.text-danger small').forEach(function(div) {
+    // Tenta encontrar o campo pelo id do erro
+    let campo = null;
+    // Se o erro está dentro de um div logo após o campo
+    if (div.parentElement) {
+      // Procura input, select ou textarea anterior
+      let anterior = div.parentElement.querySelector('input, select, textarea');
+      if (anterior) campo = anterior;
+    }
+    // Se não encontrou, tenta buscar pelo id do label anterior
+    if (!campo) {
+      let label = div.parentElement.querySelector('label');
+      if (label && label.htmlFor) {
+        campo = document.getElementById(label.htmlFor);
+      }
+    }
+    // Busca pelo id padrão Django se ainda não encontrou
+    if (!campo && div.parentElement && div.parentElement.id) {
+      campo = document.getElementById(div.parentElement.id.replace('div_id_', 'id_'));
+    }
+    // Aplica destaque se encontrou
+    if (campo) {
+      campo.classList.add('campo-obrigatorio-erro');
+    }
+  });
+});
+</script>
+{% load crispy_forms_tags %}
+
+
+
+<!-- AVISO DE ATENÇÃO PERSONALIZADO PARA O FORMULÁRIO DE PACIENTES -->
+<div style="background:#fff3cd; color:#856404; border:2px solid #ffeeba; padding:14px 20px; border-radius:7px; font-size:1.25em; font-weight:bold; display:flex; align-items:center; margin-bottom:18px;">
+  <span style="font-size:1.7em; margin-right:12px;">&#9888;&#65039;</span>
+  Atenção: Para o conforto de todos, monitore o total de cadastros e respeite o limite de acomodações. <b>Evite overbook!</b> Monitore o total geral antes de novos cadastros.
+</div>
+
+
+
+
+
+<!-- ALERTA DE ATENÇÃO PARA IDENTIFICAÇÃO DO TEMPLATE -->
+<div style="background:#fff3cd; color:#856404; border:2px solid #ffeeba; padding:10px 18px; border-radius:7px; font-size:1.25em; font-weight:bold; display:flex; align-items:center; margin-bottom:18px;">
+  <span style="font-size:1.7em; margin-right:12px;">&#9888;&#65039;</span>
+  Você está editando o template <b>cadastrar_paciente.html</b>
+</div>
+
+
+<div style="background:#222; color:#fff; padding:10px; font-size:1.3em; text-align:center; border-radius:7px; margin-bottom:18px;">
+  TESTE DE ALTERAÇÃO NO TEMPLATE - SE VOCÊ ESTÁ VENDO ESTE TEXTO, O TEMPLATE ESTÁ SENDO USADO CORRETAMENTE
+</div>
+
+{% block content %}
+
+
+<div class="alert mb-3" style="background:#fffbe6; border:2px solid #ffe58f; color:#ad6800; font-size:1.18em; font-weight:600; border-radius:10px; box-shadow:0 2px 8px #ffe58f55;">
+  <div style="display:flex; align-items:center; gap:14px;">
+    <span style="font-size:2em;">&#128202;</span>
+    <div>
+      <span style="color:#ad6800;">Pacientes:</span> <b>{{ total_pacientes }}</b>
+      &nbsp;|&nbsp;
+      <span style="color:#ad6800;">Acompanhantes:</span> <b>{{ total_acompanhantes }}</b>
+      &nbsp;|&nbsp;
+      <span style="color:#d84315; font-weight:bold;">Total geral:</span> <b style="font-size:1.22em; color:#d84315;">{{ total_geral }}</b>
+    </div>
+  </div>
+  <div style="margin-top:8px; padding:8px 0 0 2.5em;">
+    <span style="color:#d84315; font-size:1.08em; font-weight:bold; background:#fff0f0; border-radius:5px; padding:3px 10px;">
+      &#9888;&#65039; Evite excesso de acomodações! Monitore o total geral antes de novos cadastros.
+    </span>
+  </div>
+</div>
+
+<div class="alert alert-primary d-flex align-items-center mb-3" style="font-size:1.12em;">
+  <button class="btn btn-info btn-sm mt-2 btn-afunda me-auto" type="button" data-bs-toggle="collapse" data-bs-target="#instrucoesTopo" aria-expanded="false" aria-controls="instrucoesTopo" id="btn-instrucoes">
+    <span id="texto-instrucoes">Mostrar instruções de uso</span>
+  </button>
+</div>
+<div class="collapse" id="instrucoesTopo">
+  <div class="card card-body" style="background: #e3f2fd;">
+    <script>
+    // Alterna texto do botão de instruções
+    const btnInstr = document.getElementById('btn-instrucoes');
+    const textoInstr = document.getElementById('texto-instrucoes');
+    if(btnInstr && textoInstr) {
+      btnInstr.addEventListener('click', function() {
+        setTimeout(function() {
+          if(document.getElementById('instrucoesTopo').classList.contains('show')) {
+            textoInstr.textContent = 'Ocultar instruções de uso';
+          } else {
+            textoInstr.textContent = 'Mostrar instruções de uso';
+          }
+        }, 300);
+      });
+    }
+    </script>
+    <strong>Como importar uma lista de pacientes no sistema</strong>
+    <ol class="mb-2 mt-2">
+      <li>Você receberá o arquivo com os dados dos pacientes por e-mail, WhatsApp, Google Drive ou outro meio digital. O arquivo geralmente estará no formato Excel (.xlsx) ou CSV (.csv).</li>
+      <li>Baixe o arquivo para o seu computador. Salve-o em uma pasta fácil de localizar, como “Downloads” ou “Documentos”.</li>
+      <li>Acesse o sistema de transporte de pacientes.</li>
+      <li>No menu de cadastro ou listagem de pacientes, clique na opção “Importar pacientes”.</li>
+      <li>Selecione o arquivo que você salvou no computador e confirme o envio.</li>
+      <li>Aguarde a confirmação de importação. O sistema mostrará uma mensagem de sucesso ou informará se houver algum erro no arquivo.</li>
+    </ol>
+    <b>Exportar lista de pacientes:</b>
+    <ul class="mb-2">
+      <li>Para compartilhar ou arquivar os dados, clique em <b>“Exportar pacientes (Excel)”</b> ou <b>“Exportar pacientes (CSV)”</b> acima do formulário.</li>
+      <li>O arquivo será baixado no seu computador e pode ser enviado para outros setores, colegas, responsáveis pelo transporte, controle administrativo, ou para backup pessoal.</li>
+      <li>Você pode enviar o arquivo por e-mail, WhatsApp, Google Drive ou outro meio digital, conforme a necessidade do seu fluxo de trabalho.</li>
+      <li>O formato Excel (.xlsx) é ideal para edição em planilhas. O formato CSV (.csv) é compatível com a maioria dos sistemas e pode ser importado facilmente.</li>
+    </ul>
+    <b>Dicas:</b>
+    <ul class="mb-0">
+      <li>Certifique-se de que o arquivo contém as colunas necessárias (nome, idade, telefone, endereço, etc.).</li>
+      <li>Se tiver dúvidas sobre o formato do arquivo, peça um modelo para a equipe de suporte.</li>
+      <li>Caso receba o arquivo em outro formato, converta para Excel ou CSV antes de importar.</li>
+    </ul>
+
+    <hr class="my-3">
+    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#instrucoesTopoEn" aria-expanded="false" aria-controls="instrucoesTopoEn">
+      Show/Hide Instructions in English
+    </button>
+
+    <div class="collapse mt-3" id="instrucoesTopoEn">
+      <strong>How to import a patient list into the system</strong>
+      <ol class="mb-2 mt-2">
+        <li>You will receive the patient data file by email, WhatsApp, Google Drive, or another digital channel. The file is usually in Excel (.xlsx) or CSV (.csv) format.</li>
+        <li>Download the file to your computer. Save it in an easy-to-find folder, such as "Downloads" or "Documents".</li>
+        <li>Access the patient transport system.</li>
+        <li>In the patient registration or listing menu, click "Import patients".</li>
+        <li>Select the file you saved on your computer and confirm the upload.</li>
+        <li>Wait for the import confirmation. The system will show a success message or indicate any file errors.</li>
+      </ol>
+      <b>Export patient list:</b>
+      <ul class="mb-2">
+        <li>To share or archive data, click "Export patients (Excel)" or "Export patients (CSV)" above the form.</li>
+        <li>The file will be downloaded to your computer and can be shared with other departments, colleagues, transport staff, administrative control, or used for personal backup.</li>
+        <li>You can send the file by email, WhatsApp, Google Drive, or another digital method, according to your workflow needs.</li>
+        <li>Excel format (.xlsx) is ideal for spreadsheet editing. CSV format (.csv) is compatible with most systems and can be imported easily.</li>
+      </ul>
+      <b>Tips:</b>
+      <ul class="mb-0">
+        <li>Make sure the file contains all required columns (name, age, phone, address, etc.).</li>
+        <li>If you are unsure about the file format, ask the support team for a sample template.</li>
+        <li>If you receive the file in a different format, convert it to Excel or CSV before importing.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+{# --- NOVA ORGANIZAÇÃO INTUITIVA PARA USUÁRIO LEIGO --- #}
+
+
+
+<h2 class="mb-3 mt-2" style="font-weight:700; color:#1976d2;">Cadastro e Gerenciamento de Pacientes</h2>
+
+{# 1. Feedback de sucesso/erro #}
+{% if messages %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+    <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+{% endif %}
+
+
+
+{# 2. Formulário manual de cadastro (agora primeiro bloco) #}
+<div class="card mb-3 shadow-sm">
+  <div class="card-body">
+    <h5 class="card-title mb-2" style="color:#f57c00; background:#fff3e0; padding:6px 12px; border-radius:6px;">Cadastrar paciente manualmente</h5>
+    {# Formulário colapsável para revisão de dados recebidos via web #}
+    {% if importado_via_web %}
+    <button class="btn btn-lg btn-danger fw-bold shadow mb-3 px-4" style="font-size:1.18em; border-width:2px; border-radius:8px; letter-spacing:0.5px;" type="button" data-bs-toggle="collapse" data-bs-target="#formularioWeb" aria-expanded="false" aria-controls="formularioWeb">
+      <span style="font-size:1.3em; vertical-align:middle;">⚠️</span> Revisar dados recebidos via web
+    </button>
+    <div class="collapse" id="formularioWeb">
+      <div class="alert alert-danger mb-3" style="font-size:1.13em; font-weight:600; border-left:6px solid #c62828; background:#fff3e0; color:#c62828;">
+        <span style="font-size:1.2em;">⚠️</span> <b>Este formulário é exclusivo para revisão e confirmação de dados recebidos via web (importação de arquivo).</b><br>
+        Confira, corrija e complete as informações antes de salvar no sistema. Se não for revisar dados importados, utilize o formulário manual abaixo.
+      </div>
+      {% if arquivo_origem_nome and arquivo_origem_tipo == 'dados_recebidos' %}
+      <div class="alert alert-warning border border-2 border-warning shadow-sm">
+        <b>Arquivo em revisão:</b> {{ arquivo_origem_nome }}<br>
+        Após salvar, o sistema moverá este arquivo automaticamente para a pasta de processados.
+      </div>
+      {% endif %}
+      <form method="post" id="revisao-paciente-web-form" autocomplete="on">
+        {% csrf_token %}
+        <input type="hidden" name="salvar_web" value="1">
+        <input type="hidden" name="arquivo_origem_nome" value="{{ arquivo_origem_nome|default:'' }}">
+        <input type="hidden" name="arquivo_origem_tipo" value="{{ arquivo_origem_tipo|default:'' }}">
+        <!-- Repita os campos do formulário, preenchidos com os dados importados -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-header" style="font-size:1.15em; font-weight:600; background:#e3f2fd; color:#0d47a1;">
+            Dados Pessoais (Web)
+          </div>
+          <div class="card-body pb-2">
+            <div class="row g-2">
+              <div class="col-md-5 mb-2">
+                {{ form_web.nome.label_tag }} {{ form_web.nome }}
+              </div>
+              <div class="col-md-2 mb-2">
+                {{ form_web.cartao_sis.label_tag }} {{ form_web.cartao_sis }}
+              </div>
+              <div class="col-md-2 mb-2">
+                {{ form_web.idade.label_tag }} {{ form_web.idade }}
+              </div>
+              <div class="col-md-3 mb-2">
+                {{ form_web.peso.label_tag }}
+                <div class="input-group">
+                  {{ form_web.peso }}
+                  <span class="input-group-text">kg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card shadow-sm mb-3">
+          <div class="card-header" style="font-size:1.08em; font-weight:600; background:#e0f7fa; color:#006064;">
+            Contato e Referência (Web)
+          </div>
+          <div class="card-body pb-2">
+            <div class="row g-2">
+              <div class="col-md-2 mb-2">
+                {{ form_web.ddd.label_tag }} {{ form_web.ddd }}
+              </div>
+              <div class="col-md-4 mb-2">
+                {{ form_web.telefone.label_tag }} {{ form_web.telefone }}
+              </div>
+              <div class="col-md-6 mb-2">
+                {{ form_web.referencia.label_tag }} {{ form_web.referencia }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card shadow-sm mb-3">
+          <div class="card-header" style="font-size:1.08em; font-weight:600; background:#e8f5e9; color:#1b5e20;">
+            Endereço (Web)
+          </div>
+          <div class="card-body pb-2">
+            <div class="row g-2">
+              <div class="col-md-5 mb-2">
+                {{ form_web.rua.label_tag }} {{ form_web.rua }}
+              </div>
+              <div class="col-md-2 mb-2">
+                {{ form_web.numero.label_tag }} {{ form_web.numero }}
+              </div>
+              <div class="col-md-3 mb-2">
+                {{ form_web.bairro.label_tag }} {{ form_web.bairro }}
+              </div>
+              <div class="col-md-2 mb-2">
+                {{ form_web.estado.label_tag }} {{ form_web.estado }}
+              </div>
+              <div class="col-md-5 mb-2">
+                {{ form_web.cidade.label_tag }} {{ form_web.cidade }}
+              </div>
+              <div class="col-md-3 mb-2">
+                {{ form_web.cep.label_tag }} {{ form_web.cep }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card shadow-sm mb-3">
+          <div class="card-header" style="font-size:1.08em; font-weight:600; background:#fffde7; color:#f9a825;">
+            Condições Especiais (Web)
+          </div>
+          <div class="card-body pb-2">
+            <div class="row g-2 mt-2">
+              <div class="form-check col-md-2 mb-2">
+                {{ form_web.oxigenio }} {{ form_web.oxigenio.label_tag }}
+              </div>
+              <div class="form-check col-md-2 mb-2">
+                {{ form_web.maca }} {{ form_web.maca.label_tag }}
+              </div>
+              <div class="form-check col-md-2 mb-2">
+                {{ form_web.cadeirante }} {{ form_web.cadeirante.label_tag }}
+              </div>
+              <div class="form-check col-md-2 mb-2">
+                {{ form_web.acompanhante }} {{ form_web.acompanhante.label_tag }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card shadow-sm mb-3">
+          <div class="card-header" style="font-size:1.08em; font-weight:600; background:#f3e5f5; color:#4a148c;">
+            Observações e Evolução (Web)
+          </div>
+          <div class="card-body pb-2">
+            <div class="mb-2">
+              {{ form_web.evolucao.label_tag }} {{ form_web.evolucao }}
+            </div>
+            <div class="mb-2">
+              {{ form_web.observacoes.label_tag }} {{ form_web.observacoes }}
+            </div>
+          </div>
+        </div>
+        {{ form_web.latitude }}
+        {{ form_web.longitude }}
+        <div class="d-grid gap-2 mt-3">
+          <button type="submit" class="btn btn-warning btn-lg btn-afunda" name="salvar_web" value="1">
+            Salvar Dados Recebidos via Web
+          </button>
+        </div>
+      </form>
+      <button class="btn btn-secondary btn-sm mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#formularioWeb" aria-expanded="true" aria-controls="formularioWeb">
+        Ocultar formulário de revisão de dados recebidos via web
+      </button>
+    </div>
+    {% endif %}
+
+
+    {# --- NOVO FORMULÁRIO VISUAL PREMIUM --- #}
+    <form method="post" id="cadastrar-paciente-form" autocomplete="on">
+      {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          <strong>Por favor, corrija os erros abaixo:</strong>
+          <ul class="mb-0">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><b>{{ field.label }}:</b> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% csrf_token %}
+      <fieldset class="card shadow-sm mb-3">
+        <legend class="card-header" style="font-size:1.15em; font-weight:600; background:#e3f2fd; color:#0d47a1; border-radius:6px 6px 0 0;">Dados Pessoais</legend>
+        <div class="card-body pb-2">
+          <div class="row g-2">
+            <div class="col-md-7 mb-2">
+              <div class="col-md-5 mb-2">
+                {{ form.nome.label_tag }}<span class="text-danger">*</span> {{ form.nome }}
+                {% if form.nome.errors %}
+                  <div class="text-danger small">{{ form.nome.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-2 mb-2">
+                {{ form.cartao_sis.label_tag }}
+                <span tabindex="0" data-bs-toggle="tooltip" title="Número do cartão do SUS/SIS de Mogi das Cruzes" style="cursor:help; color:#1976d2;">
+                  <i class="bi bi-info-circle"></i>
+                </span>
+                {{ form.cartao_sis }}
+                {% if form.cartao_sis.errors %}
+                  <div class="text-danger small">{{ form.cartao_sis.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-2 mb-2">
+              {{ form.idade.label_tag }}<span class="text-danger">*</span> {{ form.idade }}
+              {% if form.idade.errors %}
+                <div class="text-danger small">{{ form.idade.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-3 mb-2">
+              {{ form.peso.label_tag }}<span class="text-danger">*</span>
+              <div class="input-group">
+                {{ form.peso }}
+                <span class="input-group-text">kg</span>
+              </div>
+              {% if form.peso.errors %}
+                <div class="text-danger small">{{ form.peso.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset class="card shadow-sm mb-3">
+        <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#e0f7fa; color:#006064; border-radius:6px 6px 0 0;">Contato e Referência</legend>
+        <div class="card-body pb-2">
+          <div class="row g-2">
+            <div class="col-md-2 mb-2">
+              {{ form.ddd.label_tag }}
+              <span tabindex="0" data-bs-toggle="tooltip" title="DDD do telefone (ex: 11)" style="cursor:help; color:#1976d2;">
+                <i class="bi bi-info-circle"></i>
+              </span>
+              {{ form.ddd }}
+              {% if form.ddd.errors %}
+                <div class="text-danger small">{{ form.ddd.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-4 mb-2">
+              {{ form.telefone.label_tag }} {{ form.telefone }}
+              {% if form.telefone.errors %}
+                <div class="text-danger small">{{ form.telefone.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-2">
+              {{ form.referencia.label_tag }}
+              <span tabindex="0" data-bs-toggle="tooltip" title="Ponto de referência para facilitar localização (opcional)" style="cursor:help; color:#1976d2;">
+                <i class="bi bi-info-circle"></i>
+              </span>
+              {{ form.referencia }}
+              <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                // Seleciona campos por id padrão Django
+                const ddd = document.getElementById('id_ddd');
+                const tel = document.getElementById('id_telefone');
+                const ref = document.getElementById('id_referencia');
+                if (ddd) ddd.setAttribute('tabindex', '1');
+                if (tel) tel.setAttribute('tabindex', '2');
+                if (ref) ref.setAttribute('tabindex', '3');
+              });
+              </script>
+              {% if form.referencia.errors %}
+                <div class="text-danger small">{{ form.referencia.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset class="card shadow-sm mb-3">
+        <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#e8f5e9; color:#1b5e20; border-radius:6px 6px 0 0;">Endereço</legend>
+        <div class="card-body pb-2">
+          <div class="row g-2">
+            <div class="col-md-5 mb-2">
+              {{ form.rua.label_tag }}<span class="text-danger">*</span> {{ form.rua }}
+              {% if form.rua.errors %}
+                <div class="text-danger small">{{ form.rua.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-2 mb-2">
+              {{ form.numero.label_tag }}<span class="text-danger">*</span> {{ form.numero }}
+              {% if form.numero.errors %}
+                <div class="text-danger small">{{ form.numero.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-3 mb-2">
+              {{ form.bairro.label_tag }}<span class="text-danger">*</span> {{ form.bairro }}
+              {% if form.bairro.errors %}
+                <div class="text-danger small">{{ form.bairro.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-2 mb-2">
+              {{ form.estado.label_tag }}
+              <span tabindex="0" data-bs-toggle="tooltip" title="UF do estado (ex: SP)" style="cursor:help; color:#1976d2;">
+                <i class="bi bi-info-circle"></i>
+              </span>
+              {{ form.estado }}
+              {% if form.estado.errors %}
+                <div class="text-danger small">{{ form.estado.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-5 mb-2">
+              {{ form.cidade.label_tag }}<span class="text-danger">*</span> {{ form.cidade }}
+              {% if form.cidade.errors %}
+                <div class="text-danger small">{{ form.cidade.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-3 mb-2">
+              {{ form.cep.label_tag }}
+              <span tabindex="0" data-bs-toggle="tooltip" title="CEP no formato 00000-000" style="cursor:help; color:#1976d2;">
+                <i class="bi bi-info-circle"></i>
+              </span>
+              {{ form.cep }}
+              {% if form.cep.errors %}
+                <div class="text-danger small">{{ form.cep.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset class="card shadow-sm mb-3">
+        <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#fffde7; color:#f9a825; border-radius:6px 6px 0 0;">Condições Especiais</legend>
+        <div class="card-body pb-2">
+          <div class="row g-2 mt-2">
+            <div class="form-check col-md-2 mb-2">
+              {{ form.oxigenio }} {{ form.oxigenio.label_tag }}
+              {% if form.oxigenio.errors %}
+                <div class="text-danger small">{{ form.oxigenio.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="form-check col-md-2 mb-2">
+              {{ form.maca }} {{ form.maca.label_tag }}
+              {% if form.maca.errors %}
+                <div class="text-danger small">{{ form.maca.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="form-check col-md-2 mb-2">
+              {{ form.cadeirante }} {{ form.cadeirante.label_tag }}
+              {% if form.cadeirante.errors %}
+                <div class="text-danger small">{{ form.cadeirante.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="form-check col-md-2 mb-2">
+              {{ form.acompanhante }} {{ form.acompanhante.label_tag }}
+              {% if form.acompanhante.errors %}
+                <div class="text-danger small">{{ form.acompanhante.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      <fieldset class="card shadow-sm mb-3">
+        <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#f3e5f5; color:#4a148c; border-radius:6px 6px 0 0;">Observações e Evolução</legend>
+        <div class="card-body pb-2">
+          <div class="mb-2">
+            {{ form.evolucao.label_tag }} {{ form.evolucao }}
+            {% if form.evolucao.errors %}
+              <div class="text-danger small">{{ form.evolucao.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="mb-2">
+            {{ form.observacoes.label_tag }} {{ form.observacoes }}
+            {% if form.observacoes.errors %}
+              <div class="text-danger small">{{ form.observacoes.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </fieldset>
+      {{ form.latitude }}
+      {{ form.longitude }}
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-success btn-lg btn-afunda">
+          Salvar Paciente
+        </button>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          // Seleciona todos os formulários da página
+          const forms = document.querySelectorAll('form');
+          forms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+              // Procura campo acompanhante dentro do formulário
+              let acomp = form.querySelector('[name$="acompanhante"]');
+              // Se não encontrar, tenta buscar por id comum
+              if (!acomp) acomp = form.querySelector('#id_acompanhante');
+              if (acomp && (!acomp.value || acomp.value.trim() === '')) {
+                const confirmado = confirm('Nenhum acompanhante foi indicado. Tem certeza que deseja cadastrar sem acompanhante? Isso pode causar excesso de acomodações.');
+                if (!confirmado) {
+                  e.preventDefault();
+                  acomp.focus();
+                }
+              }
+            });
+          });
+        });
+        </script>
+        <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
+      </div>
+    <script>
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    </script>
+    </form>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+<script>
+  $(document).ready(function() {
+    // Máscara para telefone (formato 99999-9999 ou 9999-9999)
+    $("#id_telefone").mask(function(val) {
+      return val.replace(/\D/g, '').length === 9 ? '00000-0000' : '0000-00009';
+    });
+    // Máscara para CEP (formato 99999-999)
+    $("#id_cep").mask('00000-000');
+
+  });
+</script>
+
+
+  </div>
+</div>
+
+
+<!-- Collapse para exportação/importação -->
+<div class="mb-3">
+  <div class="mb-3 d-flex gap-2 flex-wrap">
+    <a href="{% url 'transporte_pacientes:arquivos_recebidos_pacientes' %}" class="btn btn-outline-dark btn-lg btn-afunda">
+      <i class="bi bi-folder2-open me-1"></i> Arquivos recebidos
+    </a>
+  </div>
+  <button class="btn btn-outline-info btn-lg btn-afunda mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#exportImportCollapse" aria-expanded="false" aria-controls="exportImportCollapse">
+    <i class="bi bi-arrows-angle-expand me-1"></i> Exibir opções de importação/exportação de pacientes
+    <span class="badge bg-warning text-dark ms-2">Essas opções são avançadas. Use apenas se precisar importar ou exportar listas completas.</span>
+  </button>
+  <div class="collapse" id="exportImportCollapse">
+    <div class="mb-3 d-flex gap-2">
+      <a href="{% url 'transporte_pacientes:exportar_pacientes_excel' %}" class="btn btn-outline-success btn-lg btn-afunda">
+        <i class="bi bi-file-earmark-excel me-1"></i> Exportar pacientes (Excel)
+      </a>
+      <a href="{% url 'transporte_pacientes:exportar_pacientes_csv' %}" class="btn btn-outline-primary btn-lg btn-afunda">
+        <i class="bi bi-filetype-csv me-1"></i> Exportar pacientes (CSV)
+      </a>
+    </div>
+    <div class="card mb-3 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title mb-2" style="color:#00897b; background:#e0f2f1; padding:6px 12px; border-radius:6px;">Importar lista de pacientes</h5>
+        <form method="post" enctype="multipart/form-data" action="">
+          {% csrf_token %}
+          <div class="input-group mb-2">
+            <input type="file" name="arquivo_importacao" class="form-control" accept=".csv,.xlsx,.xls" required>
+            <button type="submit" name="importar_pacientes" class="btn btn-primary btn-afunda">
+              <i class="bi bi-upload me-1"></i> Importar pacientes
+            </button>
+          </div>
+        </form>
+        <div class="alert alert-info py-2 px-3 mb-2" style="font-size:1.08em; font-weight:500;">
+          <span style="color:#1565c0;">Selecione um arquivo <b>Excel (.xlsx)</b> ou <b>CSV (.csv)</b> com os dados dos pacientes.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<script>
+  // Preenche a data/hora atual no aviso
+  document.addEventListener('DOMContentLoaded', function() {
+    var agora = new Date();
+    var dataHora = agora.toLocaleString('pt-BR', { hour12: false });
+    document.getElementById('data-hora-atual').textContent = dataHora;
+  });
+</script>
+
+
+<div class="text-center mt-4 mb-2">
+  <button id="toggleHistoricoBtn" class="btn btn-outline-warning btn-sm px-4 py-2 btn-afunda" type="button" onclick="toggleHistorico()" style="color: #fff; background-color: #ff9800; border-color: #ff9800;">
+    <span id="toggleHistoricoText">Mostrar lista de pacientes</span>
+  </button>
+</div>
+<div id="historicoPacientes" style="display: none;">
+  {% include 'transporte_pacientes/_historico_pacientes.html' %}
+</div>
+
+<style>
+  /* Efeito de afundamento para TODOS os botões */
+  button, .btn, .btn-afunda {
+    transition: box-shadow 0.12s, transform 0.12s;
+  }
+  button:active, .btn:active, .btn-afunda:active {
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.05);
+    transform: translateY(2px) scale(0.98);
+    outline: none;
+  }
+  #cadastrar-paciente-form .is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220,53,69,.25);
+  }
+</style>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function toggleHistorico() {
+    var historico = document.getElementById('historicoPacientes');
+    var btnText = document.getElementById('toggleHistoricoText');
+    if (!historico || !btnText) return;
+    if (historico.style.display === 'none' || historico.style.display === '') {
+      historico.style.display = 'block';
+      btnText.textContent = 'Ocultar lista de pacientes';
+    } else {
+      historico.style.display = 'none';
+      btnText.textContent = 'Mostrar lista de pacientes';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    var historico = document.getElementById('historicoPacientes');
+    var btnText = document.getElementById('toggleHistoricoText');
+    if (historico && btnText) {
+      if (historico.style.display === 'none' || historico.style.display === '') {
+        btnText.textContent = 'Mostrar lista de pacientes';
+      } else {
+        btnText.textContent = 'Ocultar lista de pacientes';
+      }
+    }
+  });
+</script>
+{% endblock %}
+
+
+{# ORIGINAL: TESTE VISUAL: Se você está vendo esta mensagem, o template foi atualizado com sucesso em 14/03/2026. #}
+{{ ERRO_DETETIVE }} <!-- TESTE DETETIVE: Se aparecer erro, o template está sendo carregado. -->
+
+

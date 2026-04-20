@@ -1,0 +1,152 @@
+<!-- CÓDIGO DO HISTÓRICO DE PACIENTES (backup antes de remoção)
+
+<!-- Botão para mostrar/ocultar histórico de pacientes -->
+<div class="mb-3 d-flex gap-2">
+  <button class="btn btn-outline-primary" type="button" id="toggleHistoricoBtn" onclick="toggleHistorico()">
+    <i class="bi bi-clock-history"></i> <span id="toggleHistoricoText">Mostrar histórico de pacientes salvos</span>
+  </button>
+</div>
+<div class="card-body" id="historicoPacientes" style="display: none;">
+  <div class="alert alert-info mb-2">LISTA TRADICIONAL DE PACIENTES</div>
+  <div class="table-responsive" style="background-color: #fff;">
+    <table class="table table-bordered table-striped align-middle w-100 small" style="color: #222; background-color: #fff;">
+      <thead class="table-light">
+        <tr>
+          <th><i class="bi bi-person"></i> Nome</th>
+          <th><i class="bi bi-calendar"></i> Idade</th>
+          <th><i class="bi bi-activity"></i> Peso</th>
+          <th><i class="bi bi-geo-alt"></i> Endereço</th>
+          <th><i class="bi bi-telephone"></i> Telefone</th>
+          <th><i class="bi bi-check2-circle"></i> Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for paciente in pacientes %}
+        <tr>
+          <td>{{ paciente.nome }}</td>
+          <td>{{ paciente.idade }} anos</td>
+          <td>{{ paciente.peso|floatformat:2 }} kg</td>
+          <td>{{ paciente.endereco }}</td>
+          <td>{{ paciente.telefone }}</td>
+          <td>{{ paciente.status }}</td>
+          <td>
+            <form method="post" action="{% url 'transporte_pacientes:excluir_selecionados_paciente' %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="paciente_ids" value="{{ paciente.id }}">
+              <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-trash"></i> Excluir
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Rodapé com histórico de pacientes cadastrados (exclusão em lote) -->
+<div class="card mt-4">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-list"></i> Histórico de Pacientes Cadastrados</span>
+  </div>
+  <div class="card-body p-0" id="historico-paciente-rodape">
+    <form method="post" action="{% url 'transporte_pacientes:excluir_selecionados_paciente' %}" id="form-excluir-paciente-multiplos">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:40px;"><input type="checkbox" id="check-all-paciente"></th>
+              <th>Nome</th>
+              <th>Idade</th>
+              <th>Peso</th>
+              <th>Endereço</th>
+              <th>Telefone</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for paciente in pacientes %}
+              <tr>
+                <td><input type="checkbox" name="paciente_ids" value="{{ paciente.id }}"></td>
+                <td>{{ paciente.nome }}</td>
+                <td>{{ paciente.idade }}</td>
+                <td>{{ paciente.peso|floatformat:2 }}</td>
+                <td>{{ paciente.endereco }}</td>
+                <td>{{ paciente.telefone }}</td>
+                <td>{{ paciente.status }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" style="text-align:center; font-weight:bold; color:#d32f2f; background:#fff3cd;">Nenhum paciente cadastrado ainda.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="p-2">
+        <button type="submit" class="btn btn-warning text-white btn-orange-elevated btn-orange-shadow" style="font-weight:bold;">
+          <i class="bi bi-trash"></i> Excluir selecionados
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Rodapé com histórico de pacientes cadastrados -->
+<footer class="container mt-5">
+  <hr class="my-4">
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-list"></i> Histórico de Pacientes Cadastrados</span>
+      <button id="btn-toggle-historico-rodape-paciente" type="button" class="btn btn-orange-elevated btn-orange-shadow" style="font-weight:bold;">
+        <span id="toggle-label-rodape-paciente">Ocultar histórico</span>
+      </button>
+    </div>
+    <div class="card-body p-0" id="historico-paciente-rodape">
+      <form method="post" action="{% url 'transporte_pacientes:excluir_selecionados_paciente' %}" id="form-excluir-paciente-multiplos">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:40px;"><input type="checkbox" id="check-all-paciente"></th>
+                <th>Nome</th>
+                <th>Idade</th>
+                <th>Peso</th>
+                <th>Endereço</th>
+                <th>Telefone</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for paciente in pacientes %}
+                <tr>
+                  <td><input type="checkbox" name="paciente_ids" value="{{ paciente.id }}"></td>
+                  <td>{{ paciente.nome }}</td>
+                  <td>{{ paciente.idade }}</td>
+                  <td>{{ paciente.peso|floatformat:2 }}</td>
+                  <td>{{ paciente.endereco }}</td>
+                  <td>{{ paciente.telefone }}</td>
+                  <td>{{ paciente.status }}</td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="7" style="text-align:center; font-weight:bold; color:#d32f2f; background:#fff3cd;">Nenhum paciente cadastrado ainda.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="p-2">
+          <button type="submit" class="btn btn-danger" style="font-weight:bold;">
+            <i class="bi bi-trash"></i> Excluir selecionados
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</footer>
+<!-- FIM DO BACKUP DO HISTÓRICO DE PACIENTES -->

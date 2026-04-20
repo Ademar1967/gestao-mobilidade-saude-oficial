@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<!-- MELHORIA ATIVA: Este formulário foi atualizado com melhorias de usabilidade. Última atualização: 07/03/2026. -->
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card shadow-lg border-warning mb-4">
+        <div class="card-header bg-warning text-dark d-flex align-items-center">
+          <i class="bi bi-pencil-square me-2" style="font-size:1.5rem;"></i>
+          <h3 class="mb-0">Editar Enfermagem: {{ enfermagem.nome }}</h3>
+        </div>
+        <div class="card-body">
+          <form method="post" autocomplete="on">
+            {% csrf_token %}
+            {% for field in form %}
+              <div class="mb-3">
+                <label class="form-label fw-bold">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                  <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+              </div>
+            {% endfor %}
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-save me-1"></i> Salvar Alterações
+              </button>
+              <a href="{% url 'transporte_pacientes:cadastrar_enfermagem' %}" class="btn btn-secondary btn-lg">
+                <i class="bi bi-arrow-left"></i> Voltar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  #melhoria-alert .btn-ok-melhoria {
+    background-color: #1976d2 !important;
+    border-color: #1976d2 !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 1.5em;
+    box-shadow: 0 2px 8px #90caf9;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  #melhoria-alert .btn-ok-melhoria:active {
+    background-color: #115293 !important;
+    box-shadow: 0 1px 2px #1976d2;
+  }
+  .btn-orange-elevated {
+    background: linear-gradient(90deg, #ff9800 60%, #ffb74d 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px -2px #ff980088, 0 2px 4px #ff980044;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: box-shadow 0.2s, transform 0.1s, background 0.2s;
+    outline: none;
+    position: relative;
+  }
+  .btn-orange-elevated:active {
+    box-shadow: 0 2px 4px #ff980044;
+    background: linear-gradient(90deg, #ff9800 80%, #ffb74d 100%);
+    transform: translateY(2px) scale(0.98);
+  }
+  .btn-orange-elevated:focus {
+    outline: 2px solid #ff9800;
+  }
+</style>
+<div class="text-end mb-2" style="font-size:0.97em; color:#1976d2; font-weight:400;">
+  Última atualização: 07/03/2026 17:11
+</div>
+<script>
+  document.getElementById('fechar-melhoria').onclick = function() {
+    var alert = document.getElementById('melhoria-alert');
+    alert.style.transform = 'scale(0.97) translateY(2px)';
+    alert.style.boxShadow = '0 1px 2px #90caf9';
+    setTimeout(function(){ alert.style.display = 'none'; }, 120);
+  };
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Efeito de afundamento para todos os botões
+    var botoes = document.querySelectorAll('button, .btn');
+    botoes.forEach(function(btn) {
+      btn.addEventListener('mousedown', function() {
+        btn.style.transform = 'scale(0.97) translateY(2px)';
+        btn.style.boxShadow = '0 1px 2px #90caf9';
+      });
+      btn.addEventListener('mouseup', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+    });
+  });
+</script>
+{% endblock %}

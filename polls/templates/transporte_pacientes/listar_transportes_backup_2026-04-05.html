@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+/* Centralização absoluta do título */
+.card-header {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+.titulo-impressao {
+  display: inline-block !important;
+  text-align: center !important;
+  font-size: 26px !important;
+  color: #1976d2 !important;
+  font-weight: bold !important;
+  margin-top: 18px !important;
+  margin-bottom: 18px !important;
+  letter-spacing: 1px;
+  width: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+/* Botão de impressão na tela */
+.btn-print {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 12px 28px !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.18) !important;
+  cursor: pointer !important;
+  transition: box-shadow 0.1s, transform 0.1s !important;
+  margin-bottom: 20px !important;
+  margin-right: 14px !important;
+  outline: none !important;
+  display: inline-block !important;
+  min-width: 180px !important;
+  min-height: 48px !important;
+}
+.btn-novo {
+  background: #388e3c !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 12px 28px !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 8px rgba(56, 142, 60, 0.13) !important;
+  cursor: pointer !important;
+  transition: box-shadow 0.1s, transform 0.1s !important;
+  margin-bottom: 20px !important;
+  margin-right: 0 !important;
+  outline: none !important;
+  display: inline-block !important;
+  min-width: 180px !important;
+  min-height: 48px !important;
+}
+.btn-novo:active {
+  box-shadow: 0 1px 2px rgba(56, 142, 60, 0.18) !important;
+  transform: translateY(2px) scale(0.98) !important;
+.btn-print:active {
+  box-shadow: 0 1px 2px rgba(25, 118, 210, 0.22) !important;
+  transform: translateY(2px) scale(0.98) !important;
+}
+@media print {
+  .btn-print { display: none !important; }
+  body, html {
+    background: #fff !important;
+    color: #222 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 15px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  table, th, td, tr, tbody, thead {
+    font-size: 15px !important;
+  }
+  .container, .row, .col-lg-10, .col-md-12, .col-12, .card, .card-body, .table-responsive {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #222 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .card-header, .alert, .no-print, nav, footer, a {
+    display: none !important;
+  }
+  /* Botão de impressão na tela */
+  .btn-print {
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 22px;
+    font-size: 17px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: box-shadow 0.1s, transform 0.1s;
+    margin-bottom: 18px;
+    margin-right: 12px;
+  }
+  .btn-print:active {
+    box-shadow: 0 1px 1px rgba(0,0,0,0.10);
+    transform: translateY(2px) scale(0.98);
+  }
+  @media print {
+    .btn-print { display: none !important; }
+  }
+  .titulo-impressao {
+    display: block !important;
+    text-align: center !important;
+    font-size: 26px !important;
+    color: #1976d2 !important;
+    font-weight: bold !important;
+    margin-top: 18px !important;
+    margin-bottom: 18px !important;
+    letter-spacing: 1px;
+    width: 100%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .table-responsive {
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+  table {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+    font-size: 15px !important;
+    background: #fff !important;
+  }
+  th, td {
+    border: 0.7px solid #222 !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    line-height: 1.6 !important;
+    white-space: normal !important;
+    min-height: 22px !important;
+    height: 22px !important;
+  }
+  th {
+    background: #1976d2 !important;
+    color: #fff !important;
+    font-weight: bold !important;
+    font-size: 18px !important;
+    border-bottom: 2px solid #0d47a1 !important;
+    letter-spacing: 0.5px;
+  }
+  tr:nth-child(even) td {
+    background: #eaf1fb !important;
+  }
+  tr:nth-child(odd) td {
+    background: #fff !important;
+  }
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+}
+@media screen {
+  .footer-print { display: none; }
+}
+</style>
+<!-- Listagem de transportes realizados -->
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12 col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
+        </div>
+        <div class="card-body">
+          <button type="button" class="btn-print" onclick="window.print()">Imprimir</button>
+          <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo">Novo Transporte</a>
+          {% if transportes %}
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Data</th>
+                    <th>Paciente</th>
+                    <th>Clínica</th>
+                    <th>Veículo</th>
+                    <th>Condutor</th>
+                    <th>Enfermagem</th>
+                    <th>Saída</th>
+                    <th>Chegada</th>
+                    <th>Observações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in transportes %}
+                  <tr>
+                    <td>{{ t.data_transporte|date:'d/m/Y' }}</td>
+                    <td>{{ t.paciente }}</td>
+                    <td>{{ t.clinica }}</td>
+                    <td>{{ t.veiculo }}</td>
+                    <td>{{ t.condutor }}</td>
+                    <td>{{ t.enfermagem }}</td>
+                    <td>{{ t.hora_saida|default:'-' }}</td>
+                    <td>{{ t.hora_chegada|default:'-' }}</td>
+                    <td>{{ t.observacoes|default:'-' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-warning">Nenhum transporte cadastrado ainda.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

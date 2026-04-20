@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h2 class="mb-1" style="font-weight:700; color:#0d47a1;">Arquivos Recebidos</h2>
+    <div class="text-muted">Fila de arquivos CSV e Excel prontos para revisão e importação.</div>
+  </div>
+  <a href="{% url 'transporte_pacientes:cadastrar_paciente' %}" class="btn btn-outline-primary btn-afunda">
+    <i class="bi bi-arrow-left me-1"></i> Voltar para pacientes
+  </a>
+</div>
+
+{% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="alert alert-info border-start border-4 border-info shadow-sm">
+  <b>Pasta monitorada:</b> {{ pasta_entrada }}<br>
+  Salve os arquivos recebidos nessa pasta e use o botão <b>Importar</b> para iniciar a revisão com poucos cliques.
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-folder2-open me-2"></i>Arquivos prontos para importar</span>
+    <span class="badge bg-light text-dark">{{ arquivos_recebidos|length }} arquivo(s)</span>
+  </div>
+  <div class="card-body p-0">
+    {% if arquivos_recebidos %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Arquivo</th>
+              <th>Tipo</th>
+              <th>Tamanho</th>
+              <th>Última alteração</th>
+              <th class="text-end">Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for arquivo in arquivos_recebidos %}
+              <tr>
+                <td><b>{{ arquivo.nome }}</b></td>
+                <td>{{ arquivo.extensao }}</td>
+                <td>{{ arquivo.tamanho_kb }} KB</td>
+                <td>{{ arquivo.modificado_em|date:'d/m/Y H:i' }}</td>
+                <td class="text-end">
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="arquivo_nome" value="{{ arquivo.nome }}">
+                    <button type="submit" class="btn btn-success btn-sm btn-afunda">
+                      <i class="bi bi-cloud-arrow-down me-1"></i> Importar
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-4 text-center text-muted">
+        Nenhum arquivo CSV ou Excel foi encontrado na pasta de entrada.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

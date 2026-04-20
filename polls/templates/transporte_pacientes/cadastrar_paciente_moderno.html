@@ -1,0 +1,336 @@
+<!-- This file has been moved to the backup folder -->
+
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+<style>
+...existing code...
+</style>
+<style>
+	.btn-historico {
+		background: linear-gradient(90deg, #ff9800 80%, #ffd54f 100%);
+		color: #fff;
+		font-weight: 700;
+		font-size: 1.1em;
+		border-radius: 0.7rem;
+		border: none;
+		box-shadow: 0 2px 8px 0 rgba(255, 193, 7, 0.13);
+		transition: background 0.2s, box-shadow 0.2s;
+		margin-bottom: 1rem;
+		padding: 0.7em 2em;
+	}
+	.btn-historico:hover,
+	.btn-historico:active,
+	.btn-historico.show {
+		background: linear-gradient(90deg, #fb8c00 80%, #ffe082 100%);
+		color: #fff;
+		box-shadow: 0 4px 16px 0 rgba(255, 193, 7, 0.22);
+	}
+	.alert-info-custom {
+		background: linear-gradient(90deg, #e3f2fd 80%, #bbdefb 100%);
+		color: #1565c0;
+		font-weight: 600;
+		border: 1.5px solid #90caf9;
+		border-radius: 0.7rem;
+		box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.10);
+		margin-bottom: 1rem;
+	}
+	<div class="row g-2">
+		{# <div class="col-md-4">{{ form.maca.label }}{{ form.maca|as_crispy_field }}</div> #}
+		{# <div class="col-md-4">{{ form.cadeirante.label }}{{ form.cadeirante|as_crispy_field }}</div> #}
+		{# <div class="col-md-4">{{ form.acompanhante.label }}{{ form.acompanhante|as_crispy_field }}</div> #}
+	   </div>
+	<!-- ...restante do template... -->
+							<div class="row g-2">
+								{# <div class="col-md-4">{{ form.tratamento.label }}{{ form.tratamento|as_crispy_field }}</div> #}
+								{# <div class="col-md-4">{{ form.status.label }}<span class="asterisk">*</span>{{ form.status|as_crispy_field }}</div> #}
+								{# <div class="col-md-4">{{ form.oxigenio.label }}{{ form.oxigenio|as_crispy_field }}</div> #}
+							</div>
+							<div class="row g-2">
+								{# <div class="col-md-4">{{ form.maca.label }}{{ form.maca|as_crispy_field }}</div> #}
+								{# <div class="col-md-4">{{ form.cadeirante.label }}{{ form.cadeirante|as_crispy_field }}</div> #}
+								{# <div class="col-md-4">{{ form.acompanhante.label }}{{ form.acompanhante|as_crispy_field }}</div> #}
+							</div>
+						<tbody>
+							{% if pacientes %}
+								{% for paciente in pacientes %}
+								<tr>
+									<td>{{ paciente.nome }}</td>
+									<td>{{ paciente.idade }} anos</td>
+									<td>{{ paciente.peso|floatformat:2 }} kg</td>
+									<td>{{ paciente.endereco }}</td>
+									<td>{{ paciente.telefone }}</td>
+									<td>{{ paciente.status }}</td>
+									<td>
+										<a href="{% url 'transporte_pacientes:editar_paciente' paciente.id %}" class="btn btn-warning btn-sm">
+											<i class="bi bi-pencil-square"></i> Editar
+										</a>
+										<button type="button" class="btn btn-danger btn-sm ms-1 btn-excluir-paciente" data-id="{{ paciente.id }}" title="Excluir paciente" style="vertical-align: middle;">
+											<i class="bi bi-trash"></i>
+										</button>
+									</td>
+									<td class="text-center">
+										<input type="checkbox" name="paciente_ids" value="{{ paciente.id }}">
+									</td>
+								</tr>
+								{% endfor %}
+							{% endif %}
+						</tbody>
+							<tr>
+								<th><i class="bi bi-person"></i> Nome</th>
+								<th><i class="bi bi-calendar"></i> Idade</th>
+								<th><i class="bi bi-activity"></i> Peso</th>
+								<th><i class="bi bi-geo-alt"></i> Endereço</th>
+								<th><i class="bi bi-telephone"></i> Telefone</th>
+								<th><i class="bi bi-check2-circle"></i> Status</th>
+											<th><i class="bi bi-pencil-square"></i> Editar</th>
+											<th><input type="checkbox" id="selectAllPacientes" title="Selecionar todos"></th>
+
+							{% extends 'base.html' %}
+							{% load crispy_forms_tags %}
+
+							{% block content %}
+							<style>
+								.btn-historico {
+									background: linear-gradient(90deg, #ff9800 80%, #ffd54f 100%);
+									color: #fff;
+									font-weight: 700;
+									font-size: 1.1em;
+									border-radius: 0.7rem;
+									border: none;
+									box-shadow: 0 2px 8px 0 rgba(255, 193, 7, 0.13);
+									transition: background 0.2s, box-shadow 0.2s;
+									margin-bottom: 1rem;
+									padding: 0.7em 2em;
+								}
+								.btn-historico:hover,
+								.btn-historico:active,
+								.btn-historico.show {
+									background: linear-gradient(90deg, #fb8c00 80%, #ffe082 100%);
+									color: #fff;
+									box-shadow: 0 4px 16px 0 rgba(255, 193, 7, 0.22);
+								}
+								.alert-info-custom {
+									background: linear-gradient(90deg, #e3f2fd 80%, #bbdefb 100%);
+									color: #1565c0;
+									font-weight: 600;
+									border: 1.5px solid #90caf9;
+									border-radius: 0.7rem;
+									box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.10);
+									margin-bottom: 1rem;
+								}
+								/* ...demais estilos... */
+							</style>
+							<div class="container mt-4">
+								<div class="row justify-content-center">
+									<div class="col-lg-10">
+										<h2 class="mb-4">Cadastro de Pacientes</h2>
+
+										<form id="pacienteForm" method="post" action="" autocomplete="off">
+											{% csrf_token %}
+											<fieldset class="mb-3 p-3 border rounded">
+												<legend>Dados Pessoais</legend>
+												<div class="row g-2">
+													<div class="col-md-6">{{ form.nome.label }}{{ form.nome|as_crispy_field }}</div>
+													<div class="col-md-3">{{ form.idade.label }}{{ form.idade|as_crispy_field }}</div>
+													<div class="col-md-3">{{ form.peso.label }}{{ form.peso|as_crispy_field }}</div>
+												</div>
+											</fieldset>
+											<fieldset class="mb-3 p-3 border rounded">
+												<legend>Contato</legend>
+												<div class="row g-2">
+													<div class="col-md-6">{{ form.telefone.label }}{{ form.telefone|as_crispy_field }}</div>
+												</div>
+											</fieldset>
+											<fieldset class="mb-3 p-3 border rounded">
+												<legend>Endereço</legend>
+												<div class="row g-2">
+													<div class="col-md-12">{{ form.endereco.label }}{{ form.endereco|as_crispy_field }}</div>
+												</div>
+											</fieldset>
+											<fieldset class="mb-3 p-3 border rounded">
+												<legend>Condições Especiais</legend>
+												<div class="row g-2">
+													<div class="col-md-4">{{ form.tratamento.label }}{{ form.tratamento|as_crispy_field }}</div>
+													<div class="col-md-4">{{ form.status.label }}<span class="asterisk">*</span>{{ form.status|as_crispy_field }}</div>
+													<div class="col-md-4">{{ form.oxigenio.label }}{{ form.oxigenio|as_crispy_field }}</div>
+												</div>
+												<div class="row g-2 mt-2">
+													<div class="col-md-4">{{ form.maca.label }}{{ form.maca|as_crispy_field }}</div>
+													<div class="col-md-4">{{ form.cadeirante.label }}{{ form.cadeirante|as_crispy_field }}</div>
+													<div class="col-md-4">{{ form.acompanhante.label }}{{ form.acompanhante|as_crispy_field }}</div>
+												</div>
+											</fieldset>
+											<fieldset class="mb-3 p-3 border rounded">
+												<legend>Observações</legend>
+												<div class="row g-2">
+													<div class="col-md-12">{{ form.observacoes.label }}{{ form.observacoes|as_crispy_field }}</div>
+												</div>
+											</fieldset>
+											<button type="submit" class="btn btn-success mt-2">Salvar Paciente</button>
+										</form>
+										<button class="btn btn-historico mt-4 mb-2" type="button" onclick="toggleHistorico()">
+											<span id="toggleHistoricoText">Exibir lista de pacientes salvos</span>
+										</button>
+										<div id="historicoPacientes" class="table-responsive collapse">
+											<div class="alert alert-info mb-2">LISTA MODERNA DE PACIENTES</div>
+											<table class="table table-striped align-middle">
+												<thead>
+													<tr>
+														<th><i class="bi bi-person"></i> Nome</th>
+														<th><i class="bi bi-calendar"></i> Idade</th>
+														<th><i class="bi bi-activity"></i> Peso</th>
+														<th><i class="bi bi-geo-alt"></i> Endereço</th>
+														<th><i class="bi bi-telephone"></i> Telefone</th>
+														<th><i class="bi bi-check2-circle"></i> Status</th>
+														<th><i class="bi bi-pencil-square"></i> Editar</th>
+														<th><input type="checkbox" id="selectAllPacientes" title="Selecionar todos"></th>
+													</tr>
+												</thead>
+												<tbody>
+													{% if pacientes %}
+														{% for paciente in pacientes %}
+														<tr>
+															<td>{{ paciente.nome }}</td>
+															<td>{{ paciente.idade }} anos</td>
+															<td>{{ paciente.peso|floatformat:2 }} kg</td>
+															<td>{{ paciente.endereco }}</td>
+															<td>{{ paciente.telefone }}</td>
+															<td>{{ paciente.status }}</td>
+															<td>
+																<a href="{% url 'transporte_pacientes:editar_paciente' paciente.id %}" class="btn btn-warning btn-sm">
+																	<i class="bi bi-pencil-square"></i> Editar
+																</a>
+																<button type="button" class="btn btn-danger btn-sm ms-1 btn-excluir-paciente" data-id="{{ paciente.id }}" title="Excluir paciente" style="vertical-align: middle;">
+																	<i class="bi bi-trash"></i>
+																</button>
+															</td>
+															<td class="text-center">
+																<input type="checkbox" name="paciente_ids" value="{{ paciente.id }}">
+															</td>
+														</tr>
+														{% endfor %}
+													{% else %}
+														<tr><td colspan="8" class="text-center">Nenhum paciente cadastrado.</td></tr>
+													{% endif %}
+												</tbody>
+											</table>
+											<!-- Formulário de exclusão em lote -->
+											<form id="formExcluirPacientes" method="post" action="{% url 'transporte_pacientes:excluir_selecionados_paciente' %}" class="mt-2">
+												{% csrf_token %}
+												<input type="hidden" name="paciente_ids" id="pacientesSelecionados">
+												<button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir os pacientes selecionados?')">
+													<i class="bi bi-trash"></i> Excluir Selecionados
+												</button>
+											</form>
+										</div>
+										<script>
+											function toggleHistorico() {
+												var historico = document.getElementById('historicoPacientes');
+												var btnText = document.getElementById('toggleHistoricoText');
+												if (!historico.classList.contains('show')) {
+													historico.classList.add('show');
+													historico.style.maxHeight = '600px';
+													historico.style.opacity = 1;
+													btnText.textContent = 'Ocultar lista de pacientes salvos';
+												} else {
+													historico.classList.remove('show');
+													historico.style.maxHeight = 0;
+													historico.style.opacity = 0;
+													btnText.textContent = 'Exibir lista de pacientes salvos';
+												}
+											}
+
+											// Selecionar todos os checkboxes
+											document.addEventListener('DOMContentLoaded', function() {
+												var selectAll = document.getElementById('selectAllPacientes');
+												if (selectAll) {
+													selectAll.addEventListener('change', function() {
+														var checkboxes = document.querySelectorAll('input[name="paciente_ids"]');
+														checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+													});
+												}
+												// Enviar IDs selecionados no form de exclusão
+												var formExcluir = document.getElementById('formExcluirPacientes');
+												if (formExcluir) {
+													formExcluir.addEventListener('submit', function(e) {
+														var selecionados = Array.from(document.querySelectorAll('input[name="paciente_ids"]:checked')).map(cb => cb.value);
+														if (selecionados.length === 0) {
+															alert('Selecione pelo menos um paciente para excluir.');
+															e.preventDefault();
+															return false;
+														}
+														document.getElementById('pacientesSelecionados').value = selecionados.join(',');
+													});
+												}
+
+												// Exclusão individual de paciente via AJAX
+												document.querySelectorAll('.btn-excluir-paciente').forEach(function(btn) {
+													btn.addEventListener('click', function() {
+														if (confirm('Tem certeza que deseja excluir este paciente?')) {
+															var pacienteId = this.getAttribute('data-id');
+															fetch('{% url "transporte_pacientes:excluir_paciente_ajax" %}', {
+																method: 'POST',
+																headers: {
+																	'Content-Type': 'application/x-www-form-urlencoded',
+																	'X-CSRFToken': '{{ csrf_token }}'
+																},
+																body: 'id=' + encodeURIComponent(pacienteId)
+															})
+															.then(response => response.json())
+															.then(data => {
+																if (data.success) {
+																	// Remove a linha da tabela
+																	btn.closest('tr').remove();
+																	// Opcional: feedback visual
+																	alert('Paciente excluído com sucesso!');
+																} else {
+																	alert('Erro ao excluir paciente.');
+																}
+															})
+															.catch(() => alert('Erro ao excluir paciente.'));
+														}
+													});
+												});
+
+												// AJAX para atualização instantânea do histórico de pacientes
+												const form = document.getElementById('pacienteForm');
+												if (form) {
+													form.addEventListener('submit', function(e) {
+														e.preventDefault();
+														const formData = new FormData(form);
+														fetch(window.location.href, {
+															method: 'POST',
+															headers: {
+																'X-Requested-With': 'XMLHttpRequest',
+															},
+															body: formData
+														})
+														.then(response => response.text())
+														.then(html => {
+															// Extrai apenas a tabela de pacientes do HTML retornado
+															const parser = new DOMParser();
+															const doc = parser.parseFromString(html, 'text/html');
+															const novaTabela = doc.querySelector('#historicoPacientes');
+															if (novaTabela) {
+																document.getElementById('historicoPacientes').innerHTML = novaTabela.innerHTML;
+																// Garante que a lista fique visível após salvar
+																document.getElementById('historicoPacientes').classList.add('show');
+																document.getElementById('historicoPacientes').style.maxHeight = '600px';
+																document.getElementById('historicoPacientes').style.opacity = 1;
+																document.getElementById('toggleHistoricoText').textContent = 'Ocultar lista de pacientes salvos';
+															}
+															// Limpa o formulário após salvar
+															form.reset();
+														})
+														.catch(err => {
+															alert('Erro ao salvar paciente!');
+														});
+													});
+												}
+											});
+										</script>
+									</div>
+								</div>
+							</div>
+							{% endblock %}

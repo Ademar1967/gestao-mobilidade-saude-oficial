@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Editar Veículo</h2>
+  <div class="card mb-4" style="background-color: #d4f8d4; border-color: #a8e6a3;">
+    <div class="card-header" style="background-color: #a8e6a3; color: #155724; border-bottom: 1px solid #7ed957;">
+      <i class="bi bi-truck me-2" style="font-size:1.5rem;"></i>
+      <h3 class="mb-0">Editar Informações do Veículo</h3>
+    </div>
+    <div class="card-body" style="background-color: #d4f8d4; color: #155724;">
+      <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="mt-4">
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="bi bi-save me-1"></i> Salvar Alterações
+          </button>
+          <a href="{% url 'transporte_pacientes:cadastrar_veiculo' %}" class="btn btn-secondary btn-lg ms-2">
+            <i class="bi bi-x-circle me-1"></i> Cancelar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

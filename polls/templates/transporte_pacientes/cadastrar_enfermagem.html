@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <!-- MELHORIA ATIVA: Alerta padronizado no topo -->
+  <div id="melhoria-alert" class="alert alert-success d-flex align-items-center shadow-sm" style="border-left: 6px solid #43a047; background: linear-gradient(90deg, #e8f5e9 80%, #c8e6c9 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem;">
+    <span class="me-2" style="font-size:1.5em; color:#43a047;">&#x2714;&#xFE0F;</span>
+    <span>
+      <span style="color:#256029;">Melhoria aplicada</span><br>
+      <span style="font-size:0.97em; color:#1976d2; font-weight:400;">Última atualização: 07/03/2026 17:11</span>
+    </span>
+    <button type="button" class="btn btn-primary btn-sm ms-auto px-3 py-1 btn-ok-melhoria" onclick="document.getElementById('melhoria-alert').style.opacity=0; setTimeout(function(){document.getElementById('melhoria-alert').style.display='none';},400);">OK, entendi</button>
+  </div>
+  
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible fade show mt-3" role="alert" style="font-size:1.25rem; font-weight:bold; border:2px solid #1976d2; background:linear-gradient(90deg,#e3f2fd,#1976d2); color:#1565c0;">
+        <i class="bi bi-check-circle me-1"></i> {{ message }} <span style="background:#1976d2;color:#fff;padding:2px 10px;border-radius:6px;margin-left:12px;">MENU PRINCIPAL</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+  <div class="container mt-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10 col-12">
+        <div class="card mb-4" style="background-color: #d4f8d4; border-color: #a8e6a3;">
+          <div class="card-header" style="background-color: #a8e6a3; color: #155724; border-bottom: 1px solid #7ed957;">
+            <i class="bi bi-person-vcard me-2" style="font-size:1.5rem;"></i>
+            <h4 class="mb-0 d-inline">Cadastro de Enfermagem</h4>
+          </div>
+          <div class="card-body" style="background-color: #d4f8d4; color: #155724;">
+            {% if form.errors %}
+              <div class="alert alert-danger" role="alert">
+                <strong>Erros no cadastro:</strong><br>
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    {{ field.label }}: {{ error }}<br>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                  {{ error }}<br>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <form method="post" autocomplete="on" id="form-enfermagem">
+              {% csrf_token %}
+              {% for field in form %}
+                <div class="mb-3 col-12">
+                  <label class="form-label fw-bold" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:red;">*</span>{% endif %}</label>
+                  {% if field.errors %}
+                    <div class="alert alert-danger py-1 mb-1" role="alert">{{ field.errors|join:', ' }}</div>
+                  {% endif %}
+                  {{ field }}
+                  {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                  {% endif %}
+                </div>
+              {% endfor %}
+              <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-success btn-lg" id="btn-salvar">
+                  <i class="bi bi-save me-1"></i> Salvar Enfermagem
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé com histórico de enfermagens cadastradas -->
+  <footer class="container mt-5">
+    <hr class="my-4">
+    <div class="card mt-4">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list"></i> Histórico de Enfermagens Cadastradas</span>
+        <button id="btn-toggle-historico-rodape" type="button" class="btn btn-orange-elevated" style="font-weight:bold;">
+          <span id="toggle-label-rodape">Ocultar histórico</span>
+        </button>
+      </div>
+      <div class="card-body p-0" id="historico-enfermagem-rodape">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:40px;"><input type="checkbox" id="check-all-enfermagem"></th>
+                <th>Nome</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <form method="post" action="{% url 'transporte_pacientes:excluir_selecionadas_enfermagem' %}" id="form-excluir-enfermagem-multiplas">
+              {% csrf_token %}
+              <tbody>
+                {% for enfermagem in enfermagens %}
+                  <tr>
+                    <td><input type="checkbox" name="enfermagem_ids" value="{{ enfermagem.id }}"></td>
+                    <td id="nome-enfermagem-{{ enfermagem.id }}">{{ enfermagem.nome }}</td>
+                    <td>
+                      <div class="d-flex justify-content-center align-items-center gap-2">
+                        <a href="#" onclick="if(confirm('Tem certeza que deseja excluir esta enfermagem?')){document.getElementById('excluir-enfermagem-{{ enfermagem.id }}').submit();} return false;" class="btn btn-sm btn-danger p-1 flex-column d-flex align-items-center justify-content-center" title="Excluir" style="min-width:32px; min-height:32px;">
+                          <span style="font-size:0.75em; line-height:1;">Excluir</span>
+                          <i class="bi bi-trash" style="font-size:1.1em;"></i>
+                        </a>
+                        <a href="{% url 'transporte_pacientes:editar_enfermagem' enfermagem.id %}" class="btn btn-sm btn-warning text-dark p-1 flex-column d-flex align-items-center justify-content-center" title="Editar" style="font-weight:bold; min-width:32px; min-height:32px;">
+                          <span style="font-size:0.75em; line-height:1;">Editar</span>
+                          <i class="bi bi-pencil-square" style="font-size:1.1em;"></i>
+                        </a>
+                        <form id="excluir-enfermagem-{{ enfermagem.id }}" method="post" action="{% url 'transporte_pacientes:excluir_enfermagem' enfermagem.id %}" style="display:none;">
+                          {% csrf_token %}
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="2" style="text-align:center; font-weight:bold; color:#d32f2f; background:#fff3cd;">Nenhuma enfermagem cadastrada ainda.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </form>
+              <div class="p-2">
+                <button type="submit" form="form-excluir-enfermagem-multiplas" class="btn btn-danger" style="font-weight:bold;">
+                  <i class="bi bi-trash"></i> Excluir selecionadas
+                </button>
+              </div>
+          </table>
+        </div>
+      </div>
+    </div>
+    <style>
+            #check-all-enfermagem {
+              accent-color: #ff9800;
+              width: 1.2em;
+              height: 1.2em;
+            }
+      .btn-orange-elevated {
+        background: linear-gradient(90deg, #ff9800 60%, #ffb74d 100%);
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 12px -2px #ff980088, 0 2px 4px #ff980044;
+        border-radius: 8px;
+        padding: 8px 22px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: box-shadow 0.2s, transform 0.1s, background 0.2s;
+        outline: none;
+        position: relative;
+      }
+      .btn-orange-elevated:active {
+        box-shadow: 0 2px 4px #ff980044;
+        background: linear-gradient(90deg, #ff9800 80%, #ffb74d 100%);
+        transform: translateY(2px) scale(0.98);
+      }
+      .btn-orange-elevated:focus {
+        outline: 2px solid #ff9800;
+      }
+    </style>
+    <script>
+            // Selecionar/desmarcar todos os checkboxes
+            document.addEventListener('DOMContentLoaded', function() {
+              var checkAll = document.getElementById('check-all-enfermagem');
+              if (checkAll) {
+                checkAll.addEventListener('change', function() {
+                  var checks = document.querySelectorAll('input[name="enfermagem_ids"]');
+                  for (var i = 0; i < checks.length; i++) {
+                    checks[i].checked = checkAll.checked;
+                  }
+                });
+              }
+            });
+      document.addEventListener('DOMContentLoaded', function() {
+        var btn = document.getElementById('btn-toggle-historico-rodape');
+        var historico = document.getElementById('historico-enfermagem-rodape');
+        var label = document.getElementById('toggle-label-rodape');
+        btn.addEventListener('click', function() {
+          if (historico.style.display === 'none') {
+            historico.style.display = '';
+            label.textContent = 'Ocultar histórico';
+          } else {
+            historico.style.display = 'none';
+            label.textContent = 'Mostrar histórico';
+          }
+        });
+      });
+    </script>
+  </footer>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Efeito de afundamento para todos os botões
+    var botoes = document.querySelectorAll('button, .btn');
+    botoes.forEach(function(btn) {
+      btn.addEventListener('mousedown', function() {
+        btn.style.transform = 'scale(0.97) translateY(2px)';
+        btn.style.boxShadow = '0 1px 2px #81c784';
+      });
+      btn.addEventListener('mouseup', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+    });
+
+    // Selecionar/desmarcar todos os checkboxes
+    var checkAll = document.getElementById('check-all-enfermagem');
+    if (checkAll) {
+      checkAll.addEventListener('change', function() {
+        var checks = document.querySelectorAll('input[name="enfermagem_ids"]');
+        for (var i = 0; i < checks.length; i++) {
+          checks[i].checked = checkAll.checked;
+        }
+      });
+    }
+
+    // Mostrar/ocultar histórico (se existir)
+    var btn = document.getElementById('btn-toggle-historico-rodape');
+    var historico = document.getElementById('historico-enfermagem-rodape');
+    var label = document.getElementById('toggle-label-rodape');
+    if (btn && historico && label) {
+      btn.addEventListener('click', function() {
+        if (historico.style.display === 'none') {
+          historico.style.display = '';
+          label.textContent = 'Ocultar histórico';
+        } else {
+          historico.style.display = 'none';
+          label.textContent = 'Mostrar histórico';
+        }
+      });
+    }
+  });
+
+  // Navegação com Enter e Tab: avança para o próximo campo dentro do formulário
+  $(function() {
+    $('#form-enfermagem').on('keydown', 'input', function(e) {
+      var $fields = $('#form-enfermagem').find('input:visible:not([type="hidden"]):not([type="submit"]):not([disabled])');
+      var idx = $fields.index(this);
+      if (e.key === 'Tab' && idx > -1 && idx < $fields.length - 1) {
+        // Tab: navega normalmente, não salva
+        // comportamento padrão
+      } else if (e.key === 'Enter' && idx > -1) {
+        if (idx < $fields.length - 1) {
+          e.preventDefault();
+          $fields.eq(idx + 1).focus();
+        } else {
+          // Último campo: submit
+          e.preventDefault();
+          $('#form-enfermagem').submit();
+        }
+      }
+    });
+    // Clique no botão salva normalmente
+    // Após submit bem-sucedido, foca no campo nome e faz scroll para o topo
+    {% if messages %}
+      setTimeout(function() {
+        var nomeField = $('#form-enfermagem input[name="nome"]');
+        if (nomeField.length) {
+          nomeField.focus();
+        }
+        window.scrollTo({top: 0, behavior: 'smooth'});
+      }, 200);
+    {% endif %}
+    // Mostrar/ocultar histórico
+    $('#btn-toggle-historico').on('click', function() {
+      var $historico = $('#historico-enfermagem');
+      $historico.toggle();
+      var $label = $('#toggle-label');
+      if ($historico.is(':visible')) {
+        $label.text('Ocultar histórico');
+      } else {
+        $label.text('Mostrar histórico');
+      }
+    });
+  });
+</script>
+{% endblock %}

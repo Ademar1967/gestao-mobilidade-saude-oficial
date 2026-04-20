@@ -1,0 +1,218 @@
+{% extends 'polls/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <!-- MELHORIA ATIVA: Alerta padronizado no topo -->
+  <div id="melhoria-alert" class="alert alert-success d-flex align-items-center shadow-sm" style="border-left: 6px solid #43a047; background: linear-gradient(90deg, #e8f5e9 80%, #c8e6c9 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem;">
+    <span class="me-2" style="font-size:1.5em; color:#43a047;">&#x2714;&#xFE0F;</span>
+    <span>
+      <span style="color:#256029;">Melhoria aplicada</span><br>
+      <span style="font-size:0.97em; color:#1976d2; font-weight:400;">Última atualização: 07/03/2026 17:11</span>
+    </span>
+    <button type="button" class="btn btn-primary btn-sm ms-auto px-3 py-1 btn-ok-melhoria" onclick="document.getElementById('melhoria-alert').style.opacity=0; setTimeout(function(){document.getElementById('melhoria-alert').style.display='none';},400);">OK, entendi</button>
+  </div>
+  <!-- ...existing code... -->
+  <!-- ...existing code... -->
+  {% if messages %}
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+      {% for message in messages %}
+        <div class="toast align-items-center text-bg-success border-0 shadow show js-condutor-toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+          <div class="d-flex">
+            <div class="toast-body fw-semibold">
+              <i class="bi bi-check-circle me-1"></i> {{ message }}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="container mt-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10 col-12">
+        <div class="card mb-4" style="background-color: #d4f8d4; border-color: #a8e6a3;">
+          <div class="card-header" style="background-color: #a8e6a3; color: #155724; border-bottom: 1px solid #7ed957;">
+            <i class="bi bi-person-badge me-2" style="font-size:1.5rem;"></i>
+            <h4 class="mb-0 d-inline">Cadastro de Condutor</h4>
+          </div>
+          <div class="card-body" style="background-color: #d4f8d4; color: #155724;">
+            <form method="post" autocomplete="on" id="form-condutor">
+              {% csrf_token %}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                  {% for error in form.non_field_errors %}
+                    {{ error }}<br>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% for field in form %}
+                <div class="mb-3 col-12">
+                  <label class="form-label fw-bold" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span style="color:red;">*</span>{% endif %}</label>
+                  {% if field.errors %}
+                    <div class="alert alert-danger py-1 mb-1" role="alert">{{ field.errors|join:', ' }}</div>
+                  {% endif %}
+                  {{ field }}
+                  {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                  {% endif %}
+                </div>
+              {% endfor %}
+              <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-success btn-lg" id="btn-salvar">
+                  <i class="bi bi-save me-1"></i> Salvar Condutor
+                </button>
+              </div>
+            </form>
+            <!-- Histórico de condutores cadastrados -->
+            <div class="card mt-4">
+              <div class="card-header bg-secondary text-white d-flex align-items-center">
+                <i class="bi bi-list me-2"></i>
+                <span>Histórico de Condutores Salvos</span>
+                <button class="btn btn-outline-light btn-sm ms-auto" id="btn-toggle-historico" type="button" style="font-weight:bold;">
+                  <span id="toggle-label">Ocultar histórico</span>
+                </button>
+              </div>
+              <div class="card-body p-0" id="historico-condutor">
+                <div class="table-responsive">
+                  <form method="post" action="{% url 'transporte_pacientes:excluir_selecionados_condutor' %}" id="form-excluir-condutores">
+                    {% csrf_token %}
+                    <table class="table table-striped table-hover mb-0" style="vertical-align:middle;">
+                      <thead class="table-light">
+                        <tr style="height:44px; vertical-align:middle;">
+                          <th style="width:40px;"><input type="checkbox" id="select-all-condutores"></th>
+                          <th>Nome</th>
+                          <th style="width: 90px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      {% for condutor in condutores %}
+                        <tr>
+                          <td><input type="checkbox" name="condutor_ids" value="{{ condutor.id }}"></td>
+                          <td>{{ condutor.nome }}</td>
+                          <td>
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                              <a href="#" onclick="if(confirm('Tem certeza que deseja excluir este condutor?')){document.getElementById('excluir-condutor-{{ condutor.id }}').submit();} return false;" class="btn btn-sm btn-danger p-1 flex-column d-flex align-items-center justify-content-center" title="Excluir" style="min-width:32px; min-height:32px;">
+                                <span style="font-size:0.75em; line-height:1;">Excluir</span>
+                                <i class="bi bi-trash" style="font-size:1.1em;"></i>
+                              </a>
+                              <a href="{% url 'transporte_pacientes:editar_condutor' condutor.id %}" class="btn btn-sm btn-warning text-dark p-1 flex-column d-flex align-items-center justify-content-center" title="Editar" style="font-weight:bold; min-width:32px; min-height:32px;">
+                                <span style="font-size:0.75em; line-height:1;">Editar</span>
+                                <i class="bi bi-pencil-square" style="font-size:1.1em;"></i>
+                              </a>
+                              <form id="excluir-condutor-{{ condutor.id }}" method="post" action="{% url 'transporte_pacientes:excluir_condutor' condutor.id %}" style="display:none;">
+                                {% csrf_token %}
+                              </form>
+                            </div>
+                          </td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="1" style="text-align:center; font-weight:bold; color:#d32f2f; background:#fff3cd;">Nenhum condutor cadastrado ainda.</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                    </table>
+                    <button type="submit" class="btn btn-danger btn-sm mt-2" onclick="return confirm('Tem certeza que deseja excluir os condutores selecionados?');">
+                      <i class="bi bi-trash"></i> Excluir Selecionados
+                    </button>
+                  </form>
+                <!-- ...existing code... -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ...existing code... -->
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var toasts = document.querySelectorAll('.js-condutor-toast');
+    toasts.forEach(function(toastEl) {
+      if (window.bootstrap && bootstrap.Toast) {
+        var toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+        toast.show();
+      }
+    });
+
+    // Selecionar/desmarcar todos
+    var selectAll = document.getElementById('select-all-condutores');
+    if (selectAll) {
+      selectAll.addEventListener('change', function() {
+        var checkboxes = document.querySelectorAll('input[name="condutor_ids"]');
+        checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+      });
+    }
+    // Efeito de afundamento para todos os botões
+    var botoes = document.querySelectorAll('button, .btn');
+    botoes.forEach(function(btn) {
+      btn.addEventListener('mousedown', function() {
+        btn.style.transform = 'scale(0.97) translateY(2px)';
+        btn.style.boxShadow = '0 1px 2px #81c784';
+      });
+      btn.addEventListener('mouseup', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+    });
+    // Mostrar/ocultar histórico
+    var btn = document.getElementById('btn-toggle-historico');
+    var historico = document.getElementById('historico-condutor');
+    var label = document.getElementById('toggle-label');
+    if (btn && historico && label) {
+      btn.addEventListener('click', function() {
+        if (historico.style.display === 'none') {
+          historico.style.display = '';
+          label.textContent = 'Ocultar histórico';
+        } else {
+          historico.style.display = 'none';
+          label.textContent = 'Mostrar histórico';
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
+<style>
+  .btn-orange-elevated {
+    background: linear-gradient(90deg, #ff9800 60%, #ffb74d 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px -2px #ff980088, 0 2px 4px #ff980044;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: box-shadow 0.2s, transform 0.1s, background 0.2s;
+    outline: none;
+    position: relative;
+  }
+  .btn-orange-elevated:active {
+    box-shadow: 0 2px 4px #ff980044;
+    background: linear-gradient(90deg, #ff9800 80%, #ffb74d 100%);
+    transform: translateY(2px) scale(0.98);
+  }
+  .btn-orange-elevated:focus {
+    outline: 2px solid #ff9800;
+  }
+  #melhoria-alert .btn-ok-melhoria {
+    background-color: #1976d2 !important;
+    border-color: #1976d2 !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 1.5em;
+    box-shadow: 0 2px 8px #90caf9;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  #melhoria-alert .btn-ok-melhoria:active {
+    background-color: #115293 !important;
+    box-shadow: 0 1px 2px #1976d2;
+  }
+</style>

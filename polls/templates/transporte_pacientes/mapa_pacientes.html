@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h4>Pacientes no Mapa</h4>
+  <div id="map" style="height: 500px; width: 100%;"></div>
+</div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var map = L.map('map').setView([-23.55052, -46.633308], 10); // São Paulo
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    fetch('/pacientes-json/')
+      .then(response => response.json())
+      .then(data => {
+        data.forEach(paciente => {
+          if (paciente.latitude && paciente.longitude) {
+            L.marker([paciente.latitude, paciente.longitude])
+              .addTo(map)
+              .bindPopup(`<b>${paciente.nome}</b><br>${paciente.endereco}`);
+          }
+        });
+      });
+  });
+</script>
+{% endblock %}

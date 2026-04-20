@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block extra_head %}
+<style>
+  /* Efeito de afundar em TODOS os botões Bootstrap */
+  .btn:active, .btn.active, .btn:focus:active,
+  .btn-danger:active, .btn-danger.active, .btn-danger:focus:active,
+  .btn-warning:active, .btn-warning.active, .btn-warning:focus:active,
+  .btn-success:active, .btn-success.active, .btn-success:focus:active,
+  .btn-primary:active, .btn-primary.active, .btn-primary:focus:active,
+  .btn-close:active, .btn-close.active, .btn-close:focus:active,
+  .btn-orange-elevated:active, .btn-orange-elevated.active, .btn-orange-elevated:focus:active {
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.05);
+    transform: translateY(2px) scale(0.98);
+    outline: none;
+  }
+  /* Força o botão azul do aviso de melhoria */
+  #melhoria-alert .btn-ok-melhoria {
+    background-color: #1976d2 !important;
+    border-color: #1976d2 !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 1.5em;
+    box-shadow: 0 2px 8px #90caf9;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  #melhoria-alert .btn-ok-melhoria:active {
+    background-color: #115293 !important;
+    box-shadow: 0 1px 2px #1976d2;
+  }
+  .btn-orange-elevated {
+    background: linear-gradient(90deg, #ff9800 60%, #ffb74d 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px -2px #ff980088, 0 2px 4px #ff980044;
+    border-radius: 8px;
+    padding: 8px 22px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: box-shadow 0.2s, transform 0.1s, background 0.2s;
+    outline: none;
+    position: relative;
+  }
+  .btn-orange-elevated:focus {
+    outline: 2px solid #ff9800;
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <!-- AVISO IMPORTANTE SOBRE ENDEREÇOS DAS CLÍNICAS -->
+  <div class="alert alert-danger d-flex align-items-center shadow-lg" style="border-left: 8px solid #d32f2f; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); font-size: 1.15em; font-weight: 600; margin-bottom: 1.5rem; margin-top: 0; padding: 18px 20px; border-radius: 6px;">
+    <span class="me-3" style="font-size:2.2em; color:#d32f2f; font-weight:bold;">⚠️</span>
+    <span>
+      <span style="color:#c62828; font-size:1.1em; font-weight:700;">ATENÇÃO CRÍTICA:</span><br>
+      <span style="font-size:1.05em; color:#b71c1c; font-weight:500; line-height:1.5;">Os endereços aqui sugeridos são extrações automáticas de fontes públicas. <strong>VOCÊ DEVE</strong> conferir e confirmar manualmente cada endereço antes de usar, para evitar erros de logística, atrasos ou perda de consultas.</span>
+    </span>
+  </div>
+  
+  {% if messages %}
+    <div class="mt-3">
+      {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center shadow-lg" role="alert" style="background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%); color: #fff; font-size: 1.18em; font-weight: 800; border-left: 8px solid #00e676; border-radius: 8px; box-shadow: 0 4px 24px rgba(67,233,123,0.13);">
+          <span class="me-2" style="font-size:1.7em; color:#fff; text-shadow: 0 2px 8px #43e97b;">✔️</span>
+          <span style="flex:1;">{{ message }}</span>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="card mb-4">
+    <div class="card-header" style="background-color: {% if editar %}#ffe082{% else %}#a8e6a3{% endif %}; color: #155724; position:relative;">
+      <h4 class="mb-0">
+        {% if editar %}
+          <div id="aviso-edicao-clinica" class="alert alert-warning d-flex align-items-center p-2 mb-0" style="background: linear-gradient(90deg,#ffe082 60%,#fff8e1 100%); color:#b26a00; font-weight:700; border-left:6px solid #ffb300; border-radius:6px; box-shadow:0 2px 8px #ffe08255;">
+            <span style="font-size:1.3em; margin-right:8px;">📝</span>
+            Editando clínica: <span style="color:#b26a00; margin-left:4px;">{{ clinica_editando.nome }}</span>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" onclick="window.location.href='{% url 'transporte_pacientes:cadastrar_clinica' %}'">Cancelar edição</button>
+          </div>
+        {% else %}
+          Cadastrar Clínica
+        {% endif %}
+      </h4>
+    </div>
+    {% if editar %}
+    <script>
+      // Some automaticamente após 8 segundos
+      setTimeout(function() {
+        var aviso = document.getElementById('aviso-edicao-clinica');
+        if (aviso) aviso.style.display = 'none';
+      }, 8000);
+    </script>
+    {% endif %}
+    <div class="card-body" style="background-color: {% if editar %}#fff8e1{% else %}#d4f8d4{% endif %};">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mt-2 position-relative" style="z-index:10;">
+          <label for="id_nome" class="form-label">Nome do hospital/clínica:</label>
+          <div style="position:relative;">
+            <input type="text" id="id_nome" name="nome" class="form-control" required autocomplete="off" placeholder="Ex.: Hospital Municipal Vila Nova"
+              value="{{ form.nome.value|default_if_none:'' }}" style="padding-right:2.2em;" />
+            <span id="seta-autocomplete" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:1.3em; color:#888;">▼</span>
+          </div>
+          <div id="nome-sugestoes" class="list-group mt-2" style="display:none; max-height:220px; overflow-y:auto; position:absolute; width:100%; box-shadow:0 4px 16px #0001;"></div>
+        </div>
+        <div class="mt-3">
+          <label for="id_endereco_completo">Endereço completo do hospital/clínica:</label>
+          <input type="text" id="id_endereco_completo" name="endereco_completo" class="form-control" autocomplete="off" placeholder="Rua, número, bairro, cidade, CEP"
+            value="{{ form.endereco_completo.value|default_if_none:'' }}" />
+          <label for="id_logradouro">Logradouro:</label>
+          <input type="text" id="id_logradouro" name="logradouro" class="form-control" autocomplete="off"
+            value="{{ form.logradouro.value|default_if_none:'' }}" />
+          <label for="id_numero">Número:</label>
+          <input type="text" id="id_numero" name="numero" class="form-control" autocomplete="off"
+            value="{{ form.numero.value|default_if_none:'' }}" />
+          <label for="id_cep">CEP:</label>
+          <input type="text" id="id_cep" name="cep" class="form-control" autocomplete="off"
+            value="{{ form.cep.value|default_if_none:'' }}" />
+        </div>
+        <button type="submit" class="btn btn-success mt-2">Salvar</button>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const form = document.querySelector('form');
+          const nomeInput = document.getElementById('id_nome');
+          const enderecoCompletoInput = document.getElementById('id_endereco_completo');
+          const logradouroInput = document.getElementById('id_logradouro');
+          const numeroInput = document.getElementById('id_numero');
+          const cepInput = document.getElementById('id_cep');
+          const sugestoesBox = document.getElementById('nome-sugestoes');
+          let debounceTimer = null;
+
+          function limparSugestoes() {
+            sugestoesBox.innerHTML = '';
+            sugestoesBox.style.display = 'none';
+          }
+
+          function selecionarSugestao(item) {
+            nomeInput.value = item.label || '';
+            enderecoCompletoInput.value = item.value || '';
+            logradouroInput.value = item.logradouro || '';
+            numeroInput.value = item.numero || '';
+            cepInput.value = item.cep || '';
+            limparSugestoes();
+          }
+
+          function renderSugestoes(itens) {
+            if (!itens || itens.length === 0) {
+              limparSugestoes();
+              return;
+            }
+
+            sugestoesBox.innerHTML = '';
+            itens.slice(0, 8).forEach(function(item) {
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'list-group-item list-group-item-action';
+              btn.textContent = item.value ? (item.label + ' - ' + item.value) : item.label;
+              btn.addEventListener('click', function() {
+                selecionarSugestao(item);
+              });
+              sugestoesBox.appendChild(btn);
+            });
+            sugestoesBox.style.display = '';
+          }
+
+          function buscarSugestoesNome(term) {
+            if (!term || term.length < 2) {
+              limparSugestoes();
+              return;
+            }
+
+            fetch('/autocomplete_endereco_unidade/?term=' + encodeURIComponent(term))
+              .then(function(response) { return response.json(); })
+              .then(function(data) {
+                if (!Array.isArray(data)) {
+                  limparSugestoes();
+                  alert('Erro ao buscar sugestões: ' + (data && data.error ? data.error : 'Resposta inesperada do servidor.'));
+                  return;
+                }
+                if (data.length === 0) {
+                  limparSugestoes();
+                  // Mostra alerta só se o usuário digitou algo
+                  if (term.length > 2) alert('Nenhuma sugestão encontrada para: ' + term);
+                  return;
+                }
+                renderSugestoes(data);
+              })
+              .catch(function(e) {
+                limparSugestoes();
+                alert('Erro de conexão ao buscar sugestões.');
+              });
+          }
+
+          const setaAutocomplete = document.getElementById('seta-autocomplete');
+          if (setaAutocomplete && nomeInput) {
+            setaAutocomplete.addEventListener('mousedown', function(e) {
+              e.preventDefault();
+              nomeInput.focus();
+              buscarSugestoesNome(nomeInput.value.trim());
+            });
+          }
+          if (nomeInput) {
+            nomeInput.addEventListener('input', function() {
+              const term = nomeInput.value.trim();
+              clearTimeout(debounceTimer);
+              debounceTimer = setTimeout(function() {
+                buscarSugestoesNome(term);
+              }, 250);
+            });
+
+            // Exibe sugestões ao focar/clicar, mesmo sem digitar
+            nomeInput.addEventListener('focus', function() {
+              const term = nomeInput.value.trim();
+              buscarSugestoesNome(term);
+            });
+            nomeInput.addEventListener('click', function() {
+              const term = nomeInput.value.trim();
+              buscarSugestoesNome(term);
+            });
+
+            document.addEventListener('click', function(ev) {
+              if (!nomeInput.closest('.mt-2').contains(ev.target) && !ev.target.closest('#nome-sugestoes')) {
+                limparSugestoes();
+              }
+            });
+          }
+
+          form.addEventListener('submit', function(e) {
+            // Aguarda resposta do servidor e limpa apenas se não houver erros
+            setTimeout(function() {
+              // Verifica se há alertas de sucesso
+              const success = document.querySelector('.alert-success');
+              if (success) {
+                form.reset();
+                // Limpa campos extras do autocomplete
+                ['id_nome','id_endereco_completo','id_logradouro','id_numero','id_cep'].forEach(function(id) {
+                  const el = document.getElementById(id);
+                  if (el) el.value = '';
+                });
+                limparSugestoes();
+              }
+            }, 400);
+          });
+        });
+        </script>
+      </form>
+    </div>
+  </div>
+
+  <div class="mb-2">
+    <button id="btn-mostrar-clinicas" class="btn btn-success me-2" type="button">Mostrar clínicas cadastradas</button>
+    <button id="btn-ocultar-clinicas" class="btn btn-warning" type="button">Ocultar clínicas cadastradas</button>
+  </div>
+  <div class="collapse show" id="clinicasCadastradasCollapse">
+      <script>
+        // Controle dos botões mostrar/ocultar
+        document.addEventListener('DOMContentLoaded', function() {
+          var lista = document.getElementById('clinicasCadastradasCollapse');
+          var btnMostrar = document.getElementById('btn-mostrar-clinicas');
+          var btnOcultar = document.getElementById('btn-ocultar-clinicas');
+          function mostrar() {
+            lista.classList.add('show');
+          }
+          function ocultar() {
+            lista.classList.remove('show');
+          }
+          btnMostrar.addEventListener('click', mostrar);
+          btnOcultar.addEventListener('click', ocultar);
+        });
+      </script>
+    <div class="card border-secondary mb-0" style="max-height: 220px; overflow-y: auto;">
+      <div class="card-header bg-secondary text-white d-flex align-items-center" style="height: 48px;">
+        <i class="bi bi-list-check me-2" style="font-size:1.3rem;"></i>
+        <h4 class="mb-0">Clínicas Cadastradas</h4>
+      </div>
+      <div class="card-body p-2" style="max-height: 160px; overflow-y: auto;">
+        <div class="table-responsive mb-0" style="max-height: 140px; overflow-y: auto;">
+          <form method="post" action="{% url 'transporte_pacientes:excluir_selecionadas_clinicas' %}" id="form-excluir-selecionadas">
+            {% csrf_token %}
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th><input type="checkbox" id="check-todas"></th>
+                  <th>Nome</th>
+                  <th>Endereço</th>
+                  <th>Telefone</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for clinica in clinicas %}
+                <tr>
+                  <td><input type="checkbox" name="clinicas_ids" value="{{ clinica.id }}"></td>
+                  <td>{{ clinica.nome }}</td>
+                  <td>{{ clinica.endereco }}</td>
+                  <td>{{ clinica.telefone }}</td>
+                  <td>
+                    <a href="{% url 'transporte_pacientes:corrigir_dados_clinica' %}?id={{ clinica.id }}" class="btn btn-warning btn-sm me-1">Editar</a>
+                    <form method="post" action="{% url 'transporte_pacientes:excluir_clinica' clinica.id %}" style="display:inline;" onsubmit="return confirmarExclusaoClinica('{{ clinica.nome|escapejs }}');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                    </form>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center">Nenhuma clínica cadastrada.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            <button type="submit" class="btn btn-danger mt-2 d-flex align-items-center gap-2" onclick="return confirmarExclusaoSelecionadas();">
+              <i class="bi bi-trash-fill" style="font-size:1.2em;"></i>
+              Excluir selecionadas
+            </button>
+          <script>
+          function confirmarExclusaoClinica(nome) {
+            return confirm('⚠️ Atenção!\n\nVocê tem certeza que deseja excluir a clínica:\n\n' + nome + '\n\nEsta ação não poderá ser desfeita.');
+          }
+          function confirmarExclusaoSelecionadas() {
+            return confirm('⚠️ Atenção!\n\nVocê tem certeza que deseja excluir as clínicas selecionadas?\n\nEsta ação não poderá ser desfeita.');
+          }
+          </script>
+          </form>
+          <script>
+            // Marcar/desmarcar todos os checkboxes
+            document.addEventListener('DOMContentLoaded', function() {
+              var checkTodas = document.getElementById('check-todas');
+              if (checkTodas) {
+                checkTodas.addEventListener('change', function() {
+                  var boxes = document.querySelectorAll('input[name=clinicas_ids]');
+                  for (var i = 0; i < boxes.length; i++) {
+                    boxes[i].checked = checkTodas.checked;
+                  }
+                });
+              }
+            });
+          </script>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+      <!-- Removido bloco de exibição automática da lista de clínicas cadastradas -->
+    </footer>
+  </div>
+  <div class="d-lg-none mt-4">
+    <div class="container">
+      <div class="card border-secondary mb-0">
+        <div class="card-header bg-secondary text-white d-flex align-items-center">
+          <i class="bi bi-list-check me-2" style="font-size:1.3rem;"></i>
+          <h4 class="mb-0">Clínicas Cadastradas</h4>
+        </div>
+        <div class="card-body p-2">
+          <div class="table-responsive mb-0">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Nome</th>
+                  <th>Endereço</th>
+                  <th>Telefone</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for clinica in clinicas %}
+                <tr>
+                  <td>{{ clinica.nome }}</td>
+                  <td>{{ clinica.endereco }}</td>
+                  <td>{{ clinica.telefone }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center">Nenhuma clínica cadastrada.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <!-- Campos de endereço separados, fora da tabela -->
+          <div class="mt-3">
+            <label for="id_endereco_completo">Endereço completo do hospital/clínica:</label>
+            <input type="text" id="id_endereco_completo" name="endereco_completo" class="form-control" autocomplete="off" />
+            <label for="id_logradouro">Logradouro:</label>
+            <input type="text" id="id_logradouro" name="logradouro" class="form-control" autocomplete="off" />
+            <label for="id_numero">Número:</label>
+            <input type="text" id="id_numero" name="numero" class="form-control" autocomplete="off" />
+            <label for="id_cep">CEP:</label>
+            <input type="text" id="id_cep" name="cep" class="form-control" autocomplete="off" />
+          </div>
+          <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+          <script>
+            $(document).ajaxError(function(event, jqxhr, settings, thrownError) {
+              if (settings.url.includes('autocomplete_endereco_unidade')) {
+                alert('Erro ao buscar sugestões de endereço. Tente novamente ou preencha manualmente.');
+              }
+            });
+          </script>
+        </div>
+      </div>
+    </div>
+  </div>
+      <!-- Removido bloco duplicado de exibição de clínicas e campos soltos -->
+
+  <div id="melhoria-alert" class="alert alert-success d-flex align-items-center shadow-sm" style="border-left: 6px solid #43a047; background: linear-gradient(90deg, #e8f5e9 80%, #c8e6c9 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem;">
+    <span class="me-2" style="font-size:1.5em; color:#43a047;">&#x2714;&#xFE0F;</span>
+    <span>
+      <span style="color:#256029;">Melhoria aplicada:</span> agora os botões têm efeito visual ao clicar, tornando a experiência mais moderna e intuitiva!<br>
+      <span style="font-size:0.97em; color:#1976d2; font-weight:400;">Última atualização: 07/03/2026 17:11</span>
+    </span>
+    <button type="button" class="btn btn-primary btn-sm ms-auto px-3 py-1 btn-ok-melhoria" onclick="document.getElementById('melhoria-alert').style.opacity=0; setTimeout(function(){document.getElementById('melhoria-alert').style.display='none';},400);">OK, entendi</button>
+  </div>
+  <script>
+    document.getElementById('fechar-melhoria').onclick = function() {
+      var alert = document.getElementById('melhoria-alert');
+      alert.style.transform = 'scale(0.97) translateY(2px)';
+      alert.style.boxShadow = '0 1px 2px #90caf9';
+      setTimeout(function(){ alert.style.display = 'none'; }, 120);
+    };
+  </script>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Efeito de afundamento para todos os botões
+    var botoes = document.querySelectorAll('button, .btn');
+    botoes.forEach(function(btn) {
+      btn.addEventListener('mousedown', function() {
+        btn.style.transform = 'scale(0.97) translateY(2px)';
+        btn.style.boxShadow = '0 1px 2px #90caf9';
+      });
+      btn.addEventListener('mouseup', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.transform = '';
+        btn.style.boxShadow = '';
+      });
+    });
+  });
+</script>
