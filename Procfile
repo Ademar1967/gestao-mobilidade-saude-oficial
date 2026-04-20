@@ -1,0 +1,1 @@
+web: gunicorn transporte_django.wsgi
