@@ -7,3 +7,6 @@ django-crispy-forms
 crispy-bootstrap5
 requests
 rapidfuzz
+gunicorn
+psycopg2
+dj-database-url
