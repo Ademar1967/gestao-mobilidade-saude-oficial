@@ -124,21 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Cadastrar Transporte</h4>
         </div>
         <div class="card-body p-4" style="background:#f8fafc;">
-          {% if form.errors %}
-            <div class="alert alert-danger">
-              <strong>Erros no formulário:</strong>
-              <ul class="mb-0">
-                {% for field in form %}
-                  {% for error in field.errors %}
-                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                  {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                  <li>{{ error }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
+          {# Removido bloco de erros no topo. Os erros aparecerão ao lado de cada campo automaticamente pelo crispy-forms. #}
           <form method="post" autocomplete="on">
             <!-- Bloco: Paciente -->
             <div class="mb-4 pb-2 border-bottom border-2">
@@ -217,8 +203,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite o nome do condutor se não estiver na lista.">
                       <i class="bi bi-question-circle text-primary"></i>
                     </span>
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 editar-campo" data-campo="id_condutor_manual" title="Editar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-pencil"></i></button>
                     <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_condutor_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-x-circle"></i></button>
                   </div>
+                  <script>
+                  // Botão editar: foca no campo manual correspondente
+                  document.addEventListener('DOMContentLoaded', function() {
+                    document.querySelectorAll('.editar-campo').forEach(function(btn) {
+                      btn.addEventListener('click', function() {
+                        var campoId = btn.getAttribute('data-campo');
+                        var campo = document.getElementById(campoId);
+                        if (campo) {
+                          campo.removeAttribute('readonly');
+                          campo.focus();
+                        }
+                      });
+                    });
+                  });
+                  </script>
                   <div class="form-text" style="color:#0d47a1; font-weight:600;">O condutor digitado será salvo automaticamente ao clicar em Salvar Transporte.</div>
                 </div>
                 {% endif %}
@@ -250,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite o nome da enfermagem se não estiver na lista.">
                       <i class="bi bi-question-circle text-primary"></i>
                     </span>
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 editar-campo" data-campo="id_enfermagem_manual" title="Editar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-pencil"></i></button>
                     <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_enfermagem_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-x-circle"></i></button>
                   </div>
                   <div class="form-text" style="color:#0d47a1; font-weight:600;">A enfermagem digitada será salva automaticamente ao clicar em Salvar Transporte.</div>

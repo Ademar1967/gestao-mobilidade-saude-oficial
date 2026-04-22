@@ -32,6 +32,13 @@ class TransporteForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'placeholder': 'Digite o nome da enfermagem'})
     )
 
+    def clean_data_transporte(self):
+        from django.utils import timezone
+        data = self.cleaned_data.get('data_transporte')
+        if data and data < timezone.localdate():
+            raise forms.ValidationError('A data informada já passou. Selecione uma data igual ou posterior a hoje.')
+        return data
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Remove o campo 'patrimonio' do form padrão (será tratado manualmente)
