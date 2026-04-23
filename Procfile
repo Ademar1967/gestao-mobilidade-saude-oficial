@@ -1,1 +1,1 @@
-web: gunicorn transporte_django.wsgi
+web: bash start.sh
