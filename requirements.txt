@@ -10,3 +10,4 @@ rapidfuzz
 gunicorn
 psycopg2
 dj-database-url
+django-extensions==4.1
