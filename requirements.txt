@@ -6,3 +6,4 @@ crispy-bootstrap5
  djangorestframework
  djangorestframework-simplejwt
 psycopg2-binary
+twilio
