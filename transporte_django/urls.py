@@ -17,7 +17,6 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from polls.admin import admin_site
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -26,8 +25,6 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     # Admin padrão Django
     path('admin/', admin.site.urls),
-    # Admin customizado do Transporte de Pacientes
-    path('transporte-admin/', admin_site.urls),
     path('', include('polls.urls')),
     path('api/', include('polls.api_urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
