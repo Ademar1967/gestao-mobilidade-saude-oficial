@@ -1,9 +1,12 @@
 django-extensions
 gunicorn
+django>=6.0.4
 dj-database-url
 django-crispy-forms
 crispy-bootstrap5
- djangorestframework
- djangorestframework-simplejwt
+djangorestframework
+djangorestframework-simplejwt
 psycopg2-binary
 twilio
+pandas
+requests
