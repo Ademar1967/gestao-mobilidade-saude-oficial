@@ -21,7 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 import os
-from distutils.util import strtobool
+
+# Função equivalente ao strtobool do distutils (compatível com Python 3.12+)
+def strtobool(val):
+    val = str(val).lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    if val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    raise ValueError(f"invalid truth value: {val}")
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!')
 # DEBUG: False por padrão (produção), True apenas se DJANGO_DEBUG=1
 DEBUG = bool(strtobool(os.environ.get('DJANGO_DEBUG', '0')))
