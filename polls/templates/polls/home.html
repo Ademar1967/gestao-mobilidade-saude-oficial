@@ -1,57 +1,67 @@
 {% extends 'polls/base.html' %}
+{% load static %}
 {% block content %}
-    <div class="text-center mb-4">
-        <h1 class="mb-2 fw-bold" style="color: #1976d2; letter-spacing: 1px; text-shadow: 0 2px 8px #e3eafc;">Transporte de Pacientes</h1>
-        <h4 class="mb-0 fw-normal" style="color: #388e3c; letter-spacing: 0.5px;">Acesso Rápido aos Cadastros</h4>
+<div class="container py-4">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-lg border-0 rounded-4 bg-white bg-opacity-90">
+                <div class="card-body text-center p-4">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2966/2966484.png" alt="Logo" width="70" class="mb-3" style="filter: drop-shadow(0 2px 8px #e3eafc);">
+                    <h1 class="fw-bold mb-2" style="color: #1976d2; letter-spacing: 1px;">Transporte de Pacientes</h1>
+                    <h5 class="fw-normal mb-3" style="color: #388e3c;">Acesso Rápido aos Cadastros</h5>
+                    <div class="alert alert-warning d-flex align-items-center justify-content-center mb-3" style="font-size: 1.08em; font-weight: 500;">
+                        <span class="me-2" style="font-size:1.5em;">&#9888;&#65039;</span>
+                        Atenção: Para o conforto de todos, monitore o total de cadastros e respeite o limite de acomodações.
+                    </div>
+                    <div class="d-flex flex-column align-items-center gap-3 mt-4 mb-2">
+                        <a href="/pacientes/cadastrar/" class="btn btn-primary btn-lg shadow-sm menu-btn w-100 d-flex align-items-center justify-content-center" style="max-width: 400px;">
+                            <i class="bi bi-person-plus me-2"></i> Pacientes
+                        </a>
+                        <a href="/clinicas/cadastrar/" class="btn btn-success btn-lg shadow-sm menu-btn w-100 d-flex align-items-center justify-content-center" style="max-width: 400px;">
+                            <i class="bi bi-hospital me-2"></i> Clínicas
+                        </a>
+                        <a href="/veiculos/cadastrar/" class="btn btn-warning btn-lg shadow-sm menu-btn w-100 d-flex align-items-center justify-content-center" style="max-width: 400px; color: #212529;">
+                            <i class="bi bi-truck-front me-2"></i> Veículos
+                        </a>
+                        <a href="/condutores/cadastrar/" class="btn btn-danger btn-lg shadow-sm menu-btn w-100 d-flex align-items-center justify-content-center" style="max-width: 400px;">
+                            <i class="bi bi-person-badge me-2"></i> Condutores
+                        </a>
+                        <a href="/enfermagem/cadastrar/" class="btn btn-info btn-lg shadow-sm menu-btn w-100 d-flex align-items-center justify-content-center" style="max-width: 400px; color: #212529;">
+                            <i class="bi bi-clipboard2-pulse me-2"></i> Enfermagens
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="alert alert-warning d-flex align-items-center justify-content-center mb-4" style="max-width: 600px; margin: 0 auto; font-size: 1.08em; font-weight: 500;">
-        <span class="me-2" style="font-size:1.5em;">&#9888;&#65039;</span>
-        Atenção: Para o conforto de todos, monitore o total de cadastros e respeite o limite de acomodações.
-    </div>
-    <div class="d-flex flex-column align-items-center gap-3 mt-4 mb-4">
-        <a href="/pacientes/cadastrar/" class="btn btn-primary btn-lg shadow-sm menu-btn w-100" style="max-width: 400px;">
-            Pacientes
-        </a>
-        <a href="/clinicas/cadastrar/" class="btn btn-success btn-lg shadow-sm menu-btn w-100" style="max-width: 400px;">
-            Clínicas
-        </a>
-        <a href="/veiculos/cadastrar/" class="btn btn-warning btn-lg shadow-sm menu-btn w-100" style="max-width: 400px; color: #212529;">
-            Veículos
-        </a>
-        <a href="/condutores/cadastrar/" class="btn btn-danger btn-lg shadow-sm menu-btn w-100" style="max-width: 400px;">
-            Condutores
-        </a>
-        <a href="/enfermagem/cadastrar/" class="btn btn-info btn-lg shadow-sm menu-btn w-100" style="max-width: 400px; color: #212529;">
-            Enfermagens
-        </a>
-    </div>
-    <style>
-        body {
-            background: linear-gradient(120deg, #e3f2fd 0%, #f1f8e9 100%);
-        }
+    <footer class="text-center mt-4 mb-2 text-muted small">
+        © 2026 Transporte de Pacientes - Todos os direitos reservados.
+    </footer>
+</div>
+<style>
+    body {
+        background: linear-gradient(120deg, #e3f2fd 0%, #f1f8e9 100%);
+    }
+    .menu-btn {
+        margin-bottom: 0.2rem;
+        transition: transform 0.08s, box-shadow 0.08s;
+        border-radius: 1.5rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 12px rgba(25, 118, 210, 0.07);
+    }
+    .menu-btn:active {
+        transform: translateY(2px) scale(0.98);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.12) !important;
+    }
+    @media (max-width: 600px) {
         .menu-btn {
-            margin-bottom: 0.2rem;
-            transition: transform 0.08s, box-shadow 0.08s;
-            border-radius: 1.5rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 12px rgba(25, 118, 210, 0.07);
+            min-width: 90vw;
+            max-width: 98vw;
+            font-size: 1.1em;
         }
-        .menu-btn:active {
-            transform: translateY(2px) scale(0.98);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.12) !important;
-        }
-        @media (max-width: 600px) {
-            .menu-btn {
-                min-width: 90vw;
-                max-width: 98vw;
-                font-size: 1.1em;
-            }
-        }
-    </style>
+    }
+</style>
+<!-- Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 {% endblock %}
-            © 2026 Transporte de Pacientes - Todos os direitos reservados.
-        </footer>
-    </div>
-</body>
-</html>
