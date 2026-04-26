@@ -21,9 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 import os
+from distutils.util import strtobool
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!')
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+# DEBUG: False por padrão (produção), True apenas se DJANGO_DEBUG=1
+DEBUG = bool(strtobool(os.environ.get('DJANGO_DEBUG', '0')))
+# ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS, ou domínio do Render por padrão
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'transporte-de-enfermos.onrender.com').split(',')
 
 
 # Application definition
