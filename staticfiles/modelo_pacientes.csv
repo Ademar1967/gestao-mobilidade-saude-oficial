@@ -1,0 +1,3 @@
+nome,idade,peso,ddd,telefone,rua,numero,bairro,cidade,estado,cep,referencia,oxigenio,maca,cadeirante,acompanhante,evolucao,observacoes
+João da Silva,45,80,11,999999999,Rua das Flores,123,Centro,São Paulo,SP,01000-000,Próximo ao hospital,True,False,False,True,,
+Maria Souza,60,70,21,988888888,Rua Azul,456,Bairro Novo,Rio de Janeiro,RJ,20000-000,Em frente à padaria,False,True,False,False,,

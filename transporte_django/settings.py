@@ -22,8 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 import os
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!')
-DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
+DEBUG = True
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'transporte_django.urls'
@@ -119,6 +120,9 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Redireciona para a tela de login se não estiver autenticado
+LOGIN_URL = '/admin/login/'
 
 
 

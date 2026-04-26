@@ -557,6 +557,7 @@ def autocomplete_endereco_unidade(request):
 		# Tratamento de erro: loga e retorna erro amigÃ¡vel
 		logging.error(f"[AUTOCOMPLETE] Erro: {e}")
 		return JsonResponse({'error': str(e)}, status=500)
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .models import Veiculo, Condutor, Clinica, Paciente
 from .excel_utils import exportar_excel_profissional
@@ -565,6 +566,7 @@ from django.shortcuts import render, redirect
 from .forms import PacienteForm, VeiculoForm, CondutorForm, ClinicaForm
 from django.http import HttpResponse, JsonResponse
 
+@login_required
 def home(request):
 	"""Pagina inicial do app exibindo as unidades de saude cadastradas."""
 	from .models import Clinica

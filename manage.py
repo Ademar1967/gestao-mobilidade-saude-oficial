@@ -3,6 +3,14 @@
 import os
 import sys
 
+# Diagnóstico automático para Render: verifica se pandas está disponível
+print("[DIAGNOSTICO] PYTHONPATH:", sys.path)
+try:
+    import pandas
+    print("[DIAGNOSTICO] Pandas importado com sucesso!")
+except Exception as e:
+    print("[DIAGNOSTICO] Erro ao importar pandas:", e)
+
 
 def main():
     """Run administrative tasks."""
