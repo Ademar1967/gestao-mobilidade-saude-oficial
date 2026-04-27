@@ -557,19 +557,38 @@ def autocomplete_endereco_unidade(request):
 		# Tratamento de erro: loga e retorna erro amigÃ¡vel
 		logging.error(f"[AUTOCOMPLETE] Erro: {e}")
 		return JsonResponse({'error': str(e)}, status=500)
+
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.utils import timezone
 from .models import Veiculo, Condutor, Clinica, Paciente
 from .excel_utils import exportar_excel_profissional
 import tempfile
-from django.shortcuts import render, redirect
 from .forms import PacienteForm, VeiculoForm, CondutorForm, ClinicaForm
 from django.http import HttpResponse, JsonResponse
+
+
+# View de login personalizada
+def login_view(request):
+	if request.user.is_authenticated:
+		return redirect('transporte_pacientes:home')
+	if request.method == 'POST':
+		username = request.POST.get('username')
+		password = request.POST.get('password')
+		user = authenticate(request, username=username, password=password)
+		if user is not None:
+			login(request, user)
+			return redirect('transporte_pacientes:home')
+		else:
+			messages.error(request, 'Usuário ou senha inválidos.')
+	year = timezone.now().year
+	return render(request, 'registration/login.html', {'year': year})
 
 @login_required
 def home(request):
 	"""Pagina inicial do app exibindo as unidades de saude cadastradas."""
-	from .models import Clinica
 	unidades_salvas = Clinica.objects.all()
 	return render(request, 'polls/home.html', {'unidades_salvas': unidades_salvas})
 

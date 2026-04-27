@@ -3,7 +3,7 @@ from . import views_condutor_delete_lote
 from django.urls import path
 from . import views
 from . import views_condutor_delete
-from .views import editar_paciente
+from .views import editar_paciente, login_view
 
 
 app_name = 'transporte_pacientes'
@@ -28,6 +28,7 @@ urlpatterns = [
     path('enfermagem/excluir/<int:enfermagem_id>/', views.excluir_enfermagem, name='excluir_enfermagem'),
     path('clinicas/excluir_selecionadas/', views.excluir_selecionadas_clinicas, name='excluir_selecionadas_clinicas'),
     path('clinicas/excluir_todas/', views.excluir_todas_clinicas, name='excluir_todas_clinicas'),
+    path('login/', login_view, name='login'),
     path('', views.home, name='home'),
     # Adicionado para garantir funcionamento do autocomplete de endereço no cadastro de clínica
     # Se quiser desfazer, basta remover esta linha

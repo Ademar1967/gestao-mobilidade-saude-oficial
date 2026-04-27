@@ -34,7 +34,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2
 # DEBUG: False por padrão (produção), True apenas se DJANGO_DEBUG=1
 DEBUG = bool(strtobool(os.environ.get('DJANGO_DEBUG', '0')))
 # ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS, ou domínio do Render por padrão
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'transporte-de-enfermos.onrender.com').split(',')
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'transporte-de-enfermos.onrender.com']
 
 
 # Application definition
@@ -42,6 +42,8 @@ ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'transporte-de-enfermos.o
 INSTALLED_APPS = [
     # 'admin_interface',
     # 'colorfield',
+    'admin_interface',
+    'colorfield',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'polls.apps.TransportePacientesConfig',
+    'transporte_django',
     'rest_framework',
     'rest_framework_simplejwt',
     'django_extensions',
@@ -133,7 +136,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Redireciona para a tela de login se não estiver autenticado
-LOGIN_URL = '/admin/login/'
+LOGIN_URL = '/login/'
 
 
 
