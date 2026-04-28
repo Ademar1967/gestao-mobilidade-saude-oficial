@@ -184,18 +184,4 @@ LOGGING = {
     },
 }
 
-# --- CRIA SUPERUSUÁRIO AUTOMATICAMENTE EM PRODUÇÃO (REMOVER APÓS USO) ---
-import os
-if os.environ.get("RENDER", "0") == "1" or os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
-    try:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        if not User.objects.filter(username="AMBULANCIA192").exists():
-            User.objects.create_superuser(
-                "AMBULANCIA192",
-                "ademarp2015@gmail.com",
-                "CURE@1967"
-            )
-            print("[AUTO SUPERUSER] Usuário AMBULANCIA192 criado!")
-    except Exception as e:
-        print(f"[AUTO SUPERUSER] Erro ao criar superusuário: {e}")
+
