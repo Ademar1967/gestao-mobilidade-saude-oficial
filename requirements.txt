@@ -1,4 +1,5 @@
 django-extensions
+django-admin-interface
 gunicorn
 django>=6.0.4
 dj-database-url
