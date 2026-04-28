@@ -1,6 +1,7 @@
 ﻿from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
 # --- AUTOCOMPLETE DE VEÍCULOS (AMBULÂNCIA POR PATRIMÔNIO, VAN POR PLACA) ---
 @require_GET
 def buscar_veiculos_sugestoes(request):

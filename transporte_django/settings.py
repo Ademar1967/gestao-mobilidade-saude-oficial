@@ -71,7 +71,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    'transporte_django.middleware.LoginObrigatorioMiddleware',
 ]
 
 ROOT_URLCONF = 'transporte_django.urls'
@@ -137,6 +137,8 @@ USE_TZ = True
 
 # Redireciona para a tela de login se não estiver autenticado
 LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 
 
