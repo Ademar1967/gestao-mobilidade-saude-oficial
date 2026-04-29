@@ -10,7 +10,7 @@
       <h3 class="mb-0">Editar Informações do Veículo</h3>
     </div>
     <div class="card-body" style="background-color: #d4f8d4; color: #155724;">
-      <form method="post">
+      <form method="post" id="form-editar-veiculo" data-autosave="true" data-autosave-label="da edição de veículo">
         {% csrf_token %}
         {{ form|crispy }}
         <div class="mt-4">

@@ -97,6 +97,123 @@
         })();
       </script>
       {% endif %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          const draftPrefix = 'autosave-draft:';
+          const pendingPrefix = 'autosave-pending:';
+
+          function debounce(fn, wait) {
+            let timeoutId;
+            return function () {
+              clearTimeout(timeoutId);
+              timeoutId = setTimeout(fn, wait);
+            };
+          }
+
+          function getDraftKey(form) {
+            return draftPrefix + (form.dataset.autosaveKey || form.id || form.action || window.location.pathname);
+          }
+
+          function getPendingKey(form) {
+            return pendingPrefix + (form.dataset.autosaveKey || form.id || form.action || window.location.pathname);
+          }
+
+          function collectFormData(form) {
+            const payload = {};
+            form.querySelectorAll('input, select, textarea').forEach(function (field) {
+              if (!field.name || field.disabled) return;
+              if (['password', 'file', 'submit', 'button', 'hidden'].includes(field.type)) return;
+
+              if (field.type === 'checkbox') {
+                payload[field.name] = field.checked;
+                return;
+              }
+
+              if (field.type === 'radio') {
+                if (field.checked) {
+                  payload[field.name] = field.value;
+                }
+                return;
+              }
+
+              payload[field.name] = field.value;
+            });
+            return payload;
+          }
+
+          function hasMeaningfulDraft(payload) {
+            return Object.values(payload).some(function (value) {
+              if (typeof value === 'boolean') return value;
+              return String(value || '').trim() !== '';
+            });
+          }
+
+          function applyFormData(form, payload) {
+            Object.keys(payload).forEach(function (name) {
+              const escapedName = window.CSS && CSS.escape ? CSS.escape(name) : name.replace(/"/g, '\\"');
+              const fields = form.querySelectorAll('[name="' + escapedName + '"]');
+              if (!fields.length) return;
+
+              fields.forEach(function (field) {
+                if (field.type === 'checkbox') {
+                  field.checked = Boolean(payload[name]);
+                } else if (field.type === 'radio') {
+                  field.checked = field.value === payload[name];
+                } else {
+                  field.value = payload[name] ?? '';
+                }
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+              });
+            });
+          }
+
+          document.querySelectorAll('form[data-autosave="true"]').forEach(function (form) {
+            const draftKey = getDraftKey(form);
+            const pendingKey = getPendingKey(form);
+            const label = form.dataset.autosaveLabel || 'deste formulário';
+            const saveDraft = debounce(function () {
+              const payload = collectFormData(form);
+              if (hasMeaningfulDraft(payload)) {
+                localStorage.setItem(draftKey, JSON.stringify(payload));
+              } else {
+                localStorage.removeItem(draftKey);
+              }
+            }, 250);
+
+            const hasValidationErrors = Boolean(form.querySelector('.alert-danger, .text-danger, .is-invalid'));
+            if (sessionStorage.getItem(pendingKey) === '1' && !hasValidationErrors) {
+              localStorage.removeItem(draftKey);
+              sessionStorage.removeItem(pendingKey);
+            }
+
+            const existingDraft = localStorage.getItem(draftKey);
+            if (existingDraft) {
+              try {
+                const payload = JSON.parse(existingDraft);
+                if (hasMeaningfulDraft(payload)) {
+                  const shouldRestore = window.confirm('Encontramos um rascunho salvo ' + label + '. Deseja restaurar os dados?');
+                  if (shouldRestore) {
+                    applyFormData(form, payload);
+                  }
+                }
+              } catch (error) {
+                localStorage.removeItem(draftKey);
+              }
+            }
+
+            form.addEventListener('input', saveDraft);
+            form.addEventListener('change', saveDraft);
+            form.addEventListener('submit', function () {
+              sessionStorage.setItem(pendingKey, '1');
+            });
+            form.addEventListener('reset', function () {
+              localStorage.removeItem(draftKey);
+              sessionStorage.removeItem(pendingKey);
+            });
+          });
+        });
+      </script>
       {% block extra_scripts %}{% endblock %}
     </body>
     </html>

@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div class="card-body p-4" style="background:#f8fafc;">
           {# Removido bloco de erros no topo. Os erros aparecerão ao lado de cada campo automaticamente pelo crispy-forms. #}
-          <form method="post" autocomplete="on">
+          <form method="post" autocomplete="on" id="form-cadastrar-transporte" data-autosave="true" data-autosave-label="do cadastro de transporte">
             <!-- Bloco: Paciente -->
             <div class="mb-4 pb-2 border-bottom border-2">
               <h5 class="mb-3 text-primary"><i class="bi bi-person-badge me-2"></i>Dados do Paciente</h5>

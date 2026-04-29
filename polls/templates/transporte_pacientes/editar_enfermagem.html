@@ -12,7 +12,7 @@
           <h3 class="mb-0">Editar Enfermagem: {{ enfermagem.nome }}</h3>
         </div>
         <div class="card-body">
-          <form method="post" autocomplete="on">
+          <form method="post" autocomplete="on" id="form-editar-enfermagem" data-autosave="true" data-autosave-label="da edição de enfermagem">
             {% csrf_token %}
             {% for field in form %}
               <div class="mb-3">

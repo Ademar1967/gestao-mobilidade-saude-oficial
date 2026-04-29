@@ -91,7 +91,7 @@
     </script>
     {% endif %}
     <div class="card-body" style="background-color: {% if editar %}#fff8e1{% else %}#d4f8d4{% endif %};">
-      <form method="post">
+      <form method="post" id="form-clinica" data-autosave="true" data-autosave-label="do cadastro de clínica">
         {% csrf_token %}
         <div class="mt-2 position-relative" style="z-index:10;">
           <label for="id_nome" class="form-label">Nome do hospital/clínica:</label>

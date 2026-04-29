@@ -36,7 +36,7 @@
             <h4 class="mb-0 d-inline">Cadastro de Condutor</h4>
           </div>
           <div class="card-body" style="background-color: #d4f8d4; color: #155724;">
-            <form method="post" autocomplete="on" id="form-condutor">
+            <form method="post" autocomplete="on" id="form-condutor" data-autosave="true" data-autosave-label="do cadastro de condutor">
               {% csrf_token %}
               {% if form.non_field_errors %}
                 <div class="alert alert-danger" role="alert">
