@@ -227,10 +227,21 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
             </div>
+            <!-- Bloco: Clinica -->
+            <div class="mb-4 pb-2 border-bottom border-2">
+              <h5 class="mb-3 text-primary"><i class="bi bi-hospital me-2"></i>Clinica</h5>
+              <div class="d-flex align-items-center">
+                {{ form.clinica|as_crispy_field }}
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione a clínica de destino.">
+                  <i class="bi bi-question-circle text-primary"></i>
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-x-circle"></i></button>
+              </div>
+            </div>
+
             <!-- Bloco: Enfermagem -->
             <div class="mb-4 pb-2 border-bottom border-2">
               <h5 class="mb-3 text-primary"><i class="bi bi-person-vcard me-2"></i>Enfermagem</h5>
-            {{ form.clinica|as_crispy_field }}
             <div class="row mb-2 align-items-end">
               <div class="col-md-7 col-12 mb-2 mb-md-0">
                 <div class="d-flex align-items-center">
