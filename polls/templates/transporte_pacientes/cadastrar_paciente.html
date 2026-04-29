@@ -631,9 +631,20 @@ document.addEventListener('DOMContentLoaded', function() {
         <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
       </div>
     <script>
-      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
+      document.addEventListener('DOMContentLoaded', function() {
+        // Proteção: só cria Tooltip se bootstrap estiver disponível
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip === 'function') {
+          try {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+              return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+          } catch(e) {
+            console.warn('Aviso: Tooltips não disponíveis', e);
+          }
+        } else {
+          console.warn('Aviso: Bootstrap Tooltip não carregou corretamente');
+        }
       });
     </script>
     </form>
@@ -641,13 +652,25 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
   $(document).ready(function() {
-    // Máscara para telefone (formato 99999-9999 ou 9999-9999)
-    $("#id_telefone").mask(function(val) {
-      return val.replace(/\D/g, '').length === 9 ? '00000-0000' : '0000-00009';
-    });
-    // Máscara para CEP (formato 99999-999)
-    $("#id_cep").mask('00000-000');
-
+    // Proteção: só aplica máscara se jquery.mask estiver disponível
+    if (typeof $.fn.mask === 'function') {
+      // Máscara para telefone (formato 99999-9999 ou 9999-9999)
+      try {
+        $("#id_telefone").mask(function(val) {
+          return val.replace(/\D/g, '').length === 9 ? '00000-0000' : '0000-00009';
+        });
+      } catch(e) {
+        console.warn('Aviso: Máscara de telefone não disponível', e);
+      }
+      // Máscara para CEP (formato 99999-999)
+      try {
+        $("#id_cep").mask('00000-000');
+      } catch(e) {
+        console.warn('Aviso: Máscara de CEP não disponível', e);
+      }
+    } else {
+      console.warn('Aviso: jQuery Mask plugin não carregou corretamente');
+    }
   });
 </script>
 
@@ -849,11 +872,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script>
-  // Preenche a data/hora atual no aviso
+  // Preenche a data/hora atual no aviso (se elemento existir)
   document.addEventListener('DOMContentLoaded', function() {
-    var agora = new Date();
-    var dataHora = agora.toLocaleString('pt-BR', { hour12: false });
-    document.getElementById('data-hora-atual').textContent = dataHora;
+    var elemento = document.getElementById('data-hora-atual');
+    if (elemento) {
+      var agora = new Date();
+      var dataHora = agora.toLocaleString('pt-BR', { hour12: false });
+      elemento.textContent = dataHora;
+    }
   });
 </script>
 

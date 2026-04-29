@@ -54,9 +54,32 @@
       <!-- Scripts essenciais para autocomplete -->
       <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
       <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-      <script src="/static/transporte_pacientes/autocomplete.js?v=20260321-2205"></script>
+      <!-- Autocomplete JS - carregamento seguro -->
+      <script>
+        // Tenta carregar autocomplete.js, mas não falha silenciosamente
+        fetch('/static/transporte_pacientes/autocomplete.js?v=20260321-2205')
+          .then(r => r.ok ? r.text() : null)
+          .then(code => {
+            if (code) {
+              try {
+                eval(code);
+              } catch(e) {
+                console.warn('Aviso: Autocomplete não disponível', e);
+              }
+            } else {
+              console.warn('Aviso: Arquivo autocomplete.js não encontrado');
+            }
+          })
+          .catch(e => console.warn('Aviso: Não foi possível carregar autocomplete.js'));
+      </script>
       <!-- Bootstrap Bundle para Collapse e outros componentes -->
       <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      <!-- Proteção para bootstrap global -->
+      <script>
+        if (typeof window.bootstrap === 'undefined' && typeof bootstrap !== 'undefined') {
+          window.bootstrap = bootstrap;
+        }
+      </script>
       {% if user.is_authenticated %}
       <script>
         (function () {
