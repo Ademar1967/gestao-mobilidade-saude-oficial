@@ -245,6 +245,11 @@ def cadastrar_transporte(request):
 			form = TransporteForm()  # Limpa o formulário
 			return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos})
 		audit_logger.warning("Falha de validacao ao cadastrar transporte", extra={"erros": form.errors.as_json()})
+		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+		if first_error:
+			messages.error(request, f'Nao foi possivel cadastrar transporte. {first_error}')
+		else:
+			messages.error(request, 'Nao foi possivel cadastrar transporte. Verifique os campos obrigatorios.')
 	else:
 		# GET: preencher paciente se vier na URL
 		if paciente_id:
@@ -297,6 +302,8 @@ def cadastrar_enfermagem(request):
 			from django.contrib import messages
 			messages.success(request, 'Enfermagem cadastrada com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_enfermagem')
+		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+		messages.error(request, f'Nao foi possivel cadastrar enfermagem. {first_error}')
 	else:
 		form = EnfermagemForm()
 	enfermagens = Enfermagem.objects.all().order_by('-id')
@@ -976,6 +983,8 @@ def cadastrar_veiculo(request):
 			form.save()
 			messages.success(request, 'VeÃ­culo cadastrado com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_veiculo')
+		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+		messages.error(request, f'Nao foi possivel cadastrar veiculo. {first_error}')
 	else:
 		form = VeiculoForm()
 	veiculos = Veiculo.objects.all()
@@ -989,6 +998,8 @@ def cadastrar_condutor(request):
 			form.save()
 			messages.success(request, 'Condutor salvo com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_condutor')
+		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+		messages.error(request, f'Nao foi possivel cadastrar condutor. {first_error}')
 	else:
 		form = CondutorForm()
 	from .models import Condutor

@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from .models import Transporte, Paciente, Veiculo, Condutor, Clinica, Enfermagem
 import requests
 import re
@@ -90,7 +91,9 @@ class TransporteForm(forms.ModelForm):
         # Cadastro automático de veículo se preenchido manualmente
         if not veiculo and veiculo_livre:
             # Verifica se já existe veículo com esse patrimônio ou placa
-            veiculo_existente = Veiculo.objects.filter(models.Q(patrimonio__iexact=veiculo_livre) | models.Q(placa__iexact=veiculo_livre)).first()
+            veiculo_existente = Veiculo.objects.filter(
+                Q(patrimonio__iexact=veiculo_livre) | Q(placa__iexact=veiculo_livre)
+            ).first()
             if veiculo_existente:
                 cleaned_data['veiculo'] = veiculo_existente
                 self.novo_veiculo_cadastrado = False
