@@ -493,25 +493,49 @@ def autocomplete_endereco_unidade(request):
 	# Corrige para garantir que o arquivo adicional seja buscado na raiz do projeto
 	import os
 	base_dir = Path(__file__).resolve().parent.parent
-	project_root = base_dir.parent if (base_dir / 'manage.py').exists() else base_dir
-	path2 = base_dir / 'enderecos_sp_hospitais_referencia_corrigido.csv'
-	path3 = project_root / 'enderecos_sp_hospitais_adicionais.csv'
+	project_root = base_dir if (base_dir / 'manage.py').exists() else base_dir.parent
+	path2_candidates = [
+		project_root / 'enderecos_sp_hospitais_referencia_corrigido.csv',
+		base_dir / 'enderecos_sp_hospitais_referencia_corrigido.csv',
+	]
+	path3_candidates = [
+		project_root / 'enderecos_sp_hospitais_adicionais.csv',
+		base_dir / 'enderecos_sp_hospitais_adicionais.csv',
+	]
 	resultados = []
 	try:
 		# Tenta ler apenas os arquivos de hospitais disponíveis
 		frames = []
-		try:
-			df2 = pd.read_csv(path2, sep=',', encoding='utf-8', quoting=0, on_bad_lines='warn')
-			frames.append(df2)
-		except Exception as e:
-			logging.warning(f"[AUTOCOMPLETE] Falha ao ler {path2}: {e}")
-		try:
-			df3 = pd.read_csv(path3, sep=',', encoding='utf-8', quoting=0, on_bad_lines='warn')
-			frames.append(df3)
-		except Exception as e:
-			logging.warning(f"[AUTOCOMPLETE] Falha ao ler {path3}: {e}")
+		for candidate in path2_candidates:
+			if candidate.exists():
+				try:
+					df2 = pd.read_csv(candidate, sep=',', encoding='utf-8', quoting=0, on_bad_lines='warn')
+					frames.append(df2)
+					break
+				except Exception as e:
+					logging.warning(f"[AUTOCOMPLETE] Falha ao ler {candidate}: {e}")
+		for candidate in path3_candidates:
+			if candidate.exists():
+				try:
+					df3 = pd.read_csv(candidate, sep=',', encoding='utf-8', quoting=0, on_bad_lines='warn')
+					frames.append(df3)
+					break
+				except Exception as e:
+					logging.warning(f"[AUTOCOMPLETE] Falha ao ler {candidate}: {e}")
 		if not frames:
-			return JsonResponse({'error': 'Nenhum arquivo de hospitais disponível.'}, status=500)
+			from .models import Clinica
+			clinicas = Clinica.objects.filter(nome__icontains=request.GET.get('term', '').strip()).order_by('nome')[:10]
+			fallback = []
+			for c in clinicas:
+				fallback.append({
+					'label': c.nome,
+					'value': c.endereco or '',
+					'logradouro': c.endereco or '',
+					'numero': '',
+					'cep': '',
+				})
+			logging.warning(f"[AUTOCOMPLETE] CSV ausente no servidor; usando fallback de Clinica. total={len(fallback)}")
+			return JsonResponse(fallback, safe=False)
 		df = pd.concat(frames, ignore_index=True)
 		if term:
 			# Verifica se as colunas existem
