@@ -305,6 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if form_web.oxigenio_litros_min.errors %}
                   <div class="text-danger small">{{ form_web.oxigenio_litros_min.errors }}</div>
                 {% endif %}
+                <div class="form-text text-danger fw-semibold">Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.</div>
               </div>
               <div class="form-check col-md-2 mb-2">
                 {{ form_web.maca }} {{ form_web.maca.label_tag }}
@@ -519,6 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
               {% if form.oxigenio_litros_min.errors %}
                 <div class="text-danger small">{{ form.oxigenio_litros_min.errors }}</div>
               {% endif %}
+              <div class="form-text text-danger fw-semibold">Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.</div>
             </div>
             <div class="form-check col-md-2 mb-2">
               {{ form.maca }} {{ form.maca.label_tag }}

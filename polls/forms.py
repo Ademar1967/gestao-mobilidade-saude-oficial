@@ -70,6 +70,7 @@ class TransporteForm(forms.ModelForm):
     def clean(self):
         """Valida campos e permite cadastro automático de veículo manual."""
         cleaned_data = super().clean()
+        paciente = cleaned_data.get('paciente')
         veiculo = cleaned_data.get('veiculo')
         van_editavel = self.data.get('van_editavel')
         veiculo_livre = self.data.get('veiculo_livre', '').strip()
@@ -134,6 +135,14 @@ class TransporteForm(forms.ModelForm):
                 cleaned_data['patrimonio'] = van_editavel
             else:
                 self.add_error('veiculo', 'Informe o identificador da van (campo editável).')
+
+        # Regra operacional: paciente usuario de O2 deve ser alocado exclusivamente em ambulancia.
+        veiculo_selecionado = cleaned_data.get('veiculo')
+        if paciente and getattr(paciente, 'oxigenio', False):
+            if not veiculo_selecionado:
+                self.add_error('veiculo', 'Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.')
+            elif getattr(veiculo_selecionado, 'tipo_veiculo', '') != 'ambulancia':
+                self.add_error('veiculo', 'Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.')
         return cleaned_data
     class Meta:
         model = Transporte
