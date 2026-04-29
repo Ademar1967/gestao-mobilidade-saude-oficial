@@ -195,6 +195,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="card mb-3 shadow-sm">
   <div class="card-body">
     <h5 class="card-title mb-2" style="color:#f57c00; background:#fff3e0; padding:6px 12px; border-radius:6px;">Cadastrar paciente manualmente</h5>
+    <div class="alert alert-light border mb-3" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
+      O formulário salva um rascunho automaticamente neste navegador enquanto você digita. Se houver instabilidade ou a página fechar, você poderá restaurar os dados ao abrir novamente.
+    </div>
     {# Formulário colapsável para revisão de dados recebidos via web #}
     {% if importado_via_web %}
     <button class="btn btn-lg btn-danger fw-bold shadow mb-3 px-4" style="font-size:1.18em; border-width:2px; border-radius:8px; letter-spacing:0.5px;" type="button" data-bs-toggle="collapse" data-bs-target="#formularioWeb" aria-expanded="false" aria-controls="formularioWeb">
@@ -609,6 +612,126 @@ document.addEventListener('DOMContentLoaded', function() {
     // Máscara para CEP (formato 99999-999)
     $("#id_cep").mask('00000-000');
 
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const formIds = ['cadastrar-paciente-form', 'revisao-paciente-web-form'];
+    const draftPrefix = 'paciente-draft:';
+    const pendingPrefix = 'paciente-submit-pending:';
+
+    function buildDraftKey(form) {
+      return draftPrefix + form.id;
+    }
+
+    function buildPendingKey(form) {
+      return pendingPrefix + form.id;
+    }
+
+    function collectFormData(form) {
+      const payload = {};
+      form.querySelectorAll('input, select, textarea').forEach(function(field) {
+        if (!field.name || field.disabled) return;
+        if (['password', 'file', 'submit', 'button', 'hidden'].includes(field.type)) return;
+
+        if (field.type === 'checkbox') {
+          payload[field.name] = field.checked;
+          return;
+        }
+
+        if (field.type === 'radio') {
+          if (field.checked) {
+            payload[field.name] = field.value;
+          }
+          return;
+        }
+
+        payload[field.name] = field.value;
+      });
+      return payload;
+    }
+
+    function applyFormData(form, payload) {
+      Object.keys(payload).forEach(function(name) {
+        const fields = form.querySelectorAll('[name="' + CSS.escape(name) + '"]');
+        if (!fields.length) return;
+
+        fields.forEach(function(field) {
+          if (field.type === 'checkbox') {
+            field.checked = Boolean(payload[name]);
+          } else if (field.type === 'radio') {
+            field.checked = field.value === payload[name];
+          } else {
+            field.value = payload[name] ?? '';
+          }
+          field.dispatchEvent(new Event('change', { bubbles: true }));
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      });
+    }
+
+    function hasMeaningfulDraft(payload) {
+      return Object.values(payload).some(function(value) {
+        if (typeof value === 'boolean') return value;
+        return String(value || '').trim() !== '';
+      });
+    }
+
+    function debounce(fn, wait) {
+      let timeoutId;
+      return function() {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(fn, wait);
+      };
+    }
+
+    formIds.forEach(function(formId) {
+      const form = document.getElementById(formId);
+      if (!form) return;
+
+      const draftKey = buildDraftKey(form);
+      const pendingKey = buildPendingKey(form);
+      const saveDraft = debounce(function() {
+        const payload = collectFormData(form);
+        if (hasMeaningfulDraft(payload)) {
+          localStorage.setItem(draftKey, JSON.stringify(payload));
+        } else {
+          localStorage.removeItem(draftKey);
+        }
+      }, 250);
+
+      const hasValidationErrors = Boolean(form.querySelector('.alert-danger, .text-danger'));
+      if (sessionStorage.getItem(pendingKey) === '1' && !hasValidationErrors) {
+        localStorage.removeItem(draftKey);
+        sessionStorage.removeItem(pendingKey);
+      }
+
+      const existingDraft = localStorage.getItem(draftKey);
+      if (existingDraft) {
+        try {
+          const payload = JSON.parse(existingDraft);
+          if (hasMeaningfulDraft(payload)) {
+            const shouldRestore = window.confirm('Encontramos um rascunho salvo deste formulário. Deseja restaurar os dados?');
+            if (shouldRestore) {
+              applyFormData(form, payload);
+            }
+          }
+        } catch (error) {
+          localStorage.removeItem(draftKey);
+        }
+      }
+
+      form.addEventListener('input', saveDraft);
+      form.addEventListener('change', saveDraft);
+      form.addEventListener('submit', function() {
+        sessionStorage.setItem(pendingKey, '1');
+      });
+      form.addEventListener('reset', function() {
+        localStorage.removeItem(draftKey);
+        sessionStorage.removeItem(pendingKey);
+      });
+    });
   });
 </script>
 
