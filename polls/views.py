@@ -926,6 +926,13 @@ def cadastrar_paciente(request):
 			form.save()
 			messages.success(request, 'Paciente cadastrado com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_paciente')
+		else:
+			first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+			if first_error:
+				messages.error(request, f'Não foi possível cadastrar o paciente. {first_error}')
+			else:
+				messages.error(request, 'Não foi possível cadastrar o paciente. Verifique os campos obrigatórios.')
+			logger.warning("Falha de validação ao cadastrar paciente", extra={"erros": form.errors.as_json()})
 	else:
 		form = PacienteForm()
 	from django.db.models import Exists, OuterRef, BooleanField, Value, Case, When
