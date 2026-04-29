@@ -22,7 +22,19 @@
       </div>
       <div class="mb-3">
         <label for="id_password" class="form-label">Senha</label>
-        <input type="password" name="password" required class="form-control" id="id_password" placeholder="Digite sua senha">
+        <div class="input-group">
+          <input type="password" name="password" required class="form-control" id="id_password" placeholder="Digite sua senha">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            id="toggle-password"
+            aria-label="Mostrar ou ocultar senha"
+            aria-pressed="false"
+          >
+            <i class="bi bi-eye" id="toggle-password-icon"></i>
+          </button>
+        </div>
+        <small class="text-muted">Clique no olho para ver ou ocultar a senha.</small>
       </div>
       <button type="submit" class="btn btn-primary w-100" style="font-weight: 600;">Entrar</button>
     </form>
@@ -31,4 +43,25 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    const passwordInput = document.getElementById('id_password');
+    const toggleButton = document.getElementById('toggle-password');
+    const toggleIcon = document.getElementById('toggle-password-icon');
+
+    if (!passwordInput || !toggleButton || !toggleIcon) {
+      return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      toggleIcon.className = isHidden ? 'bi bi-eye-slash' : 'bi bi-eye';
+      toggleButton.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+    });
+  })();
+</script>
 {% endblock %}
