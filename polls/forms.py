@@ -250,9 +250,9 @@ class PacienteForm(forms.ModelForm):
             endereco_completo += f", {cep}"
         # Se latitude/longitude não preenchidos, tenta geocodificar
         if not latitude or not longitude:
-            if 'test' in sys.argv:
-                logger.info("Ambiente de teste detectado: geocodificacao externa ignorada.")
-            else:
+            # Em produção (Render), desabilita geocodificação para evitar timeout
+            # Apenas tenta em ambiente local
+            if 'test' in sys.argv or os.environ.get('DEBUG') == 'True':
                 try:
                     logger.info(f"Buscando geolocalização para: {endereco_completo}")
                     url = f'https://nominatim.openstreetmap.org/search'
@@ -261,7 +261,7 @@ class PacienteForm(forms.ModelForm):
                         url,
                         params=params,
                         headers={'User-Agent': 'transporte-pacientes-app'},
-                        timeout=5,
+                        timeout=3,  # Reduzido de 5 para 3 segundos
                     )
                     if response.status_code == 200:
                         data = response.json()
@@ -277,6 +277,8 @@ class PacienteForm(forms.ModelForm):
                         logger.warning(f"Erro HTTP ao consultar geolocalização: status={response.status_code}. Salvando sem latitude/longitude.")
                 except Exception as e:
                     logger.warning(f"Exceção ao tentar geocodificar: {e}. Salvando sem latitude/longitude.")
+            else:
+                logger.info("Ambiente de produção: geocodificação desabilitada para evitar timeout.")
         # Duplicidade de paciente (só se telefone for informado)
         if nome and telefone:
             qs = Paciente.objects.filter(nome=nome, telefone=telefone)
