@@ -20,6 +20,12 @@ class TransporteForm(forms.ModelForm):
         help_text='Opcional. Se preencher aqui, será cadastrado ou selecionado automaticamente.',
         widget=forms.TextInput(attrs={'placeholder': 'Digite placa ou patrimônio do veículo'})
     )
+    clinica_manual = forms.CharField(
+        required=False,
+        label='Clínica (digitar manualmente)',
+        help_text='Opcional. Se preencher aqui, esta clínica será usada no transporte.',
+        widget=forms.TextInput(attrs={'placeholder': 'Digite o nome da clínica'})
+    )
     condutor_manual = forms.CharField(
         required=False,
         label='Condutor (digitar manualmente)',
@@ -67,11 +73,20 @@ class TransporteForm(forms.ModelForm):
         veiculo = cleaned_data.get('veiculo')
         van_editavel = self.data.get('van_editavel')
         veiculo_livre = self.data.get('veiculo_livre', '').strip()
+        clinica_manual = re.sub(r'\s+', ' ', (cleaned_data.get('clinica_manual') or '').strip())
+        cleaned_data['clinica_manual'] = clinica_manual
         condutor_manual = re.sub(r'\s+', ' ', (cleaned_data.get('condutor_manual') or '').strip())
         cleaned_data['condutor_manual'] = condutor_manual
 
         enfermagem_manual = re.sub(r'\s+', ' ', (cleaned_data.get('enfermagem_manual') or '').strip())
         cleaned_data['enfermagem_manual'] = enfermagem_manual
+
+        if clinica_manual:
+            clinica_existente = Clinica.objects.filter(nome__iexact=clinica_manual).first()
+            if clinica_existente:
+                cleaned_data['clinica'] = clinica_existente
+            else:
+                cleaned_data['clinica'] = Clinica.objects.create(nome=clinica_manual)
 
         if condutor_manual:
             condutor_existente = Condutor.objects.filter(nome__iexact=condutor_manual).first()

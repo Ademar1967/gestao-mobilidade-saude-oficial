@@ -230,12 +230,34 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Bloco: Clinica -->
             <div class="mb-4 pb-2 border-bottom border-2">
               <h5 class="mb-3 text-primary"><i class="bi bi-hospital me-2"></i>Clinica</h5>
-              <div class="d-flex align-items-center">
-                {{ form.clinica|as_crispy_field }}
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione a clínica de destino.">
-                  <i class="bi bi-question-circle text-primary"></i>
-                </span>
-                <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-x-circle"></i></button>
+              <div class="row mb-2 align-items-end">
+                <div class="col-md-7 col-12 mb-2 mb-md-0">
+                  <div class="d-flex align-items-center">
+                    {{ form.clinica|as_crispy_field }}
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione a clínica de destino.">
+                      <i class="bi bi-question-circle text-primary"></i>
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-x-circle"></i></button>
+                  </div>
+                </div>
+                <div class="col-md-5 col-12">
+                  {% if form.clinica_manual %}
+                  <div class="mb-3 condutor-manual-highlight" style="background:#e3f2fd; border:2px solid #1976d2; border-radius:10px; padding:10px 10px 6px 10px; box-shadow:0 2px 6px rgba(25,118,210,0.13);">
+                    <div style="font-weight:700; color:#1976d2; margin-bottom:4px;">
+                      <i class="bi bi-pencil-square me-1"></i> Digitação manual de clínica
+                    </div>
+                    <div class="d-flex align-items-center">
+                      {{ form.clinica_manual|as_crispy_field }}
+                      <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite o nome da clínica se não estiver na lista.">
+                        <i class="bi bi-question-circle text-primary"></i>
+                      </span>
+                      <button type="button" class="btn btn-sm btn-outline-primary ms-2 editar-campo" data-campo="id_clinica_manual" title="Editar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-pencil"></i></button>
+                      <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top"><i class="bi bi-x-circle"></i></button>
+                    </div>
+                    <div class="form-text" style="color:#0d47a1; font-weight:600;">A clínica digitada será salva automaticamente ao clicar em Salvar Transporte.</div>
+                  </div>
+                  {% endif %}
+                </div>
               </div>
             </div>
 
