@@ -3,6 +3,8 @@ from django.conf import settings
 
 # URLs que ficam abertas sem login (login, logout, admin, webhook WhatsApp, API token)
 URLS_PUBLICAS = [
+	'/static/',
+	'/media/',
     '/login/',
     '/logout/',
     '/admin/',
