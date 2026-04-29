@@ -667,7 +667,7 @@ def exportar_pacientes_excel(request):
 	enderecos_df = pd.read_csv(enderecos_path)
 	enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
 
-	campos = ["nome", "idade", "peso", "endereco", "referencia", "telefone", "tratamento", "oxigenio", "observacoes", "evolucao", "status", "destino_nome", "destino_endereco_completo"]
+	campos = ["nome", "idade", "peso", "endereco", "referencia", "telefone", "tratamento", "oxigenio", "oxigenio_litros_min", "observacoes", "evolucao", "status", "destino_nome", "destino_endereco_completo"]
 	pacientes = []
 	for obj in Paciente.objects.all():
 		destino_nome = getattr(obj, 'referencia', '')  # Supondo que o campo referencia seja o nome do destino
@@ -676,7 +676,7 @@ def exportar_pacientes_excel(request):
 		if endereco_info:
 			endereco_completo = f"{endereco_info.get('logradouro','')} {endereco_info.get('numero','')}, {endereco_info.get('bairro','')}, {endereco_info.get('municipio','')} - CEP {endereco_info.get('cep','')}"
 		pacientes.append([
-			obj.nome, obj.idade, obj.peso, obj.endereco, obj.referencia, obj.telefone, obj.tratamento, obj.oxigenio, obj.observacoes, obj.evolucao, obj.status,
+			obj.nome, obj.idade, obj.peso, obj.endereco, obj.referencia, obj.telefone, obj.tratamento, obj.oxigenio, obj.oxigenio_litros_min, obj.observacoes, obj.evolucao, obj.status,
 			destino_nome, endereco_completo
 		])
 
@@ -737,24 +737,24 @@ def exportar_pacientes_excel(request):
 		return response
 
 def preview_pacientes(request):
-    from .models import Paciente
-    import pandas as pd
-    enderecos_path = Path(__file__).resolve().parent.parent / 'enderecos_sp.csv'
-    enderecos_df = pd.read_csv(enderecos_path)
-    enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
-    campos = ["nome", "idade", "peso", "endereco", "referencia", "telefone", "tratamento", "oxigenio", "observacoes", "evolucao", "status", "destino_nome", "destino_endereco_completo"]
-    pacientes = []
-    for obj in Paciente.objects.all():
-        destino_nome = getattr(obj, 'referencia', '')
-        endereco_info = enderecos_dict.get(destino_nome, {})
-        endereco_completo = ""
-        if endereco_info:
-            endereco_completo = f"{endereco_info.get('logradouro','')} {endereco_info.get('numero','')}, {endereco_info.get('bairro','')}, {endereco_info.get('municipio','')} - CEP {endereco_info.get('cep','')}"
-        pacientes.append([
-            obj.nome, obj.idade, obj.peso, obj.endereco, obj.referencia, obj.telefone, obj.tratamento, obj.oxigenio, obj.observacoes, obj.evolucao, obj.status,
-            destino_nome, endereco_completo
-        ])
-    return render(request, 'polls/preview_pacientes.html', {'campos': campos, 'pacientes': pacientes})
+	from .models import Paciente
+	import pandas as pd
+	enderecos_path = Path(__file__).resolve().parent.parent / 'enderecos_sp.csv'
+	enderecos_df = pd.read_csv(enderecos_path)
+	enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
+	campos = ["nome", "idade", "peso", "endereco", "referencia", "telefone", "tratamento", "oxigenio", "oxigenio_litros_min", "observacoes", "evolucao", "status", "destino_nome", "destino_endereco_completo"]
+	pacientes = []
+	for obj in Paciente.objects.all():
+		destino_nome = getattr(obj, 'referencia', '')
+		endereco_info = enderecos_dict.get(destino_nome, {})
+		endereco_completo = ""
+		if endereco_info:
+			endereco_completo = f"{endereco_info.get('logradouro','')} {endereco_info.get('numero','')}, {endereco_info.get('bairro','')}, {endereco_info.get('municipio','')} - CEP {endereco_info.get('cep','')}"
+		pacientes.append([
+			obj.nome, obj.idade, obj.peso, obj.endereco, obj.referencia, obj.telefone, obj.tratamento, obj.oxigenio, obj.oxigenio_litros_min, obj.observacoes, obj.evolucao, obj.status,
+			destino_nome, endereco_completo
+		])
+	return render(request, 'polls/preview_pacientes.html', {'campos': campos, 'pacientes': pacientes})
 
 
 def _obter_pastas_dados_recebidos():

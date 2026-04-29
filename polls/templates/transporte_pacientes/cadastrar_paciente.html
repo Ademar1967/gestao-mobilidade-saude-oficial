@@ -296,6 +296,16 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="form-check col-md-2 mb-2">
                 {{ form_web.oxigenio }} {{ form_web.oxigenio.label_tag }}
               </div>
+              <div class="col-md-4 mb-2 js-oxigenio-litros-container" style="display:none;">
+                {{ form_web.oxigenio_litros_min.label_tag }}
+                <div class="input-group">
+                  {{ form_web.oxigenio_litros_min }}
+                  <span class="input-group-text">L/min</span>
+                </div>
+                {% if form_web.oxigenio_litros_min.errors %}
+                  <div class="text-danger small">{{ form_web.oxigenio_litros_min.errors }}</div>
+                {% endif %}
+              </div>
               <div class="form-check col-md-2 mb-2">
                 {{ form_web.maca }} {{ form_web.maca.label_tag }}
               </div>
@@ -500,6 +510,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="text-danger small">{{ form.oxigenio.errors }}</div>
               {% endif %}
             </div>
+            <div class="col-md-4 mb-2 js-oxigenio-litros-container" style="display:none;">
+              {{ form.oxigenio_litros_min.label_tag }}
+              <div class="input-group">
+                {{ form.oxigenio_litros_min }}
+                <span class="input-group-text">L/min</span>
+              </div>
+              {% if form.oxigenio_litros_min.errors %}
+                <div class="text-danger small">{{ form.oxigenio_litros_min.errors }}</div>
+              {% endif %}
+            </div>
             <div class="form-check col-md-2 mb-2">
               {{ form.maca }} {{ form.maca.label_tag }}
               {% if form.maca.errors %}
@@ -585,6 +605,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Máscara para CEP (formato 99999-999)
     $("#id_cep").mask('00000-000');
 
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function atualizarBlocoO2(form) {
+      const checkO2 = form.querySelector('input[name="oxigenio"]');
+      const blocoLitros = form.querySelector('.js-oxigenio-litros-container');
+      const campoLitros = form.querySelector('input[name="oxigenio_litros_min"]');
+      if (!checkO2 || !blocoLitros || !campoLitros) return;
+
+      const mostrar = checkO2.checked;
+      blocoLitros.style.display = mostrar ? '' : 'none';
+      campoLitros.required = mostrar;
+      if (!mostrar) {
+        campoLitros.value = '';
+      }
+    }
+
+    document.querySelectorAll('form').forEach(function(form) {
+      const checkO2 = form.querySelector('input[name="oxigenio"]');
+      if (!checkO2) return;
+      checkO2.addEventListener('change', function() {
+        atualizarBlocoO2(form);
+      });
+      atualizarBlocoO2(form);
+    });
   });
 </script>
 

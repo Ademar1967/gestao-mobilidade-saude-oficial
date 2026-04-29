@@ -216,7 +216,19 @@ class PacienteForm(forms.ModelForm):
         cep = cleaned_data.get('cep')
         latitude = cleaned_data.get('latitude')
         longitude = cleaned_data.get('longitude')
+        oxigenio = cleaned_data.get('oxigenio')
+        oxigenio_litros_min = cleaned_data.get('oxigenio_litros_min')
         logger.info(f"Dados recebidos: rua={rua}, numero={numero}, bairro={bairro}, cidade={cidade}, estado={estado}, cep={cep}, latitude={latitude}, longitude={longitude}")
+
+        # Regra de negocio: se usa O2, exige fluxo em L/min; se nao usa, limpa o campo.
+        if oxigenio:
+            if oxigenio_litros_min is None:
+                self.add_error('oxigenio_litros_min', 'Informe a quantidade de O2 em litros por minuto.')
+            elif oxigenio_litros_min <= 0:
+                self.add_error('oxigenio_litros_min', 'O valor de O2 deve ser maior que zero.')
+        else:
+            cleaned_data['oxigenio_litros_min'] = None
+
         # Validação: endereço detalhado (UF e CEP não obrigatórios)
         if not (rua and numero and bairro and cidade):
             logger.warning("Endereço incompleto!")
@@ -319,6 +331,7 @@ class PacienteForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'peso': forms.NumberInput(attrs={'placeholder': 'Peso (kg)', 'step': '0.01', 'min': '0', 'max': '500', 'style': 'width: 120px;'}),
+            'oxigenio_litros_min': forms.NumberInput(attrs={'placeholder': 'Ex: 2.0', 'step': '0.1', 'min': '0.1'}),
             'rua': forms.TextInput(attrs={'placeholder': 'Rua'}),
             'numero': forms.TextInput(attrs={'placeholder': 'Número'}),
             'bairro': forms.TextInput(attrs={'placeholder': 'Bairro'}),

@@ -32,6 +32,7 @@ class Paciente(models.Model):
     telefone = models.CharField(max_length=20, blank=True)
     tratamento = models.CharField(max_length=100, blank=True)
     oxigenio = models.BooleanField(default=False)
+    oxigenio_litros_min = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, help_text="Fluxo de O2 em litros por minuto")
     observacoes = models.TextField(blank=True)
     evolucao = models.TextField(blank=True)
     status = models.CharField(max_length=30, blank=True)
