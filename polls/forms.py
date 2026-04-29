@@ -173,6 +173,9 @@ class PacienteForm(forms.ModelForm):
             self.fields['latitude'].required = False
         if 'longitude' in self.fields:
             self.fields['longitude'].required = False
+        if 'oxigenio_litros_min' in self.fields:
+            self.fields['oxigenio_litros_min'].widget.attrs['placeholder'] = 'Ex: 2.0 L/min'
+            self.fields['oxigenio_litros_min'].widget.attrs['aria-label'] = 'Litros por minuto de oxigenio'
         if 'cartao_sis' in self.fields:
             self.fields['cartao_sis'].widget.attrs['autocomplete'] = 'off'
         # Placeholders explicativos adicionais
@@ -339,7 +342,7 @@ class PacienteForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'peso': forms.NumberInput(attrs={'placeholder': 'Peso (kg)', 'step': '0.01', 'min': '0', 'max': '500', 'style': 'width: 120px;'}),
-            'oxigenio_litros_min': forms.NumberInput(attrs={'placeholder': 'Ex: 2.0', 'step': '0.1', 'min': '0.1'}),
+            'oxigenio_litros_min': forms.NumberInput(attrs={'placeholder': 'Ex: 2.0 L/min', 'step': '0.1', 'min': '0.1'}),
             'rua': forms.TextInput(attrs={'placeholder': 'Rua'}),
             'numero': forms.TextInput(attrs={'placeholder': 'Número'}),
             'bairro': forms.TextInput(attrs={'placeholder': 'Bairro'}),
