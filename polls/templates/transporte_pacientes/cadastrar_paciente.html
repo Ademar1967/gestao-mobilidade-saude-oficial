@@ -21,32 +21,63 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Destaca campos obrigatórios com erro
-  document.querySelectorAll('.text-danger small').forEach(function(div) {
-    // Tenta encontrar o campo pelo id do erro
-    let campo = null;
-    // Se o erro está dentro de um div logo após o campo
-    if (div.parentElement) {
-      // Procura input, select ou textarea anterior
-      let anterior = div.parentElement.querySelector('input, select, textarea');
-      if (anterior) campo = anterior;
+  // Destaca campos obrigatórios com erro - versão melhorada
+  const errorElements = document.querySelectorAll('.text-danger small, .alert-danger');
+  
+  errorElements.forEach(function(errorDiv) {
+    // Se for um alerta geral (alert-danger), scroll até ele para visibilidade
+    if (errorDiv.classList.contains('alert-danger')) {
+      // Isso vai garantir que o usuário veja o erro
+      return;
     }
-    // Se não encontrou, tenta buscar pelo id do label anterior
+    
+    // Procura todos os campos nas proximidades do erro
+    let campo = null;
+    let parent = errorDiv.parentElement;
+    
+    // Procura em níveis ascendentes
+    let maxLevels = 5;
+    while (parent && maxLevels > 0) {
+      // Tenta encontrar input/select/textarea dentro do parent
+      campo = parent.querySelector('input, select, textarea');
+      if (campo) break;
+      parent = parent.parentElement;
+      maxLevels--;
+    }
+    
+    // Alternativa: busca pelo padrão Django id_<fieldname>
     if (!campo) {
-      let label = div.parentElement.querySelector('label');
-      if (label && label.htmlFor) {
-        campo = document.getElementById(label.htmlFor);
+      const fieldName = errorDiv.getAttribute('data-field') || errorDiv.textContent.toLowerCase();
+      // Procura no formulário todo
+      const form = errorDiv.closest('form');
+      if (form) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        for (let input of inputs) {
+          if (input.name && fieldName.includes(input.name)) {
+            campo = input;
+            break;
+          }
+        }
       }
     }
-    // Busca pelo id padrão Django se ainda não encontrou
-    if (!campo && div.parentElement && div.parentElement.id) {
-      campo = document.getElementById(div.parentElement.id.replace('div_id_', 'id_'));
-    }
+    
     // Aplica destaque se encontrou
     if (campo) {
       campo.classList.add('campo-obrigatorio-erro');
+      // Torna o campo visível scrollando para ele se necessário
+      campo.addEventListener('focus', function() {
+        campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     }
   });
+  
+  // Scroll para o primeiro erro se houver
+  const primeiroErro = document.querySelector('.alert-danger');
+  if (primeiroErro) {
+    setTimeout(function() {
+      primeiroErro.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
 });
 </script>
 {% load crispy_forms_tags %}
@@ -181,12 +212,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {# 1. Feedback de sucesso/erro #}
 {% if messages %}
-  <div class="alert alert-success alert-dismissible fade show" role="alert">
-    {% for message in messages %}
-      {{ message }}
-    {% endfor %}
-    <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
+  {% for message in messages %}
+    {% if message.tags %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="font-size:1.1em; font-weight:600;">
+        {{ message }}
+        <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% else %}
+      <div class="alert alert-info alert-dismissible fade show" role="alert" style="font-size:1.1em; font-weight:600;">
+        {{ message }}
+        <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endif %}
+  {% endfor %}
 {% endif %}
 
 
@@ -353,20 +391,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
     {# --- NOVO FORMULÁRIO VISUAL PREMIUM --- #}
     <form method="post" id="cadastrar-paciente-form" autocomplete="on">
-      {% if form.errors %}
-        <div class="alert alert-danger" role="alert">
-          <strong>Por favor, corrija os erros abaixo:</strong>
-          <ul class="mb-0">
+      {% if form.errors or form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-width:3px; font-size:1.15em; font-weight:600; margin-bottom:25px;">
+          <strong style="font-size:1.2em;">❌ Por favor, corrija os erros abaixo antes de salvar:</strong>
+          <ul class="mb-2 mt-3" style="font-size:1.05em;">
             {% for field in form %}
-              {% for error in field.errors %}
-                <li><b>{{ field.label }}:</b> {{ error }}</li>
-              {% endfor %}
+              {% if field.errors %}
+                {% for error in field.errors %}
+                  <li style="margin-bottom:8px;">
+                    <strong>{{ field.label }} ({{ field.name }}):</strong> 
+                    <span style="color:#d32f2f; font-weight:700;">{{ error }}</span>
+                  </li>
+                {% endfor %}
+              {% endif %}
             {% endfor %}
             {% for error in form.non_field_errors %}
-              <li>{{ error }}</li>
+              <li style="margin-bottom:8px;">
+                <strong>Erro:</strong> 
+                <span style="color:#d32f2f; font-weight:700;">{{ error }}</span>
+              </li>
             {% endfor %}
           </ul>
+          <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const errorAlert = document.querySelector('#cadastrar-paciente-form .alert-danger');
+            if (errorAlert) {
+              setTimeout(function() {
+                errorAlert.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 50);
+            }
+          });
+        </script>
       {% endif %}
       {% csrf_token %}
       <fieldset class="card shadow-sm mb-3">
@@ -571,27 +628,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="submit" class="btn btn-success btn-lg btn-afunda">
           Salvar Paciente
         </button>
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          // Seleciona todos os formulários da página
-          const forms = document.querySelectorAll('form');
-          forms.forEach(function(form) {
-            form.addEventListener('submit', function(e) {
-              // Procura campo acompanhante dentro do formulário
-              let acomp = form.querySelector('[name$="acompanhante"]');
-              // Se não encontrar, tenta buscar por id comum
-              if (!acomp) acomp = form.querySelector('#id_acompanhante');
-              if (acomp && (!acomp.value || acomp.value.trim() === '')) {
-                const confirmado = confirm('Nenhum acompanhante foi indicado. Tem certeza que deseja cadastrar sem acompanhante? Isso pode causar excesso de acomodações.');
-                if (!confirmado) {
-                  e.preventDefault();
-                  acomp.focus();
-                }
-              }
-            });
-          });
-        });
-        </script>
         <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
       </div>
     <script>
