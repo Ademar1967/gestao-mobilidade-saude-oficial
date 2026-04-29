@@ -240,6 +240,8 @@ def cadastrar_transporte(request):
 				messages.success(request, 'Veículo cadastrado com sucesso!')
 			elif hasattr(form, 'veiculo_ja_existia') and form.veiculo_ja_existia:
 				messages.warning(request, 'Atenção: Este veículo já estava cadastrado e foi apenas selecionado. Não é possível cadastrar o mesmo veículo duas vezes.')
+			if hasattr(form, 'alerta_oxigenio_ambulancia') and form.alerta_oxigenio_ambulancia:
+				messages.warning(request, 'Atenção: paciente usuário de O2 deve ser alocado preferencialmente em ambulância. O transporte foi salvo mesmo assim.')
 			messages.success(request, 'Transporte cadastrado com sucesso!')
 			# Após salvar, exibe mensagem e mantém usuário na tela de cadastro
 			form = TransporteForm()  # Limpa o formulário

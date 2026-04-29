@@ -136,13 +136,12 @@ class TransporteForm(forms.ModelForm):
             else:
                 self.add_error('veiculo', 'Informe o identificador da van (campo editável).')
 
-        # Regra operacional: paciente usuario de O2 deve ser alocado exclusivamente em ambulancia.
+        # Regra operacional orientativa: paciente usuario de O2 deve ser priorizado em ambulancia.
         veiculo_selecionado = cleaned_data.get('veiculo')
+        self.alerta_oxigenio_ambulancia = False
         if paciente and getattr(paciente, 'oxigenio', False):
-            if not veiculo_selecionado:
-                self.add_error('veiculo', 'Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.')
-            elif getattr(veiculo_selecionado, 'tipo_veiculo', '') != 'ambulancia':
-                self.add_error('veiculo', 'Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.')
+            if not veiculo_selecionado or getattr(veiculo_selecionado, 'tipo_veiculo', '') != 'ambulancia':
+                self.alerta_oxigenio_ambulancia = True
         return cleaned_data
     class Meta:
         model = Transporte
