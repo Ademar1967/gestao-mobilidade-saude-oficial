@@ -487,15 +487,49 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
+    function initAutocompleteAjax(inputId, endpoint, fallbackSource) {
+      if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.autocomplete !== 'function') {
+        return;
+      }
+      var $input = jQuery('#' + inputId);
+      if (!$input.length) return;
+
+      $input.autocomplete({
+        minLength: 0,
+        source: function(request, response) {
+          var termo = request.term || '';
+          if (termo.length < 2) {
+            response((fallbackSource || []).slice(0, 10));
+            return;
+          }
+          jQuery.getJSON(endpoint + encodeURIComponent(termo), function(data) {
+            var resultados = (data && data.resultados) ? data.resultados : [];
+            var lista = resultados.map(function(item) {
+              return item.nome || item.patrimonio || item.placa || '';
+            }).filter(Boolean);
+            if (lista.length === 0) {
+              response((fallbackSource || []).slice(0, 10));
+              return;
+            }
+            response(lista);
+          }).fail(function() {
+            response((fallbackSource || []).slice(0, 10));
+          });
+        }
+      }).on('focus', function() {
+        jQuery(this).autocomplete('search', this.value || '');
+      });
+    }
+
     ensurePlaceholder('id_veiculo_livre', 'Digite placa ou patrimonio do veiculo');
     ensurePlaceholder('id_condutor_manual', 'Digite o nome do condutor');
     ensurePlaceholder('id_clinica_manual', 'Digite o nome da clinica');
     ensurePlaceholder('id_enfermagem_manual', 'Digite o nome da enfermagem');
 
-    initAutocomplete('id_veiculo_livre', optionsToSource('id_veiculo'));
-    initAutocomplete('id_condutor_manual', optionsToSource('id_condutor'));
-    initAutocomplete('id_clinica_manual', optionsToSource('id_clinica'));
-    initAutocomplete('id_enfermagem_manual', optionsToSource('id_enfermagem'));
+    initAutocompleteAjax('id_veiculo_livre', '/api/veiculos/sugestoes/?q=', optionsToSource('id_veiculo'));
+    initAutocompleteAjax('id_condutor_manual', '/api/condutores/sugestoes/?q=', optionsToSource('id_condutor'));
+    initAutocompleteAjax('id_clinica_manual', '/api/clinicas/sugestoes/?q=', optionsToSource('id_clinica'));
+    initAutocompleteAjax('id_enfermagem_manual', '/api/enfermagem/sugestoes/?q=', optionsToSource('id_enfermagem'));
   });
 </script>
 {% endblock %}

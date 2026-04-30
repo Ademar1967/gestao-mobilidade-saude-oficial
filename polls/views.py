@@ -10,24 +10,29 @@ def buscar_veiculos_sugestoes(request):
 	if len(termo) < 2:
 		return JsonResponse({'sucesso': True, 'resultados': []})
 	queryset = (
-		Veiculo.objects.only('id', 'nome', 'patrimonio', 'placa', 'tipo_veiculo')
+		Veiculo.objects.only('id', 'patrimonio', 'placa', 'tipo_veiculo')
+		.annotate(
+			uso_count=models.Count('transportes'),
+			ultima_data=models.Max('transportes__data_transporte')
+		)
 		.filter(
 			(
 				(models.Q(tipo_veiculo='ambulancia') & models.Q(patrimonio__icontains=termo)) |
-				(models.Q(tipo_veiculo='van') & models.Q(placa__icontains=termo)) |
-				(models.Q(nome__icontains=termo))
+				(models.Q(tipo_veiculo='van') & models.Q(placa__icontains=termo))
 			)
 		)
-		.order_by('tipo_veiculo', 'patrimonio', 'placa')[:8]
+		.order_by('-uso_count', '-ultima_data', 'tipo_veiculo', 'patrimonio', 'placa')[:10]
 	)
 	resultados = []
 	for v in queryset:
+		identificador = v.patrimonio if v.tipo_veiculo == 'ambulancia' else v.placa
 		resultados.append({
 			'id': v.id,
-			'nome': v.nome,
+			'nome': identificador or '',
 			'patrimonio': v.patrimonio or '',
 			'placa': v.placa or '',
 			'tipo': v.tipo_veiculo,
+			'uso_count': v.uso_count or 0,
 		})
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 from django.shortcuts import render
@@ -171,8 +176,12 @@ def buscar_clinicas_sugestoes(request):
 	queryset = (
 		Clinica.objects
 		.only('id', 'nome', 'endereco', 'bairro', 'cidade', 'telefone')
+		.annotate(
+			uso_count=models.Count('transportes'),
+			ultima_data=models.Max('transportes__data_transporte')
+		)
 		.filter(nome__icontains=termo)
-		.order_by('nome')[:8]
+		.order_by('-uso_count', '-ultima_data', 'nome')[:10]
 	)
 	resultados = [
 		{
@@ -182,10 +191,69 @@ def buscar_clinicas_sugestoes(request):
 			'bairro': c.bairro or '',
 			'cidade': c.cidade or '',
 			'telefone': c.telefone or '',
+			'uso_count': c.uso_count or 0,
 		}
 		for c in queryset
 	]
 	audit_logger.info("Sugestoes de clinica consultadas", extra={"termo": termo, "quantidade": len(resultados)})
+	return JsonResponse({'sucesso': True, 'resultados': resultados})
+
+
+@login_required
+@require_GET
+def buscar_condutores_sugestoes(request):
+	from .models import Condutor
+	termo = (request.GET.get('q') or '').strip()
+	if len(termo) < 2:
+		return JsonResponse({'sucesso': True, 'resultados': []})
+
+	queryset = (
+		Condutor.objects.only('id', 'nome')
+		.annotate(
+			uso_count=models.Count('transportes'),
+			ultima_data=models.Max('transportes__data_transporte')
+		)
+		.filter(nome__icontains=termo)
+		.order_by('-uso_count', '-ultima_data', 'nome')[:10]
+	)
+
+	resultados = [
+		{
+			'id': c.id,
+			'nome': c.nome or '',
+			'uso_count': c.uso_count or 0,
+		}
+		for c in queryset
+	]
+	return JsonResponse({'sucesso': True, 'resultados': resultados})
+
+
+@login_required
+@require_GET
+def buscar_enfermagem_sugestoes(request):
+	from .models import Enfermagem
+	termo = (request.GET.get('q') or '').strip()
+	if len(termo) < 2:
+		return JsonResponse({'sucesso': True, 'resultados': []})
+
+	queryset = (
+		Enfermagem.objects.only('id', 'nome')
+		.annotate(
+			uso_count=models.Count('transportes'),
+			ultima_data=models.Max('transportes__data_transporte')
+		)
+		.filter(nome__icontains=termo)
+		.order_by('-uso_count', '-ultima_data', 'nome')[:10]
+	)
+
+	resultados = [
+		{
+			'id': e.id,
+			'nome': e.nome or '',
+			'uso_count': e.uso_count or 0,
+		}
+		for e in queryset
+	]
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 
 
@@ -207,12 +275,16 @@ def buscar_pacientes_sugestoes(request):
 			'oxigenio', 'oxigenio_litros_min', 'maca', 'cadeirante', 'acompanhante',
 			'evolucao', 'observacoes'
 		)
+		.annotate(
+			uso_count=models.Count('transportes'),
+			ultima_data=models.Max('transportes__data_transporte')
+		)
 		.filter(
 			Q(nome__icontains=termo) |
 			Q(telefone__icontains=termo) |
 			Q(cartao_sis__icontains=termo)
 		)
-		.order_by('-id')[:10]
+		.order_by('-uso_count', '-ultima_data', '-id')[:10]
 	)
 
 	resultados = []
@@ -232,6 +304,7 @@ def buscar_pacientes_sugestoes(request):
 			'estado': p.estado or '',
 			'cidade': p.cidade or '',
 			'cep': p.cep or '',
+			'uso_count': p.uso_count or 0,
 			'oxigenio': bool(p.oxigenio),
 			'oxigenio_litros_min': str(p.oxigenio_litros_min) if p.oxigenio_litros_min is not None else '',
 			'maca': bool(p.maca),
