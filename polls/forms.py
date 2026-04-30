@@ -72,6 +72,7 @@ class TransporteForm(forms.ModelForm):
         """Valida campos e permite cadastro automático de veículo manual."""
         cleaned_data = super().clean()
         paciente = cleaned_data.get('paciente')
+        data_transporte = cleaned_data.get('data_transporte')
         veiculo = cleaned_data.get('veiculo')
         van_editavel = self.data.get('van_editavel')
         veiculo_livre = self.data.get('veiculo_livre', '').strip()
@@ -143,6 +144,18 @@ class TransporteForm(forms.ModelForm):
         if paciente and getattr(paciente, 'oxigenio', False):
             if not veiculo_selecionado or getattr(veiculo_selecionado, 'tipo_veiculo', '') != 'ambulancia':
                 self.alerta_oxigenio_ambulancia = True
+
+        # Evita duplicidade operacional: mesmo paciente no mesmo dia.
+        if paciente and data_transporte:
+            qs_duplicado = Transporte.objects.filter(
+                paciente=paciente,
+                data_transporte=data_transporte,
+            )
+            if self.instance and self.instance.pk:
+                qs_duplicado = qs_duplicado.exclude(pk=self.instance.pk)
+            if qs_duplicado.exists():
+                self.add_error('paciente', 'Este paciente ja possui transporte cadastrado para esta data.')
+
         return cleaned_data
     class Meta:
         model = Transporte

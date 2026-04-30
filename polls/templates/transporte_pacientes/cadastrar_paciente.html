@@ -258,6 +258,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="alert alert-light border mb-3" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
       O formulário salva um rascunho automaticamente neste navegador enquanto você digita. Se houver instabilidade ou a página fechar, você poderá restaurar os dados ao abrir novamente.
     </div>
+    <div class="alert alert-info mb-3" style="font-size:0.98em; border-left:5px solid #0d6efd;">
+      Ao digitar no <b>Nome</b> ou <b>Telefone</b>, selecione uma sugestão para preencher automaticamente os dados de paciente já cadastrado.
+    </div>
     {# Formulário colapsável para revisão de dados recebidos via web #}
     {% if importado_via_web %}
     <button class="btn btn-lg btn-danger fw-bold shadow mb-3 px-4" style="font-size:1.18em; border-width:2px; border-radius:8px; letter-spacing:0.5px;" type="button" data-bs-toggle="collapse" data-bs-target="#formularioWeb" aria-expanded="false" aria-controls="formularioWeb">
