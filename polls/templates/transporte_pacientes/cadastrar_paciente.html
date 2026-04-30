@@ -231,16 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
   {% for message in messages %}
     {% if 'success' in message.tags %}
     <script>
-      // Limpa rascunhos do localStorage após salvar com sucesso
-      (function() {
-        var prefixes = ['paciente-draft:', 'paciente-submit-pending:'];
-        Object.keys(localStorage).forEach(function(key) {
-          prefixes.forEach(function(p) { if (key.startsWith(p)) localStorage.removeItem(key); });
-        });
-        Object.keys(sessionStorage).forEach(function(key) {
-          prefixes.forEach(function(p) { if (key.startsWith(p)) sessionStorage.removeItem(key); });
-        });
-      })();
+      // Sinaliza que houve salvamento bem-sucedido para limpar formulário e rascunhos ao carregar
+      window.__pacienteSaveSuccess = true;
     </script>
     {% endif %}
     {% if message.tags %}
@@ -436,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <i class="bi bi-trash me-1"></i> Limpar tudo
       </button>
     </div>
-    <form method="post" id="cadastrar-paciente-form" autocomplete="on">
+    <form method="post" id="cadastrar-paciente-form" autocomplete="off">
       {% if form.errors or form.non_field_errors %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-width:3px; font-size:1.15em; font-weight:600; margin-bottom:25px;">
           <strong style="font-size:1.2em;">❌ Por favor, corrija os erros abaixo antes de salvar:</strong>
@@ -808,6 +800,13 @@ document.addEventListener('DOMContentLoaded', function() {
       return pendingPrefix + form.id;
     }
 
+    function clearDraftAndPending(form) {
+      const draftKey = buildDraftKey(form);
+      const pendingKey = buildPendingKey(form);
+      localStorage.removeItem(draftKey);
+      sessionStorage.removeItem(pendingKey);
+    }
+
     function collectFormData(form) {
       const payload = {};
       form.querySelectorAll('input, select, textarea').forEach(function(field) {
@@ -865,6 +864,15 @@ document.addEventListener('DOMContentLoaded', function() {
       };
     }
 
+    if (window.__pacienteSaveSuccess) {
+      formIds.forEach(function(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        clearDraftAndPending(form);
+        form.reset();
+      });
+    }
+
     formIds.forEach(function(formId) {
       const form = document.getElementById(formId);
       if (!form) return;
@@ -882,8 +890,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const hasValidationErrors = Boolean(form.querySelector('.alert-danger, .text-danger'));
       if (sessionStorage.getItem(pendingKey) === '1' && !hasValidationErrors) {
-        localStorage.removeItem(draftKey);
-        sessionStorage.removeItem(pendingKey);
+        clearDraftAndPending(form);
       }
 
       const existingDraft = localStorage.getItem(draftKey);
@@ -907,8 +914,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.setItem(pendingKey, '1');
       });
       form.addEventListener('reset', function() {
-        localStorage.removeItem(draftKey);
-        sessionStorage.removeItem(pendingKey);
+        clearDraftAndPending(form);
       });
     });
   });
