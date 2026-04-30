@@ -19,6 +19,7 @@ urlpatterns = [
     path('transportes/cadastrar/', views.cadastrar_transporte, name='cadastrar_transporte'),
     path('transportes/', views.listar_transportes, name='listar_transportes'),
     path('transportes/excluir/<int:transporte_id>/', views.excluir_transporte, name='excluir_transporte'),
+    path('api/pacientes/sugestoes/', views.buscar_pacientes_sugestoes, name='buscar_pacientes_sugestoes'),
     path('api/clinicas/sugestoes/', views.buscar_clinicas_sugestoes, name='buscar_clinicas_sugestoes'),
     path('api/clinica/<int:clinica_id>/', views.obter_dados_clinica, name='obter_dados_clinica'),
     path('api/veiculos/sugestoes/', views.buscar_veiculos_sugestoes, name='buscar_veiculos_sugestoes'),

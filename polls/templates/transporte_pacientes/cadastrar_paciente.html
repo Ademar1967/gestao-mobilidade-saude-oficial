@@ -947,6 +947,81 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 </script>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.autocomplete !== 'function') return;
+
+    function endpointPaciente(term) {
+      return '/api/pacientes/sugestoes/?q=' + encodeURIComponent(term || '');
+    }
+
+    function setValue(id, value) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === 'checkbox') {
+        el.checked = Boolean(value);
+      } else {
+        el.value = value == null ? '' : String(value);
+      }
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function aplicarPaciente(item) {
+      setValue('id_nome', item.nome);
+      setValue('id_ddd', item.ddd);
+      setValue('id_telefone', item.telefone);
+      setValue('id_cartao_sis', item.cartao_sis);
+      setValue('id_idade', item.idade);
+      setValue('id_peso', item.peso);
+      setValue('id_referencia', item.referencia);
+      setValue('id_rua', item.rua);
+      setValue('id_numero', item.numero);
+      setValue('id_bairro', item.bairro);
+      setValue('id_estado', item.estado);
+      setValue('id_cidade', item.cidade);
+      setValue('id_cep', item.cep);
+      setValue('id_oxigenio', item.oxigenio);
+      setValue('id_oxigenio_litros_min', item.oxigenio_litros_min);
+      setValue('id_maca', item.maca);
+      setValue('id_cadeirante', item.cadeirante);
+      setValue('id_acompanhante', item.acompanhante);
+      setValue('id_evolucao', item.evolucao);
+      setValue('id_observacoes', item.observacoes);
+    }
+
+    function initAutocompletePaciente(selector) {
+      const $input = jQuery(selector);
+      if (!$input.length) return;
+
+      $input.autocomplete({
+        minLength: 2,
+        source: function(request, response) {
+          jQuery.getJSON(endpointPaciente(request.term), function(data) {
+            const resultados = (data && data.resultados) ? data.resultados : [];
+            response(resultados.map(function(item) {
+              return {
+                label: (item.nome || 'Sem nome') + (item.telefone ? ' - ' + item.telefone : ''),
+                value: selector === '#id_nome' ? (item.nome || '') : (item.telefone || ''),
+                data: item
+              };
+            }));
+          });
+        },
+        select: function(event, ui) {
+          if (!ui.item || !ui.item.data) return;
+          const ok = window.confirm('Deseja preencher o formulário com os dados deste paciente já cadastrado?');
+          if (!ok) return;
+          aplicarPaciente(ui.item.data);
+        }
+      });
+    }
+
+    initAutocompletePaciente('#id_nome');
+    initAutocompletePaciente('#id_telefone');
+  });
+</script>
+
 
   </div>
 </div>

@@ -189,6 +189,61 @@ def buscar_clinicas_sugestoes(request):
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 
 
+@login_required
+@require_GET
+def buscar_pacientes_sugestoes(request):
+	"""Retorna pacientes para autocomplete e reaproveitamento de cadastro."""
+	from django.db.models import Q
+	from .models import Paciente
+
+	termo = (request.GET.get('q') or '').strip()
+	if len(termo) < 2:
+		return JsonResponse({'sucesso': True, 'resultados': []})
+
+	queryset = (
+		Paciente.objects.only(
+			'id', 'nome', 'ddd', 'telefone', 'cartao_sis', 'idade', 'peso',
+			'referencia', 'rua', 'numero', 'bairro', 'estado', 'cidade', 'cep',
+			'oxigenio', 'oxigenio_litros_min', 'maca', 'cadeirante', 'acompanhante',
+			'evolucao', 'observacoes'
+		)
+		.filter(
+			Q(nome__icontains=termo) |
+			Q(telefone__icontains=termo) |
+			Q(cartao_sis__icontains=termo)
+		)
+		.order_by('-id')[:10]
+	)
+
+	resultados = []
+	for p in queryset:
+		resultados.append({
+			'id': p.id,
+			'nome': p.nome or '',
+			'ddd': p.ddd or '',
+			'telefone': p.telefone or '',
+			'cartao_sis': p.cartao_sis or '',
+			'idade': p.idade or '',
+			'peso': str(p.peso) if p.peso is not None else '',
+			'referencia': p.referencia or '',
+			'rua': p.rua or '',
+			'numero': p.numero or '',
+			'bairro': p.bairro or '',
+			'estado': p.estado or '',
+			'cidade': p.cidade or '',
+			'cep': p.cep or '',
+			'oxigenio': bool(p.oxigenio),
+			'oxigenio_litros_min': str(p.oxigenio_litros_min) if p.oxigenio_litros_min is not None else '',
+			'maca': bool(p.maca),
+			'cadeirante': bool(p.cadeirante),
+			'acompanhante': bool(p.acompanhante),
+			'evolucao': p.evolucao or '',
+			'observacoes': p.observacoes or '',
+		})
+
+	return JsonResponse({'sucesso': True, 'resultados': resultados})
+
+
 def obter_dados_clinica(request, clinica_id):
 	"""API que retorna dados da clÃ­nica em JSON para prÃ©-preencher endereÃ§o"""
 	from django.http import JsonResponse
