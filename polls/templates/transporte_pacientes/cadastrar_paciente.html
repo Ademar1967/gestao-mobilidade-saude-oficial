@@ -229,6 +229,20 @@ document.addEventListener('DOMContentLoaded', function() {
 {# 1. Feedback de sucesso/erro #}
 {% if messages %}
   {% for message in messages %}
+    {% if 'success' in message.tags %}
+    <script>
+      // Limpa rascunhos do localStorage após salvar com sucesso
+      (function() {
+        var prefixes = ['paciente-draft:', 'paciente-submit-pending:'];
+        Object.keys(localStorage).forEach(function(key) {
+          prefixes.forEach(function(p) { if (key.startsWith(p)) localStorage.removeItem(key); });
+        });
+        Object.keys(sessionStorage).forEach(function(key) {
+          prefixes.forEach(function(p) { if (key.startsWith(p)) sessionStorage.removeItem(key); });
+        });
+      })();
+    </script>
+    {% endif %}
     {% if message.tags %}
       <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="font-size:1.1em; font-weight:600;">
         {{ message }}
