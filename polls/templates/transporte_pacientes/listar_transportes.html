@@ -345,10 +345,10 @@ window.onbeforeprint = function() { removePrintButtons(); };
             }
             htmlTabela += '</table>';
             htmlTabela = htmlTabela.replace(/fecharModalPreviaFora/gi, '');
-            var win = window.open('', '', 'width=1000,height=800');
+            var win = window.open('', '', 'width=1400,height=900');
             win.document.write('<html><head><title>Imprimir Tabela</title>');
-            win.document.write('<style>body{font-family:Arial,sans-serif;margin:10px;}table{width:100%;border-collapse:collapse;table-layout:fixed;}th,td{border:1.5px solid #222;padding:6px 5px;font-size:13px;word-break:break-word;white-space:normal;overflow:visible;text-overflow:unset;}th{background:#1976d2;color:#fff;font-size:14px;}tr:nth-child(even) td{background:#f4f8fb;}tr:nth-child(odd) td{background:#fff;}@media print{body{margin:0;}@page{size:landscape;margin:10mm;}}');
-            win.document.write('</style></head><body>');
+            win.document.write('<style>body{font-family:Arial,sans-serif;margin:8px;}table{width:100%;border-collapse:collapse;table-layout:auto;}th,td{border:1.2px solid #222;padding:4px 4px;font-size:11.5px;line-height:1.25;word-break:break-word;white-space:normal;overflow:visible;text-overflow:unset;vertical-align:top;}th{background:#1976d2;color:#fff;font-size:12px;}th:nth-child(1),td:nth-child(1){min-width:66px;text-align:center;}th:nth-child(7),td:nth-child(7){min-width:52px;text-align:center;}th:nth-child(8),td:nth-child(8){min-width:160px;}tr:nth-child(even) td{background:#f4f8fb;}tr:nth-child(odd) td{background:#fff;}@media print{body{margin:0;}@page{size:A4 landscape;margin:6mm;}}</style>');
+            win.document.write('</head><body>');
             win.document.write('<div style="margin-bottom:14px; background:#fffbe7; border:1.5px solid #fbc02d; border-radius:7px; padding:10px 18px; font-size:17px; color:#b26a00; text-align:center; font-weight:bold;">Atenção: confira todos os dados antes de imprimir. <span style="color:#d32f2f;">Destaque qualquer observação importante!</span></div>');
             win.document.write(htmlTabela);
             win.document.write('</body></html>');
