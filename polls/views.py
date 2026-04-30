@@ -216,6 +216,7 @@ def obter_dados_clinica(request, clinica_id):
 
 def cadastrar_transporte(request):
 	"""Cadastra um novo transporte; aceita paciente_id via GET para pre-preencher o formulario."""
+	from django.contrib import messages
 	from .models import Paciente
 	paciente_id = request.GET.get('paciente_id')
 	from .models import Paciente
@@ -235,7 +236,6 @@ def cadastrar_transporte(request):
 					"usuario": getattr(request.user, "username", "anonimo") if hasattr(request, "user") and request.user.is_authenticated else "anonimo",
 				},
 			)
-			from django.contrib import messages
 			if hasattr(form, 'novo_veiculo_cadastrado') and form.novo_veiculo_cadastrado:
 				messages.success(request, 'Veículo cadastrado com sucesso!')
 			elif hasattr(form, 'veiculo_ja_existia') and form.veiculo_ja_existia:
