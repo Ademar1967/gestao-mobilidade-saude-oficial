@@ -344,7 +344,7 @@ class PacienteForm(forms.ModelForm):
         model = Paciente
         fields = '__all__'
         widgets = {
-            'peso': forms.NumberInput(attrs={'placeholder': 'Peso (kg)', 'step': '0.01', 'min': '0', 'max': '500', 'style': 'width: 120px;'}),
+            'peso': forms.NumberInput(attrs={'placeholder': 'Peso (kg)', 'step': '0.01', 'min': '0', 'style': 'width: 120px;'}),
             'oxigenio_litros_min': forms.NumberInput(attrs={'placeholder': 'Ex: 2.0 L/min', 'step': '0.1', 'min': '0.1'}),
             'rua': forms.TextInput(attrs={'placeholder': 'Rua'}),
             'numero': forms.TextInput(attrs={'placeholder': 'Número'}),

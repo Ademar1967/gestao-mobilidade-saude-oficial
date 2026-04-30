@@ -624,6 +624,10 @@ document.addEventListener('DOMContentLoaded', function() {
       </fieldset>
       {{ form.latitude }}
       {{ form.longitude }}
+      <div id="alerta-validacao-manual" class="alert alert-danger d-none" role="alert" style="border-width:3px; font-size:1.08em; font-weight:600; margin-top:12px;">
+        <strong>Não foi possível salvar. Corrija os campos destacados:</strong>
+        <ul class="mb-0 mt-2" id="lista-erros-validacao-manual"></ul>
+      </div>
       <div class="d-flex gap-2 mt-3">
         <button type="submit" class="btn btn-success btn-lg btn-afunda">
           Salvar Paciente
@@ -699,6 +703,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    const formManual = document.getElementById('cadastrar-paciente-form');
+    const alertaValidacao = document.getElementById('alerta-validacao-manual');
+    const listaErros = document.getElementById('lista-erros-validacao-manual');
+
+    function obterLabelDoCampo(campo) {
+      if (!campo) return 'Campo inválido';
+      const id = campo.id;
+      if (!id) return campo.name || 'Campo inválido';
+      const label = document.querySelector('label[for="' + id + '"]');
+      if (label && label.textContent) {
+        return label.textContent.replace('*', '').trim();
+      }
+      return campo.name || 'Campo inválido';
+    }
+
+    if (formManual && alertaValidacao && listaErros) {
+      formManual.addEventListener('submit', function(evento) {
+        alertaValidacao.classList.add('d-none');
+        listaErros.innerHTML = '';
+        formManual.querySelectorAll('.campo-obrigatorio-erro').forEach(function(el) {
+          el.classList.remove('campo-obrigatorio-erro');
+        });
+
+        const invalidos = Array.from(formManual.querySelectorAll(':invalid'));
+        if (invalidos.length > 0) {
+          evento.preventDefault();
+          const errosUnicos = new Set();
+          invalidos.forEach(function(campo) {
+            campo.classList.add('campo-obrigatorio-erro');
+            const label = obterLabelDoCampo(campo);
+            const mensagem = campo.validationMessage || 'Valor inválido.';
+            errosUnicos.add(label + ': ' + mensagem);
+          });
+
+          Array.from(errosUnicos).forEach(function(msg) {
+            const li = document.createElement('li');
+            li.textContent = msg;
+            listaErros.appendChild(li);
+          });
+
+          alertaValidacao.classList.remove('d-none');
+          alertaValidacao.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          invalidos[0].focus();
+        }
+      });
+    }
+
     const formIds = ['cadastrar-paciente-form', 'revisao-paciente-web-form'];
     const draftPrefix = 'paciente-draft:';
     const pendingPrefix = 'paciente-submit-pending:';
