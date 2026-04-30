@@ -455,4 +455,47 @@ document.addEventListener('DOMContentLoaded', function() {
     sessionStorage.setItem(key, '1');
   });
 </script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function ensurePlaceholder(id, text) {
+      var el = document.getElementById(id);
+      if (el && !el.getAttribute('placeholder')) {
+        el.setAttribute('placeholder', text);
+      }
+    }
+
+    function optionsToSource(selectId) {
+      var select = document.getElementById(selectId);
+      if (!select) return [];
+      return Array.from(select.options)
+        .map(function(opt) { return (opt.textContent || '').trim(); })
+        .filter(function(txt) { return txt && txt !== '---------'; });
+    }
+
+    function initAutocomplete(inputId, source) {
+      if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.autocomplete !== 'function') {
+        return;
+      }
+      var $input = jQuery('#' + inputId);
+      if (!$input.length) return;
+      $input.autocomplete({
+        source: source,
+        minLength: 0
+      }).on('focus', function() {
+        jQuery(this).autocomplete('search', this.value || '');
+      });
+    }
+
+    ensurePlaceholder('id_veiculo_livre', 'Digite placa ou patrimonio do veiculo');
+    ensurePlaceholder('id_condutor_manual', 'Digite o nome do condutor');
+    ensurePlaceholder('id_clinica_manual', 'Digite o nome da clinica');
+    ensurePlaceholder('id_enfermagem_manual', 'Digite o nome da enfermagem');
+
+    initAutocomplete('id_veiculo_livre', optionsToSource('id_veiculo'));
+    initAutocomplete('id_condutor_manual', optionsToSource('id_condutor'));
+    initAutocomplete('id_clinica_manual', optionsToSource('id_clinica'));
+    initAutocomplete('id_enfermagem_manual', optionsToSource('id_enfermagem'));
+  });
+</script>
 {% endblock %}
