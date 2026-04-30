@@ -477,6 +477,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if form.nome.errors %}
                   <div class="text-danger small">{{ form.nome.errors }}</div>
                 {% endif %}
+                <div id="painel-sugestao-paciente" class="mt-2 p-3 border border-success rounded shadow-sm" style="display:none; background:#f0fff4;">
+                  <div class="fw-bold text-success mb-1"><i class="bi bi-person-check-fill me-1"></i> Paciente encontrado!</div>
+                  <div id="sugestao-info" class="small text-secondary mb-2" style="line-height:1.6;"></div>
+                  <div class="d-flex gap-2">
+                    <button type="button" id="btn-carregar-sugestao" class="btn btn-success btn-sm btn-afunda">
+                      <i class="bi bi-check2-circle me-1"></i> Carregar dados desta sugestão
+                    </button>
+                    <button type="button" id="btn-cancelar-sugestao" class="btn btn-outline-secondary btn-sm btn-afunda">
+                      <i class="bi bi-x-lg me-1"></i> Cancelar
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="col-md-2 mb-2">
                 {{ form.cartao_sis.label_tag }}
@@ -993,6 +1005,47 @@ document.addEventListener('DOMContentLoaded', function() {
       setValue('id_observacoes', item.observacoes);
     }
 
+    let sugestaoAtual = null;
+
+    function mostrarPainelSugestao(item) {
+      sugestaoAtual = item;
+      const info = [
+        item.nome ? '<strong>Nome:</strong> ' + item.nome : '',
+        item.telefone ? '<strong>Telefone:</strong> (' + (item.ddd || '') + ') ' + item.telefone : '',
+        item.cartao_sis ? '<strong>Cartão SIS:</strong> ' + item.cartao_sis : '',
+        item.idade ? '<strong>Idade:</strong> ' + item.idade + ' anos' : '',
+        item.rua ? '<strong>Endereço:</strong> ' + item.rua + (item.numero ? ', ' + item.numero : '') + (item.bairro ? ' - ' + item.bairro : '') : '',
+      ].filter(Boolean).join('<br>');
+      document.getElementById('sugestao-info').innerHTML = info;
+      document.getElementById('painel-sugestao-paciente').style.display = 'block';
+    }
+
+    function esconderPainelSugestao() {
+      document.getElementById('painel-sugestao-paciente').style.display = 'none';
+      sugestaoAtual = null;
+    }
+
+    document.getElementById('btn-carregar-sugestao').addEventListener('click', function() {
+      if (sugestaoAtual) {
+        aplicarPaciente(sugestaoAtual);
+        esconderPainelSugestao();
+        // Feedback rápido no botão
+        const btn = document.getElementById('btn-carregar-sugestao');
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Dados carregados!';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-secondary');
+        setTimeout(function() {
+          btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Carregar dados desta sugestão';
+          btn.classList.remove('btn-secondary');
+          btn.classList.add('btn-success');
+        }, 2000);
+      }
+    });
+
+    document.getElementById('btn-cancelar-sugestao').addEventListener('click', function() {
+      esconderPainelSugestao();
+    });
+
     function initAutocompletePaciente(selector) {
       const $input = jQuery(selector);
       if (!$input.length) return;
@@ -1004,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const resultados = (data && data.resultados) ? data.resultados : [];
             response(resultados.map(function(item) {
               return {
-                label: (item.nome || 'Sem nome') + (item.telefone ? ' - ' + item.telefone : ''),
+                label: (item.nome || 'Sem nome') + (item.telefone ? ' - (' + (item.ddd || '') + ') ' + item.telefone : ''),
                 value: selector === '#id_nome' ? (item.nome || '') : (item.telefone || ''),
                 data: item
               };
@@ -1013,9 +1066,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         select: function(event, ui) {
           if (!ui.item || !ui.item.data) return;
-          const ok = window.confirm('Deseja preencher o formulário com os dados deste paciente já cadastrado?');
-          if (!ok) return;
-          aplicarPaciente(ui.item.data);
+          mostrarPainelSugestao(ui.item.data);
         }
       });
     }
