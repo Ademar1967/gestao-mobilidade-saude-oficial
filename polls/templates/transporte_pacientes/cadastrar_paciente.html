@@ -652,24 +652,47 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
   $(document).ready(function() {
-    // Proteção: só aplica máscara se jquery.mask estiver disponível
+    function aplicarMascaraTelefoneNativa(input) {
+      if (!input) return;
+      input.addEventListener('input', function() {
+        const digits = (input.value || '').replace(/\D/g, '').slice(0, 11);
+        if (digits.length <= 8) {
+          input.value = digits.replace(/(\d{4})(\d{0,4})/, '$1-$2').replace(/-$/, '');
+        } else if (digits.length === 9) {
+          input.value = digits.replace(/(\d{5})(\d{0,4})/, '$1-$2').replace(/-$/, '');
+        } else if (digits.length === 10) {
+          input.value = digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+        } else {
+          input.value = digits.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+        }
+      });
+    }
+
+    function aplicarMascaraCepNativa(input) {
+      if (!input) return;
+      input.addEventListener('input', function() {
+        const digits = (input.value || '').replace(/\D/g, '').slice(0, 8);
+        input.value = digits.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '');
+      });
+    }
+
+    // Preferência: plugin jQuery Mask; fallback: máscara nativa sem erro no console
     if (typeof $.fn.mask === 'function') {
-      // Máscara para telefone (formato 99999-9999 ou 9999-9999)
       try {
         $("#id_telefone").mask(function(val) {
           return val.replace(/\D/g, '').length === 9 ? '00000-0000' : '0000-00009';
         });
       } catch(e) {
-        console.warn('Aviso: Máscara de telefone não disponível', e);
+        aplicarMascaraTelefoneNativa(document.getElementById('id_telefone'));
       }
-      // Máscara para CEP (formato 99999-999)
       try {
         $("#id_cep").mask('00000-000');
       } catch(e) {
-        console.warn('Aviso: Máscara de CEP não disponível', e);
+        aplicarMascaraCepNativa(document.getElementById('id_cep'));
       }
     } else {
-      console.warn('Aviso: jQuery Mask plugin não carregou corretamente');
+      aplicarMascaraTelefoneNativa(document.getElementById('id_telefone'));
+      aplicarMascaraCepNativa(document.getElementById('id_cep'));
     }
   });
 </script>
