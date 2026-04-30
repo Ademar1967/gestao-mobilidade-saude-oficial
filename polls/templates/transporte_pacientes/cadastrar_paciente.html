@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', function() {
             response(resultados.map(function(item) {
               return {
                 label: (item.nome || 'Sem nome') + (item.telefone ? ' - (' + (item.ddd || '') + ') ' + item.telefone : ''),
-                value: selector === '#id_nome' ? (item.nome || '') : (item.telefone || ''),
+                value: selector.includes('id_nome') ? (item.nome || '') : (item.telefone || ''),
                 data: item
               };
             }));
@@ -1071,8 +1071,8 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    initAutocompletePaciente('#id_nome');
-    initAutocompletePaciente('#id_telefone');
+    initAutocompletePaciente('#cadastrar-paciente-form #id_nome');
+    initAutocompletePaciente('#cadastrar-paciente-form #id_telefone');
   });
 </script>
 
