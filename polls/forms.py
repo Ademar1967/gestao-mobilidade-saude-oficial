@@ -4,6 +4,7 @@ from .models import Transporte, Paciente, Veiculo, Condutor, Clinica, Enfermagem
 import requests
 import re
 import sys
+import os
 import unicodedata
 
 # Logging para debug de cadastro de paciente
