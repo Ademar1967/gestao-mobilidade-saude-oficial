@@ -210,6 +210,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <h2 class="mb-3 mt-2" style="font-weight:700; color:#1976d2;">Cadastro e Gerenciamento de Pacientes</h2>
 
+<div class="mb-3" style="display:flex; justify-content:flex-start;">
+  <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-lg btn-afunda btn-ir-transportes" style="background:#0b8043; color:#fff; font-weight:700; border:1px solid #076637; box-shadow:0 5px 0 #05502b; transition:transform .08s ease, box-shadow .08s ease;">
+    <i class="bi bi-list-check me-2"></i>Ir para Lista de Transportes Agendados
+  </a>
+</div>
+<style>
+  .btn-ir-transportes:hover {
+    background: #0a6f3b !important;
+    color: #fff !important;
+  }
+  .btn-ir-transportes:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #05502b !important;
+  }
+</style>
+
 {# 1. Feedback de sucesso/erro #}
 {% if messages %}
   {% for message in messages %}
