@@ -1,5 +1,6 @@
 from django.shortcuts import redirect
 from django.conf import settings
+from django.http import JsonResponse
 
 # URLs que ficam abertas sem login (login, logout, admin, webhook WhatsApp, API token)
 URLS_PUBLICAS = [
@@ -23,7 +24,12 @@ class LoginObrigatorioMiddleware:
         for url in URLS_PUBLICAS:
             if path.startswith(url):
                 return self.get_response(request)
-        # Se não autenticado, redireciona para login
+
         if not request.user.is_authenticated:
+            # Para endpoints de API, retorna JSON 401 em vez de HTML de login.
+            # Isso evita quebrar autocomplete que espera resposta JSON.
+            if path.startswith('/api/'):
+                return JsonResponse({'sucesso': False, 'erro': 'nao_autenticado'}, status=401)
             return redirect(f"{settings.LOGIN_URL}?next={path}")
+
         return self.get_response(request)

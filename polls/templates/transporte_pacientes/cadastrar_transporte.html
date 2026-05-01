@@ -596,7 +596,11 @@ document.addEventListener('DOMContentLoaded', function() {
               return;
             }
             response(unicos);
-          }).fail(function() {
+          }).fail(function(jqXHR) {
+            if (jqXHR && jqXHR.status === 401) {
+              window.location.href = '/login/?next=' + encodeURIComponent(window.location.pathname);
+              return;
+            }
             response((fallbackFiltrado.length ? fallbackFiltrado : fallback).slice(0, 10));
           });
         }
