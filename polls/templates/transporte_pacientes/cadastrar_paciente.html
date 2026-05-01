@@ -108,23 +108,44 @@ document.addEventListener('DOMContentLoaded', function() {
 {% block content %}
 
 
-<div class="alert mb-3" style="background:#fffbe6; border:2px solid #ffe58f; color:#ad6800; font-size:1.18em; font-weight:600; border-radius:10px; box-shadow:0 2px 8px #ffe58f55;">
-  <div style="display:flex; align-items:center; gap:14px;">
-    <span style="font-size:2em;">&#128202;</span>
-    <div>
-      <span style="color:#ad6800;">Pacientes:</span> <b>{{ total_pacientes }}</b>
-      &nbsp;|&nbsp;
-      <span style="color:#ad6800;">Acompanhantes:</span> <b>{{ total_acompanhantes }}</b>
-      &nbsp;|&nbsp;
-      <span style="color:#d84315; font-weight:bold;">Total geral:</span> <b style="font-size:1.22em; color:#d84315;">{{ total_geral }}</b>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-4">
+    <div class="card text-center shadow-sm border-0" style="background:linear-gradient(135deg,#e3f2fd,#bbdefb); border-radius:12px;">
+      <div class="card-body py-3">
+        <div style="font-size:2rem;">&#128101;</div>
+        <div class="fw-bold" style="font-size:1.6rem; color:#1565c0;">{{ total_pacientes }}</div>
+        <div style="font-size:0.95rem; color:#1976d2; font-weight:600;">Pacientes</div>
+      </div>
     </div>
   </div>
-  <div style="margin-top:8px; padding:8px 0 0 2.5em;">
-    <span style="color:#d84315; font-size:1.08em; font-weight:bold; background:#fff0f0; border-radius:5px; padding:3px 10px;">
-      &#9888;&#65039; Evite excesso de acomodações! Monitore o total geral antes de novos cadastros.
-    </span>
+  <div class="col-6 col-md-4">
+    <div class="card text-center shadow-sm border-0" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9); border-radius:12px;">
+      <div class="card-body py-3">
+        <div style="font-size:2rem;">&#129489;&#8205;&#129328;</div>
+        <div class="fw-bold" style="font-size:1.6rem; color:#2e7d32;">{{ total_acompanhantes }}</div>
+        <div style="font-size:0.95rem; color:#388e3c; font-weight:600;">Acompanhantes</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card text-center shadow-sm border-0" style="background:linear-gradient(135deg,{% if total_geral >= 180 %}#ffebee,#ffcdd2{% else %}#fff8e1,#ffecb3{% endif %}); border-radius:12px;">
+      <div class="card-body py-3">
+        <div style="font-size:2rem;">&#128202;</div>
+        <div class="fw-bold" style="font-size:1.6rem; color:{% if total_geral >= 180 %}#c62828{% else %}#e65100{% endif %};">{{ total_geral }}</div>
+        <div style="font-size:0.95rem; color:{% if total_geral >= 180 %}#b71c1c{% else %}#f57c00{% endif %}; font-weight:600;">
+          Total Geral
+          {% if total_geral >= 180 %}<span class="ms-1">&#9888;&#65039; Próximo do limite!</span>{% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+{% if total_geral >= 150 %}
+<div class="alert alert-warning d-flex align-items-center py-2 mb-3" style="border-left:5px solid #f57c00;">
+  <i class="bi bi-exclamation-triangle-fill me-2" style="font-size:1.3rem;"></i>
+  <span>Atenção: <b>{{ total_geral }} acomodações</b> ocupadas. Monitore o total antes de novos cadastros para evitar excesso.</span>
+</div>
+{% endif %}
 
 <div class="alert alert-primary d-flex align-items-center mb-3" style="font-size:1.12em;">
   <button class="btn btn-info btn-sm mt-2 btn-afunda me-auto" type="button" data-bs-toggle="collapse" data-bs-target="#instrucoesTopo" aria-expanded="false" aria-controls="instrucoesTopo" id="btn-instrucoes">
@@ -1101,6 +1122,92 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') {
           e.preventDefault();
           document.getElementById('modal-busca-btn').click();
+        }
+      });
+      // Busca automática ao digitar dentro do modal (debounce 350ms)
+      var _debounceModal = null;
+      inputModal.addEventListener('input', function() {
+        clearTimeout(_debounceModal);
+        var termo = inputModal.value.trim();
+        if (termo.length < 2) return;
+        _debounceModal = setTimeout(function() { buscarPacientes(termo); }, 350);
+      });
+    }
+
+    // Autocomplete direto no campo Nome do formulário principal (sem precisar clicar botão)
+    var inputNome = document.getElementById('id_nome');
+    var _debounceNome = null;
+    var _dropdownNome = null;
+
+    function criarDropdownNome() {
+      if (_dropdownNome) return _dropdownNome;
+      _dropdownNome = document.createElement('div');
+      _dropdownNome.id = 'autocomplete-nome-dropdown';
+      _dropdownNome.style.cssText = 'position:absolute; z-index:3000; background:#fff; border:1px solid #b0bec5; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,0.13); max-height:320px; overflow-y:auto; width:100%;';
+      inputNome.parentNode.style.position = 'relative';
+      inputNome.parentNode.appendChild(_dropdownNome);
+      return _dropdownNome;
+    }
+
+    function fecharDropdownNome() {
+      if (_dropdownNome) { _dropdownNome.innerHTML = ''; _dropdownNome.style.display = 'none'; }
+    }
+
+    if (inputNome) {
+      inputNome.addEventListener('input', function() {
+        clearTimeout(_debounceNome);
+        var termo = inputNome.value.trim();
+        if (termo.length < 2) { fecharDropdownNome(); return; }
+        _debounceNome = setTimeout(function() {
+          fetch('/api/pacientes/sugestoes/?q=' + encodeURIComponent(termo))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              var lista = (data && data.resultados) ? data.resultados : [];
+              var dd = criarDropdownNome();
+              if (lista.length === 0) {
+                dd.innerHTML = '<div class="px-3 py-2 text-muted small">Nenhum paciente encontrado</div>';
+                dd.style.display = 'block';
+                return;
+              }
+              var html = '';
+              lista.forEach(function(item, idx) {
+                var linha1 = item.nome || '';
+                var linha2 = [
+                  item.telefone ? '(' + (item.ddd || '') + ') ' + item.telefone : '',
+                  item.idade ? item.idade + ' anos' : '',
+                  item.bairro || '',
+                ].filter(Boolean).join(' · ');
+                html += '<div class="autocomplete-nome-item px-3 py-2" style="cursor:pointer; border-bottom:1px solid #f0f0f0;" data-idx="' + idx + '">';
+                html += '<div class="fw-bold small">' + linha1 + '</div>';
+                if (linha2) html += '<div class="text-muted" style="font-size:0.82rem;">' + linha2 + '</div>';
+                html += '</div>';
+              });
+              dd.innerHTML = html;
+              dd.style.display = 'block';
+              window._sugestoesNome = lista;
+              // hover effect
+              dd.querySelectorAll('.autocomplete-nome-item').forEach(function(el) {
+                el.addEventListener('mouseenter', function() { el.style.background = '#e3f2fd'; });
+                el.addEventListener('mouseleave', function() { el.style.background = ''; });
+                el.addEventListener('mousedown', function(e) {
+                  e.preventDefault();
+                  var idx = parseInt(el.getAttribute('data-idx'));
+                  var item = window._sugestoesNome[idx];
+                  if (item) { aplicarPaciente(item); fecharDropdownNome(); }
+                });
+              });
+            })
+            .catch(function() { fecharDropdownNome(); });
+        }, 350);
+      });
+
+      inputNome.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') fecharDropdownNome();
+      });
+
+      document.addEventListener('mousedown', function(e) {
+        if (_dropdownNome && !inputNome.contains(e.target) && !_dropdownNome.contains(e.target)) {
+          fecharDropdownNome();
         }
       });
     }
