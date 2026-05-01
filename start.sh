@@ -22,6 +22,20 @@ else
 	echo "clinicas.csv não encontrado, pulando importação de clínicas."
 fi
 
+if [ -f "condutores.csv" ]; then
+	echo "Importando condutores de condutores.csv..."
+	python manage.py importar_condutores || true
+else
+	echo "condutores.csv não encontrado, pulando importação de condutores."
+fi
+
+if [ -f "enfermagem.csv" ]; then
+	echo "Importando enfermagem de enfermagem.csv..."
+	python manage.py importar_enfermagem || true
+else
+	echo "enfermagem.csv não encontrado, pulando importação de enfermagem."
+fi
+
 # Coleta arquivos estáticos (caso precise)
 echo "Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput
