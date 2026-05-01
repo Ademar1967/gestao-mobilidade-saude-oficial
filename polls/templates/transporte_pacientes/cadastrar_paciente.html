@@ -1011,15 +1011,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function mostrarPainelSugestao(item) {
       sugestaoAtual = item;
-      const info = [
+      var info = [
         item.nome ? '<strong>Nome:</strong> ' + item.nome : '',
         item.telefone ? '<strong>Telefone:</strong> (' + (item.ddd || '') + ') ' + item.telefone : '',
         item.cartao_sis ? '<strong>Cartão SIS:</strong> ' + item.cartao_sis : '',
         item.idade ? '<strong>Idade:</strong> ' + item.idade + ' anos' : '',
         item.rua ? '<strong>Endereço:</strong> ' + item.rua + (item.numero ? ', ' + item.numero : '') + (item.bairro ? ' - ' + item.bairro : '') : '',
       ].filter(Boolean).join('<br>');
-      document.getElementById('sugestao-info').innerHTML = info;
-      document.getElementById('painel-sugestao-paciente').style.display = 'block';
+      var painel = document.getElementById('painel-sugestao-paciente');
+      var infoEl = document.getElementById('sugestao-info');
+      if (!painel || !infoEl) return;
+      infoEl.innerHTML = info;
+      painel.style.setProperty('display', 'block', 'important');
+      painel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function esconderPainelSugestao() {
@@ -1069,9 +1073,13 @@ document.addEventListener('DOMContentLoaded', function() {
         select: function(event, ui) {
           event.preventDefault();
           if (!ui.item || !ui.item.data) return;
-          // preenche o campo com o valor correto manualmente
-          jQuery(this).val(ui.item.value);
-          mostrarPainelSugestao(ui.item.data);
+          var valorCampo = ui.item.value;
+          var dadosPaciente = ui.item.data;
+          jQuery(this).val(valorCampo);
+          // setTimeout garante que o painel aparece DEPOIS do autocomplete fechar
+          setTimeout(function() {
+            mostrarPainelSugestao(dadosPaciente);
+          }, 50);
         }
       });
     }
