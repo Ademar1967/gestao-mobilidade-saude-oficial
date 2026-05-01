@@ -473,6 +473,63 @@ document.addEventListener('DOMContentLoaded', function() {
         .filter(function(txt) { return txt && txt !== '---------'; });
     }
 
+    function ensureDatalist(id) {
+      var dl = document.getElementById(id);
+      if (!dl) {
+        dl = document.createElement('datalist');
+        dl.id = id;
+        document.body.appendChild(dl);
+      }
+      return dl;
+    }
+
+    function fillDatalist(dl, values) {
+      if (!dl) return;
+      var uniq = Array.from(new Set((values || []).filter(Boolean)));
+      dl.innerHTML = uniq.map(function(v) {
+        return '<option value="' + String(v).replace(/"/g, '&quot;') + '"></option>';
+      }).join('');
+    }
+
+    function initNativeAutocompleteFallback(inputId, selectId, datalistId, endpoint) {
+      var input = document.getElementById(inputId);
+      if (!input) return;
+
+      var dl = ensureDatalist(datalistId);
+      input.setAttribute('list', datalistId);
+
+      var baseValues = optionsToSource(selectId);
+      fillDatalist(dl, baseValues.slice(0, 80));
+
+      var debounceId = null;
+      input.addEventListener('input', function() {
+        var termo = (input.value || '').trim();
+        clearTimeout(debounceId);
+        debounceId = setTimeout(function() {
+          if (termo.length < 2) {
+            fillDatalist(dl, baseValues.slice(0, 80));
+            return;
+          }
+          fetch(endpoint + encodeURIComponent(termo))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              var resultados = (data && data.resultados) ? data.resultados : [];
+              var ajaxVals = resultados.map(function(item) {
+                return item.nome || item.patrimonio || item.placa || '';
+              }).filter(Boolean);
+              if (ajaxVals.length) {
+                fillDatalist(dl, ajaxVals);
+              } else {
+                fillDatalist(dl, baseValues.slice(0, 80));
+              }
+            })
+            .catch(function() {
+              fillDatalist(dl, baseValues.slice(0, 80));
+            });
+        }, 180);
+      });
+    }
+
     function initAutocomplete(inputId, source) {
       if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.autocomplete !== 'function') {
         return;
@@ -525,6 +582,10 @@ document.addEventListener('DOMContentLoaded', function() {
     ensurePlaceholder('id_condutor_manual', 'Digite o nome do condutor');
     ensurePlaceholder('id_clinica_manual', 'Digite o nome da clinica');
     ensurePlaceholder('id_enfermagem_manual', 'Digite o nome da enfermagem');
+
+    // Fallback robusto: mantem sugestoes mesmo se jQuery UI falhar/carregar atrasado
+    initNativeAutocompleteFallback('id_veiculo_livre', 'id_veiculo', 'dl-veiculo-livre', '/api/veiculos/sugestoes/?q=');
+    initNativeAutocompleteFallback('id_clinica_manual', 'id_clinica', 'dl-clinica-manual', '/api/clinicas/sugestoes/?q=');
 
     initAutocompleteAjax('id_veiculo_livre', '/api/veiculos/sugestoes/?q=', optionsToSource('id_veiculo'));
     initAutocompleteAjax('id_condutor_manual', '/api/condutores/sugestoes/?q=', optionsToSource('id_condutor'));
