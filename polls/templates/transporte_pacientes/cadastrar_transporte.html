@@ -1,31 +1,3 @@
-<script>
-// Ativa tooltips Bootstrap 5 após todos os scripts carregados
-window.addEventListener('load', function() {
-  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    new bootstrap.Tooltip(tooltipTriggerEl);
-  });
-});
-</script>
-<script>
-// Spinner de carregamento ao salvar
-document.addEventListener('DOMContentLoaded', function() {
-  var form = document.querySelector('form');
-  var btnSalvar = document.getElementById('btnSalvar');
-  var spinner = document.getElementById('spinnerSalvar');
-  if (form && btnSalvar && spinner) {
-    form.addEventListener('submit', function() {
-      spinner.classList.remove('d-none');
-      btnSalvar.setAttribute('disabled', 'disabled');
-    });
-    form.addEventListener('reset', function() {
-      spinner.classList.add('d-none');
-      btnSalvar.removeAttribute('disabled');
-    });
-  }
-});
-</script>
-
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% block extra_scripts %}
@@ -55,11 +27,31 @@ function hideLoadingOverlay() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+    if (window.bootstrap && bootstrap.Tooltip) {
+      bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
+    }
+  });
+
+  var btnSalvar = document.getElementById('btnSalvar');
+  var spinner = document.getElementById('spinnerSalvar');
+
   // Travar tela ao submeter formulário
   let form = document.querySelector('form');
   if (form) {
     form.addEventListener('submit', function() {
       showLoadingOverlay();
+      if (btnSalvar && spinner) {
+        spinner.classList.remove('d-none');
+        btnSalvar.setAttribute('disabled', 'disabled');
+      }
+    });
+    form.addEventListener('reset', function() {
+      if (btnSalvar && spinner) {
+        spinner.classList.add('d-none');
+        btnSalvar.removeAttribute('disabled');
+      }
     });
   }
 
@@ -406,6 +398,29 @@ document.addEventListener('DOMContentLoaded', function() {
               </script>
               <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-secondary btn-lg"><i class="bi bi-list-ul me-1"></i> Ver Transportes</a>
             </div>
+
+            <!-- Fallback nativo robusto de autocomplete (independe de jQuery UI) -->
+            <datalist id="dl_veiculo_livre">
+              {% for v in form.fields.veiculo.queryset %}
+                <option value="{{ v }}"></option>
+              {% endfor %}
+            </datalist>
+            <datalist id="dl_clinica_manual">
+              {% for c in form.fields.clinica.queryset %}
+                <option value="{{ c.nome }}"></option>
+              {% endfor %}
+            </datalist>
+            <datalist id="dl_condutor_manual">
+              {% for c in form.fields.condutor.queryset %}
+                <option value="{{ c.nome }}"></option>
+              {% endfor %}
+            </datalist>
+            <datalist id="dl_enfermagem_manual">
+              {% for e in form.fields.enfermagem.queryset %}
+                <option value="{{ e.nome }}"></option>
+              {% endfor %}
+            </datalist>
+
           </form>
         </div>
       </div>
@@ -553,28 +568,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
       $input.autocomplete({
         minLength: 0,
+        appendTo: 'body',
         source: function(request, response) {
           var termo = request.term || '';
+          var fallback = (fallbackSource || []);
+          var termoNorm = termo.toLowerCase();
+          var fallbackFiltrado = fallback.filter(function(item) {
+            return String(item || '').toLowerCase().indexOf(termoNorm) >= 0;
+          });
+
           if (termo.length < 2) {
-            response((fallbackSource || []).slice(0, 10));
+            response(fallback.slice(0, 10));
             return;
           }
+
           jQuery.getJSON(endpoint + encodeURIComponent(termo), function(data) {
             var resultados = (data && data.resultados) ? data.resultados : [];
-            var lista = resultados.map(function(item) {
+            var ajaxLista = resultados.map(function(item) {
               return item.nome || item.patrimonio || item.placa || '';
             }).filter(Boolean);
-            if (lista.length === 0) {
-              response((fallbackSource || []).slice(0, 10));
+
+            // Combina ajax + local para nunca perder sugestoes
+            var combinada = ajaxLista.concat(fallbackFiltrado);
+            var unicos = Array.from(new Set(combinada)).slice(0, 12);
+            if (!unicos.length) {
+              response(fallback.slice(0, 10));
               return;
             }
-            response(lista);
+            response(unicos);
           }).fail(function() {
-            response((fallbackSource || []).slice(0, 10));
+            response((fallbackFiltrado.length ? fallbackFiltrado : fallback).slice(0, 10));
           });
         }
-      }).on('focus', function() {
+      }).on('focus click', function() {
         jQuery(this).autocomplete('search', this.value || '');
+      }).on('autocompleteopen', function() {
+        jQuery('.ui-autocomplete').css('z-index', 3000);
       });
     }
 

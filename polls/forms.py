@@ -19,25 +19,41 @@ class TransporteForm(forms.ModelForm):
         required=False,
         label='Veículo (digitar manualmente)',
         help_text='Opcional. Se preencher aqui, será cadastrado ou selecionado automaticamente.',
-        widget=forms.TextInput(attrs={'placeholder': 'Digite placa ou patrimônio do veículo'})
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Digite placa ou patrimônio do veículo',
+            'list': 'dl_veiculo_livre',
+            'autocomplete': 'off',
+        })
     )
     clinica_manual = forms.CharField(
         required=False,
         label='Clínica (digitar manualmente)',
         help_text='Opcional. Se preencher aqui, esta clínica será usada no transporte.',
-        widget=forms.TextInput(attrs={'placeholder': 'Digite o nome da clínica'})
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Digite o nome da clínica',
+            'list': 'dl_clinica_manual',
+            'autocomplete': 'off',
+        })
     )
     condutor_manual = forms.CharField(
         required=False,
         label='Condutor (digitar manualmente)',
         help_text='Opcional. Se preencher aqui, este nome sera usado no transporte.',
-        widget=forms.TextInput(attrs={'placeholder': 'Digite o nome do condutor'})
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Digite o nome do condutor',
+            'list': 'dl_condutor_manual',
+            'autocomplete': 'off',
+        })
     )
     enfermagem_manual = forms.CharField(
         required=False,
         label='Enfermagem (digitar manualmente)',
         help_text='Opcional. Se preencher aqui, este nome será usado no transporte.',
-        widget=forms.TextInput(attrs={'placeholder': 'Digite o nome da enfermagem'})
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Digite o nome da enfermagem',
+            'list': 'dl_enfermagem_manual',
+            'autocomplete': 'off',
+        })
     )
 
     def clean_data_transporte(self):
