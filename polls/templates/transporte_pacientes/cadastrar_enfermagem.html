@@ -295,6 +295,18 @@
       }
       var modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarEnfermagem'));
       if (modal) modal.hide();
+
+      var btnAbrir = document.querySelector('[data-bs-target="#modalBuscarEnfermagem"]');
+      if (btnAbrir) {
+        btnAbrir.innerHTML = '<i class="bi bi-check-lg me-1"></i> Dados carregados!';
+        btnAbrir.classList.remove('btn-outline-primary');
+        btnAbrir.classList.add('btn-success');
+        setTimeout(function() {
+          btnAbrir.innerHTML = '<i class="bi bi-search me-1"></i> Buscar enfermagem ja cadastrada';
+          btnAbrir.classList.remove('btn-success');
+          btnAbrir.classList.add('btn-outline-primary');
+        }, 3000);
+      }
     };
 
     var btnBuscarEnfermagem = document.getElementById('modal-busca-enfermagem-btn');
