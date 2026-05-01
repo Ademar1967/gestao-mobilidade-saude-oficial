@@ -57,6 +57,11 @@
                   {% endif %}
                 </div>
               {% endfor %}
+              <div class="mb-3">
+                <button type="button" class="btn btn-outline-primary btn-sm btn-afunda" data-bs-toggle="modal" data-bs-target="#modalBuscarCondutor">
+                  <i class="bi bi-search me-1"></i> Buscar condutor ja cadastrado
+                </button>
+              </div>
               <div class="d-grid gap-2 mt-3">
                 <button type="submit" class="btn btn-success btn-lg" id="btn-salvar">
                   <i class="bi bi-save me-1"></i> Salvar Condutor
@@ -125,6 +130,23 @@
       </div>
     </div>
   </div>
+  <div class="modal fade" id="modalBuscarCondutor" tabindex="-1" aria-labelledby="modalBuscarCondutorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="modalBuscarCondutorLabel"><i class="bi bi-search me-2"></i>Buscar condutor cadastrado</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <input type="text" id="modal-busca-condutor-input" class="form-control" placeholder="Digite o nome do condutor..." autocomplete="off">
+            <button class="btn btn-primary" type="button" id="modal-busca-condutor-btn"><i class="bi bi-search"></i> Buscar</button>
+          </div>
+          <div id="modal-busca-condutor-resultados"></div>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- ...existing code... -->
 {% endblock %}
 {% block extra_scripts %}
@@ -175,6 +197,89 @@
           historico.style.display = 'none';
           label.textContent = 'Mostrar histórico';
         }
+      });
+    }
+
+    function buscarCondutores(termo) {
+      var resultadosEl = document.getElementById('modal-busca-condutor-resultados');
+      if (!resultadosEl) return;
+      resultadosEl.innerHTML = '<div class="text-muted py-2">Buscando...</div>';
+      fetch('/api/condutores/sugestoes/?q=' + encodeURIComponent(termo))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var lista = (data && data.resultados) ? data.resultados : [];
+          if (!lista.length) {
+            resultadosEl.innerHTML = '<div class="alert alert-warning mb-0">Nenhum condutor encontrado.</div>';
+            return;
+          }
+          var html = '<div class="list-group">';
+          lista.forEach(function(item, idx) {
+            var nome = item.nome || '';
+            html += '<div class="list-group-item d-flex justify-content-between align-items-center gap-2">';
+            html += '<span>' + nome + '</span>';
+            html += '<button type="button" class="btn btn-success btn-sm" onclick="window._carregarCondutor(' + idx + ')"><i class="bi bi-check2-circle me-1"></i>Carregar dados</button>';
+            html += '</div>';
+          });
+          html += '</div>';
+          window._resultadosCondutores = lista;
+          resultadosEl.innerHTML = html;
+        })
+        .catch(function() {
+          resultadosEl.innerHTML = '<div class="alert alert-danger mb-0">Erro ao buscar condutores.</div>';
+        });
+    }
+
+    window._carregarCondutor = function(idx) {
+      var item = (window._resultadosCondutores || [])[idx];
+      if (!item) return;
+      var nomeInput = document.querySelector('#form-condutor #id_nome');
+      if (nomeInput) {
+        nomeInput.value = item.nome || '';
+        nomeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        nomeInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      var modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarCondutor'));
+      if (modal) modal.hide();
+    };
+
+    var btnBuscarCondutor = document.getElementById('modal-busca-condutor-btn');
+    if (btnBuscarCondutor) {
+      btnBuscarCondutor.addEventListener('click', function() {
+        var termo = (document.getElementById('modal-busca-condutor-input').value || '').trim();
+        if (termo.length < 2) {
+          document.getElementById('modal-busca-condutor-resultados').innerHTML = '<div class="alert alert-info mb-0">Digite pelo menos 2 letras.</div>';
+          return;
+        }
+        buscarCondutores(termo);
+      });
+    }
+
+    var inputBuscaCondutor = document.getElementById('modal-busca-condutor-input');
+    if (inputBuscaCondutor) {
+      inputBuscaCondutor.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          btnBuscarCondutor.click();
+        }
+      });
+    }
+
+    var modalCondutor = document.getElementById('modalBuscarCondutor');
+    if (modalCondutor) {
+      modalCondutor.addEventListener('shown.bs.modal', function() {
+        var nomeAtual = ((document.querySelector('#form-condutor #id_nome') || {}).value || '').trim();
+        var input = document.getElementById('modal-busca-condutor-input');
+        input.value = nomeAtual;
+        if (nomeAtual.length >= 2) {
+          buscarCondutores(nomeAtual);
+        } else {
+          document.getElementById('modal-busca-condutor-resultados').innerHTML = '';
+        }
+        input.focus();
+      });
+      modalCondutor.addEventListener('hidden.bs.modal', function() {
+        document.getElementById('modal-busca-condutor-input').value = '';
+        document.getElementById('modal-busca-condutor-resultados').innerHTML = '';
       });
     }
   });
