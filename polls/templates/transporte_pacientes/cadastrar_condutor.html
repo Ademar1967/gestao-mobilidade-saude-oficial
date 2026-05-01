@@ -152,6 +152,20 @@
 {% block extra_scripts %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    function mostrarSucessoTopo(texto) {
+      var existente = document.getElementById('alerta-sucesso-topo-condutor');
+      if (existente) existente.remove();
+      var alerta = document.createElement('div');
+      alerta.id = 'alerta-sucesso-topo-condutor';
+      alerta.className = 'alert alert-success shadow-sm d-flex align-items-center gap-2';
+      alerta.style.cssText = 'position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:2000; min-width:320px; max-width:90vw;';
+      alerta.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>' + texto + '</span>';
+      document.body.appendChild(alerta);
+      setTimeout(function() {
+        if (alerta && alerta.parentNode) alerta.remove();
+      }, 2600);
+    }
+
     var toasts = document.querySelectorAll('.js-condutor-toast');
     toasts.forEach(function(toastEl) {
       if (window.bootstrap && bootstrap.Toast) {
@@ -240,6 +254,7 @@
       }
       var modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarCondutor'));
       if (modal) modal.hide();
+      mostrarSucessoTopo('Dados do condutor carregados com sucesso.');
 
       var btnAbrir = document.querySelector('[data-bs-target="#modalBuscarCondutor"]');
       if (btnAbrir) {
