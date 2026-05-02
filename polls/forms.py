@@ -450,11 +450,11 @@ class ClinicaForm(forms.ModelForm):
         for clinica in queryset:
             clinica_nome_norm = self._normalize_text(clinica.nome)
             clinica_endereco_norm = self._normalize_text(clinica.endereco or '')
-            
+
             # Validar NOME duplicado
             if nome_norm and clinica_nome_norm == nome_norm:
                 self.add_error('nome', 'Ja existe uma clinica com este nome.')
-            
+
             # Validar ENDEREÇO duplicado
             if endereco_norm and clinica_endereco_norm and clinica_endereco_norm == endereco_norm:
                 self.add_error('endereco_completo', 'Ja existe uma clinica com este endereco.')

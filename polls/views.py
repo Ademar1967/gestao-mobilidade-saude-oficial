@@ -1272,4 +1272,3 @@ def excluir_transporte(request, transporte_id):
         transporte.delete()
         messages.success(request, 'Transporte excluído com sucesso!')
     return redirect('transporte_pacientes:listar_transportes')
-

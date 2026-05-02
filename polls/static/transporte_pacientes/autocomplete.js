@@ -43,7 +43,7 @@ $(document).ready(function() {
         "overflow-y": "auto",
         "width": (nomeInput.width() + 30) + "px"
       });
-      
+
       // Força altura mínima para cada item
       menu.find(".ui-menu-item").each(function() {
         $(this).css({

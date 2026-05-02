@@ -13,3 +13,4 @@ pandas
 requests
 openpyxl
 whitenoise
+pre-commit

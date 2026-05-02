@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,6 +23,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 import os
 
+
+def load_local_env(base_dir):
+    """Load key=value pairs from .env for local development without extra deps."""
+    env_file = base_dir / '.env'
+    if not env_file.exists():
+        return
+    for raw_line in env_file.read_text(encoding='utf-8').splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            os.environ.setdefault(key, value)
+
+
+load_local_env(BASE_DIR)
+
 # Função equivalente ao strtobool do distutils (compatível com Python 3.12+)
 def strtobool(val):
     val = str(val).lower()
@@ -30,11 +50,19 @@ def strtobool(val):
     if val in ('n', 'no', 'f', 'false', 'off', '0'):
         return False
     raise ValueError(f"invalid truth value: {val}")
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!')
 # DEBUG: False por padrão (produção), True apenas se DJANGO_DEBUG=1
 DEBUG = bool(strtobool(os.environ.get('DJANGO_DEBUG', '0')))
-# ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS, ou domínio do Render por padrão
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'transporte-de-enfermos.onrender.com']
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('DJANGO_SECRET_KEY não configurada. Defina no ambiente ou no arquivo .env local.')
+
+# ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS
+_allowed_hosts_env = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    '127.0.0.1,localhost,transporte-de-enfermos.onrender.com'
+)
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
 
 
 # Application definition
@@ -190,5 +218,3 @@ LOGGING = {
         },
     },
 }
-
-

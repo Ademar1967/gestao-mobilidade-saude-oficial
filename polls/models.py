@@ -7,7 +7,7 @@ class MensagemWhatsApp(models.Model):
     data_recebimento = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.numero} - {self.data_recebimento:%d/%m/%Y %H:%M}" 
+        return f"{self.numero} - {self.data_recebimento:%d/%m/%Y %H:%M}"
 
 class Enfermagem(models.Model):
     nome = models.CharField(max_length=100, unique=True)

@@ -1,2 +1,26 @@
 admin.py
 .env
+
+# Environment files
+.env.*
+!.env.example
+
+# Local databases and sensitive local artifacts
+db.sqlite3
+*.sqlite3
+
+# Python cache/compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Common local/backup files
+*.bak
+*.tmp
+
+# Collected static files (generated)
+staticfiles/
+
+# Security scan artifacts
+gitleaks-report.json
+trufflehog-results.json

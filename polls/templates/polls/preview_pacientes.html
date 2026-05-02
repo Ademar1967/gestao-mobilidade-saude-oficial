@@ -1,0 +1,28 @@
+{% extends 'polls/base.html' %}
+{% block title %}Pré-visualização dos Pacientes{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Pré-visualização dos Pacientes</h2>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
+        <tr>
+          {% for campo in campos %}
+            <th>{{ campo|capfirst }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for paciente in pacientes %}
+        <tr>
+          {% for valor in paciente %}
+            <td>{{ valor }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="/pacientes/exportar_excel/" class="btn btn-warning btn-lg mt-3"><i class="bi bi-download"></i> Baixar Excel</a>
+</div>
+{% endblock %}

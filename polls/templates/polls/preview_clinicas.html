@@ -1,0 +1,36 @@
+{% extends 'polls/base.html' %}
+{% block title %}Pré-visualização das Clínicas{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <!-- AVISO IMPORTANTE SOBRE ENDEREÇOS DAS CLÍNICAS -->
+  <div class="alert alert-warning d-flex align-items-center shadow-sm" style="border-left: 6px solid #ff9800; background: linear-gradient(90deg, #fffde7 80%, #ffe0b2 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem; margin-top: 0;">
+    <span class="me-2" style="font-size:1.5em; color:#ff9800;">&#9888;&#65039;</span>
+    <span>
+      <span style="color:#b26a00;">Atenção:</span> Os endereços das clínicas cadastradas são apenas sugestões extraídas de fontes públicas.<br>
+      <span style="font-size:0.97em; color:#b26a00; font-weight:400;">É fundamental conferir e confirmar cada endereço antes do uso, para evitar erros de logística, atrasos ou perda de consultas.</span>
+    </span>
+  </div>
+  <h2 class="mb-3">Pré-visualização das Clínicas</h2>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
+        <tr>
+          {% for campo in campos %}
+            <th>{{ campo|capfirst }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for clinica in clinicas %}
+        <tr>
+          {% for valor in clinica %}
+            <td>{{ valor }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="/clinicas/exportar_excel/" class="btn btn-warning btn-lg mt-3"><i class="bi bi-download"></i> Baixar Excel</a>
+</div>
+{% endblock %}

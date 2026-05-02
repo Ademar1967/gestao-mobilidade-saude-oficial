@@ -1,6 +1,8 @@
 @echo off
 REM Ativa o ambiente virtual (ajuste o caminho se necessário)
 call ..\.venv\Scripts\activate.bat
+REM Ativa modo desenvolvimento (DEBUG=True para servir arquivos estaticos localmente)
+set DJANGO_DEBUG=1
 REM Inicia o servidor Django em background
 start "Django" cmd /k python manage.py runserver
 REM Aguarda o servidor iniciar

@@ -1,0 +1,28 @@
+{% extends 'polls/base.html' %}
+{% block title %}Pré-visualização dos Veículos{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Pré-visualização dos Veículos</h2>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-light">
+        <tr>
+          {% for campo in campos %}
+            <th>{{ campo|capfirst }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for veiculo in veiculos %}
+        <tr>
+          {% for valor in veiculo %}
+            <td>{{ valor }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="/veiculos/exportar_excel/" class="btn btn-warning btn-lg mt-3"><i class="bi bi-download"></i> Baixar Excel</a>
+</div>
+{% endblock %}
