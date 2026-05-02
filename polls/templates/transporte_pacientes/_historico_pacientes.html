@@ -1,6 +1,9 @@
 <div class="card mt-4">
-  <div class="card-header bg-info text-white">
+  <div class="card-header bg-info text-white d-flex align-items-center justify-content-between">
     <h5 class="mb-0">Lista de Pacientes Cadastrados</h5>
+    <button class="btn btn-success btn-sm btn-afunda" onclick="window.print()" type="button" title="Imprimir esta página direto">
+      <i class="bi bi-printer-fill"></i> Impressão Direta
+    </button>
   </div>
   <div class="card-body p-0">
 
@@ -29,6 +32,7 @@
               <th>Endereço</th>
               <th>Cidade</th>
               <th>Bairro</th>
+              <th>Condições</th>
               <th>Data Cadastro</th>
                 <th>Ações</th>
               <th>Ações</th>
@@ -45,6 +49,12 @@
                   <td>{{ paciente.logradouro_formatado|default:'-' }}</td>
                   <td>{{ paciente.cidade }}</td>
                   <td>{{ paciente.bairro }}</td>
+                  <td>
+                    {% if paciente.oxigenio %}<span class="badge bg-info">O2{% if paciente.oxigenio_litros_min %} {{ paciente.oxigenio_litros_min }}L/min{% endif %}</span>{% endif %}
+                    {% if paciente.maca %}<span class="badge bg-warning">Maca</span>{% endif %}
+                    {% if paciente.cadeirante %}<span class="badge bg-danger">Cadeirante</span>{% endif %}
+                    {% if paciente.acompanhante %}<span class="badge bg-success">Acompanhante</span>{% endif %}
+                  </td>
                     <td></td> <!-- Coluna de debug removida -->
                   <td>{{ paciente.ja_alocado_db }}</td>
                   <td>
@@ -61,6 +71,13 @@
                 </tr>
             {% endfor %}
           </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="12" style="text-align:center; padding:14px; background:#1565c0; font-size:1.2em; font-weight:700; color:#fff; border-top:3px solid #0d47a1; letter-spacing:1px;">
+                🚐 TOTAL: <strong>{{ total_pacientes }}</strong> paciente(s) + <strong>{{ total_acompanhantes }}</strong> acompanhante(s) = <strong style="font-size:1.3em;">{{ total_geral }}</strong> PESSOA(S) NO VEÍCULO
+              </td>
+            </tr>
+          </tfoot>
         </table>
       <div class="d-flex flex-wrap gap-2 m-2">
         <button class="btn btn-afunda" style="background-color:#ff9800; color:#fff; border:none;" onclick="excluirSelecionadosPacientes()" type="button">

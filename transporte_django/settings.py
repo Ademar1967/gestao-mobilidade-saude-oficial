@@ -140,8 +140,8 @@ USE_TZ = True
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
-# Sessão expira após inatividade (30 minutos por padrão). Pode ser ajustado por variável de ambiente.
-SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '1800'))
+# Sessão expira após inatividade (20 minutos por padrão). Pode ser ajustado por variável de ambiente.
+SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '1200'))  # 20 minutos
 SESSION_SAVE_EVERY_REQUEST = True
 
 

@@ -794,8 +794,10 @@ def exportar_pacientes_excel(request):
 	from .models import Paciente
 	import pandas as pd
 	enderecos_path = Path(__file__).resolve().parent.parent / 'enderecos_sp.csv'
-	enderecos_df = pd.read_csv(enderecos_path)
-	enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
+	enderecos_dict = {}
+	if enderecos_path.exists():
+		enderecos_df = pd.read_csv(enderecos_path)
+		enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
 
 	campos = ["nome", "idade", "peso", "endereco", "referencia", "telefone", "tratamento", "oxigenio", "oxigenio_litros_min", "observacoes", "evolucao", "status", "destino_nome", "destino_endereco_completo"]
 	pacientes = []
@@ -870,8 +872,10 @@ def preview_pacientes(request):
 	from .models import Paciente
 	import pandas as pd
 	enderecos_path = Path(__file__).resolve().parent.parent / 'enderecos_sp.csv'
-	enderecos_df = pd.read_csv(enderecos_path)
-	enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
+	enderecos_dict = {}
+	if enderecos_path.exists():
+		enderecos_df = pd.read_csv(enderecos_path)
+		enderecos_dict = {row['nome']: row for _, row in enderecos_df.iterrows()}
 	campos = ["nome", "idade", "peso", "endereco", "referencia", "telefone", "tratamento", "oxigenio", "oxigenio_litros_min", "observacoes", "evolucao", "status", "destino_nome", "destino_endereco_completo"]
 	pacientes = []
 	for obj in Paciente.objects.all():
@@ -1026,6 +1030,7 @@ def arquivos_recebidos_pacientes(request):
 		'pasta_entrada': entrada_dir,
 	})
 
+@login_required
 def cadastrar_paciente(request):
 	from .models import Paciente
 	from django.contrib import messages

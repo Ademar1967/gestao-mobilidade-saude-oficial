@@ -58,6 +58,18 @@
   min-width: 180px !important;
   min-height: 48px !important;
 }
+
+/* Mantem o layout original na tela; aparece apenas na impressao */
+.coluna-condicoes-print {
+  display: none !important;
+}
+
+/* Na prévia do modal, exibe a coluna de condições para conferência antes de imprimir */
+#modalPrevia .coluna-condicoes-print,
+#tabelaPreviaContainer .coluna-condicoes-print {
+  display: table-cell !important;
+  visibility: visible !important;
+}
 .btn-novo:active {
   box-shadow: 0 1px 2px rgba(56, 142, 60, 0.18) !important;
   transform: translateY(2px) scale(0.98) !important;
@@ -147,6 +159,11 @@
     display: table-cell !important;
     visibility: visible !important;
   }
+  th.coluna-condicoes-print,
+  td.coluna-condicoes-print {
+    display: table-cell !important;
+    visibility: visible !important;
+  }
   /* Cabeçalho fixo na tabela de transportes */
   .table-responsive {
     max-height: 420px;
@@ -188,6 +205,7 @@ window.onbeforeprint = function() { removePrintButtons(); };
         <div class="card-body">
           <div id="botoes-acoes" class="no-print" style="margin-bottom: 18px;">
             <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true">Imprimir</button>
+            <button type="button" class="btn-novo" style="margin-left: 10px;" onclick="window.print()">Impressão Direta</button>
             <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="margin-left: 10px;">Novo Transporte</a>
 
             <button type="button" class="btn-novo" style="margin-left: 10px; background: #1976d2; color: #fff;" onclick="abrirModalPrevia()">Prévia Excel/Imprimir</button>
@@ -316,6 +334,16 @@ window.onbeforeprint = function() { removePrintButtons(); };
             if (!tabelaOriginal) return;
             var thead = tabelaOriginal.querySelector('thead');
             var tbody = tabelaOriginal.querySelector('tbody');
+            var obsIdx = -1;
+            if (thead) {
+              var headerCells = thead.querySelectorAll('th');
+              headerCells.forEach(function(th, idx) {
+                var txt = (th.textContent || '').trim().toLowerCase();
+                if (txt === 'obs.' || txt.indexOf('obs') === 0) {
+                  obsIdx = idx;
+                }
+              });
+            }
             var htmlTabela = '<table>';
             if (thead) htmlTabela += thead.outerHTML;
             if (tbody) {
@@ -327,8 +355,8 @@ window.onbeforeprint = function() { removePrintButtons(); };
                 var tds = tr.querySelectorAll('td');
                 tds.forEach(function(td, idx) {
                   var texto = td.innerText || td.textContent;
-                  // Coluna Observações (penúltima coluna)
-                  if (idx === tds.length - 2) {
+                  // Coluna Observações
+                  if (idx === obsIdx) {
                     var obs = texto.trim();
                     if (obs && obs !== '-' && obs.length > 2) {
                       htmlTabela += '<td style="color:#b71c1c; font-weight:bold; background:#fff3e0; font-size:15px;">' + obs + '</td>';
@@ -347,7 +375,7 @@ window.onbeforeprint = function() { removePrintButtons(); };
             htmlTabela = htmlTabela.replace(/fecharModalPreviaFora/gi, '');
             var win = window.open('', '', 'width=1400,height=900');
             win.document.write('<html><head><title>Imprimir Tabela</title>');
-            win.document.write('<style>body{font-family:Arial,sans-serif;margin:8px;}table{width:100%;border-collapse:collapse;table-layout:auto;}th,td{border:1.2px solid #222;padding:4px 4px;font-size:11.5px;line-height:1.25;word-break:break-word;white-space:normal;overflow:visible;text-overflow:unset;vertical-align:top;}th{background:#1976d2;color:#fff;font-size:12px;}th:nth-child(1),td:nth-child(1){min-width:66px;text-align:center;}th:nth-child(7),td:nth-child(7){min-width:52px;text-align:center;}th:nth-child(8),td:nth-child(8){min-width:160px;}tr:nth-child(even) td{background:#f4f8fb;}tr:nth-child(odd) td{background:#fff;}@media print{body{margin:0;}@page{size:A4 landscape;margin:6mm;}}</style>');
+            win.document.write('<style>body{font-family:Arial,sans-serif;margin:8px;}table{width:100%;border-collapse:collapse;table-layout:auto;}th,td{border:1.2px solid #222;padding:4px 4px;font-size:11.5px;line-height:1.25;word-break:break-word;white-space:normal;overflow:visible;text-overflow:unset;vertical-align:top;}th{background:#1976d2;color:#fff;font-size:12px;}th:nth-child(1),td:nth-child(1){min-width:66px;text-align:center;}th:nth-child(7),td:nth-child(7){min-width:52px;text-align:center;}th:nth-child(8),td:nth-child(8){min-width:150px;}th:nth-child(9),td:nth-child(9){min-width:170px;}tr:nth-child(even) td{background:#f4f8fb;}tr:nth-child(odd) td{background:#fff;}@media print{body{margin:0;}@page{size:A4 landscape;margin:6mm;}}</style>');
             win.document.write('</head><body>');
             win.document.write('<div style="margin-bottom:14px; background:#fffbe7; border:1.5px solid #fbc02d; border-radius:7px; padding:10px 18px; font-size:17px; color:#b26a00; text-align:center; font-weight:bold;">Atenção: confira todos os dados antes de imprimir. <span style="color:#d32f2f;">Destaque qualquer observação importante!</span></div>');
             win.document.write(htmlTabela);
@@ -375,6 +403,7 @@ window.onbeforeprint = function() { removePrintButtons(); };
                     <th style="min-width:80px; max-width:90px; white-space:nowrap; text-align:center;">Condutor</th>
                     <th style="min-width:60px; max-width:70px; white-space:nowrap; text-align:center;">Enf.</th>
                     <th style="min-width:60px; max-width:70px; white-space:nowrap; text-align:center;">Saída</th>
+                    <th class="coluna-condicoes-print" style="min-width:110px; max-width:130px; word-break:break-word; text-align:left;">Condições</th>
                     <!-- Coluna Chegada removida -->
                     <th style="min-width:90px; max-width:120px; word-break:break-word; text-align:left;">Obs.</th>
                     <th class="acao-coluna no-print" style="min-width:60px; max-width:70px; white-space:nowrap; text-align:center;">Ações</th>
@@ -390,6 +419,24 @@ window.onbeforeprint = function() { removePrintButtons(); };
                     <td style="white-space:nowrap; text-align:center; max-width:90px; overflow:hidden; text-overflow:ellipsis;" title="{{ t.condutor }}">{{ t.condutor }}</td>
                     <td style="white-space:nowrap; text-align:center; max-width:70px; overflow:hidden; text-overflow:ellipsis;" title="{{ t.enfermagem }}">{{ t.enfermagem }}</td>
                     <td style="white-space:nowrap; text-align:center; max-width:70px;">{{ t.hora_saida|default:'-' }}</td>
+                    <td class="coluna-condicoes-print" style="word-break:break-word; text-align:left; max-width:130px;" title="{% if t.paciente.oxigenio or t.paciente.maca or t.paciente.cadeirante or t.paciente.acompanhante %}{% if t.paciente.oxigenio %}Oxigênio{% if t.paciente.oxigenio_litros_min %} ({{ t.paciente.oxigenio_litros_min }} L/min){% endif %}{% endif %}{% if t.paciente.oxigenio and t.paciente.maca %} | {% endif %}{% if t.paciente.maca %}Maca{% endif %}{% if t.paciente.oxigenio or t.paciente.maca %}{% if t.paciente.cadeirante %} | {% endif %}{% endif %}{% if t.paciente.cadeirante %}Cadeirante{% endif %}{% if t.paciente.oxigenio or t.paciente.maca or t.paciente.cadeirante %}{% if t.paciente.acompanhante %} | {% endif %}{% endif %}{% if t.paciente.acompanhante %}Acompanhante{% endif %}{% else %}-{% endif %}">
+                      {% if t.paciente.oxigenio or t.paciente.maca or t.paciente.cadeirante or t.paciente.acompanhante %}
+                        {% if t.paciente.oxigenio %}
+                          <span class="badge bg-primary">O2{% if t.paciente.oxigenio_litros_min %}: {{ t.paciente.oxigenio_litros_min }} L/min{% endif %}</span>
+                        {% endif %}
+                        {% if t.paciente.maca %}
+                          <span class="badge bg-danger">Maca</span>
+                        {% endif %}
+                        {% if t.paciente.cadeirante %}
+                          <span class="badge bg-warning text-dark">Cadeirante</span>
+                        {% endif %}
+                        {% if t.paciente.acompanhante %}
+                          <span class="badge bg-success">Acompanhante</span>
+                        {% endif %}
+                      {% else %}
+                        -
+                      {% endif %}
+                    </td>
                     <!-- Coluna Chegada removida -->
                     <td style="word-break:break-word; text-align:left; max-width:120px;" title="{{ t.observacoes|default:'-' }}">{{ t.observacoes|default:'-' }}</td>
                     <td class="acao-coluna no-print" style="white-space:nowrap; text-align:center; max-width:70px;">

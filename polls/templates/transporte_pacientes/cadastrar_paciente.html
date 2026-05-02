@@ -2,111 +2,12 @@
 {% extends 'base.html' %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'transporte_pacientes/form-clean.css' %}">
-<style>
-  .campo-obrigatorio-erro {
-    border: 2.5px solid #d32f2f !important;
-    box-shadow: 0 0 0 3px #ffcdd2 !important;
-    animation: shake 0.18s 2;
-    border-radius: 6px !important;
-    background: #fff8f8 !important;
-    transition: border 0.2s, box-shadow 0.2s;
-  }
-  @keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    50% { transform: translateX(4px); }
-    75% { transform: translateX(-4px); }
-    100% { transform: translateX(0); }
-  }
-</style>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Destaca campos obrigatórios com erro - versão melhorada
-  const errorElements = document.querySelectorAll('.text-danger small, .alert-danger');
-  
-  errorElements.forEach(function(errorDiv) {
-    // Se for um alerta geral (alert-danger), scroll até ele para visibilidade
-    if (errorDiv.classList.contains('alert-danger')) {
-      // Isso vai garantir que o usuário veja o erro
-      return;
-    }
-    
-    // Procura todos os campos nas proximidades do erro
-    let campo = null;
-    let parent = errorDiv.parentElement;
-    
-    // Procura em níveis ascendentes
-    let maxLevels = 5;
-    while (parent && maxLevels > 0) {
-      // Tenta encontrar input/select/textarea dentro do parent
-      campo = parent.querySelector('input, select, textarea');
-      if (campo) break;
-      parent = parent.parentElement;
-      maxLevels--;
-    }
-    
-    // Alternativa: busca pelo padrão Django id_<fieldname>
-    if (!campo) {
-      const fieldName = errorDiv.getAttribute('data-field') || errorDiv.textContent.toLowerCase();
-      // Procura no formulário todo
-      const form = errorDiv.closest('form');
-      if (form) {
-        const inputs = form.querySelectorAll('input, select, textarea');
-        for (let input of inputs) {
-          if (input.name && fieldName.includes(input.name)) {
-            campo = input;
-            break;
-          }
-        }
-      }
-    }
-    
-    // Aplica destaque se encontrou
-    if (campo) {
-      campo.classList.add('campo-obrigatorio-erro');
-      // Torna o campo visível scrollando para ele se necessário
-      campo.addEventListener('focus', function() {
-        campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-    }
-  });
-  
-  // Scroll para o primeiro erro se houver
-  const primeiroErro = document.querySelector('.alert-danger');
-  if (primeiroErro) {
-    setTimeout(function() {
-      primeiroErro.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  }
-});
-</script>
 {% load crispy_forms_tags %}
 
 
 
-<!-- AVISO DE ATENÇÃO PERSONALIZADO PARA O FORMULÁRIO DE PACIENTES -->
-<div style="background:#fff3cd; color:#856404; border:2px solid #ffeeba; padding:14px 20px; border-radius:7px; font-size:1.25em; font-weight:bold; display:flex; align-items:center; margin-bottom:18px;">
-  <span style="font-size:1.7em; margin-right:12px;">&#9888;&#65039;</span>
-  Atenção: Para o conforto de todos, monitore o total de cadastros e respeite o limite de acomodações. <b>Evite overbook!</b> Monitore o total geral antes de novos cadastros.
-</div>
-
-
-
-
-
-<!-- ALERTA DE ATENÇÃO PARA IDENTIFICAÇÃO DO TEMPLATE -->
-<div style="background:#fff3cd; color:#856404; border:2px solid #ffeeba; padding:10px 18px; border-radius:7px; font-size:1.25em; font-weight:bold; display:flex; align-items:center; margin-bottom:18px;">
-  <span style="font-size:1.7em; margin-right:12px;">&#9888;&#65039;</span>
-  Você está editando o template <b>cadastrar_paciente.html</b>
-</div>
-
-
-<div style="background:#222; color:#fff; padding:10px; font-size:1.3em; text-align:center; border-radius:7px; margin-bottom:18px;">
-  TESTE DE ALTERAÇÃO NO TEMPLATE - SE VOCÊ ESTÁ VENDO ESTE TEXTO, O TEMPLATE ESTÁ SENDO USADO CORRETAMENTE
-</div>
 
 {% block content %}
-
 
 <div class="row g-3 mb-3">
   <div class="col-6 col-md-4">
@@ -231,28 +132,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <h2 class="mb-3 mt-2" style="font-weight:700; color:#1976d2;">Cadastro e Gerenciamento de Pacientes</h2>
 
-<div class="mb-3" style="display:flex; justify-content:flex-start;">
-  <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-lg btn-afunda btn-ir-transportes" style="background:#0b8043; color:#fff; font-weight:700; border:1px solid #076637; box-shadow:0 5px 0 #05502b; transition:transform .08s ease, box-shadow .08s ease;">
-    <i class="bi bi-list-check me-2"></i>Ir para Lista de Transportes Agendados
-  </a>
-</div>
-<style>
-  .btn-ir-transportes:hover {
-    background: #0a6f3b !important;
-    color: #fff !important;
-  }
-  .btn-ir-transportes:active {
-    transform: translateY(3px);
-    box-shadow: 0 2px 0 #05502b !important;
-  }
-</style>
-
 {# 1. Feedback de sucesso/erro #}
 {% if messages %}
   {% for message in messages %}
     {% if 'success' in message.tags %}
     <script>
-      // Sinaliza que houve salvamento bem-sucedido para limpar formulário e rascunhos ao carregar
       window.__pacienteSaveSuccess = true;
     </script>
     {% endif %}
@@ -276,11 +160,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="card mb-3 shadow-sm">
   <div class="card-body">
     <h5 class="card-title mb-2" style="color:#f57c00; background:#fff3e0; padding:6px 12px; border-radius:6px;">Cadastrar paciente manualmente</h5>
-    <div class="alert alert-light border mb-3" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
-      O formulário salva um rascunho automaticamente neste navegador enquanto você digita. Se houver instabilidade ou a página fechar, você poderá restaurar os dados ao abrir novamente.
+    <div class="alert alert-light border mb-2" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
+      O formulário salva um rascunho automaticamente neste navegador enquanto você digita. Se a página fechar, os dados serão restaurados ao abrir novamente.
     </div>
-    <div class="alert alert-info mb-3" style="font-size:0.98em; border-left:5px solid #0d6efd;">
-      Ao digitar no <b>Nome</b> ou <b>Telefone</b>, selecione uma sugestão para preencher automaticamente os dados de paciente já cadastrado.
+    <div class="mb-2 d-flex gap-2 flex-wrap">
+      <button type="button" class="btn btn-outline-primary btn-afunda" data-bs-toggle="modal" data-bs-target="#modalBuscarPaciente">
+        <i class="bi bi-search me-1"></i> Buscar paciente já cadastrado
+      </button>
     </div>
     {# Formulário colapsável para revisão de dados recebidos via web #}
     {% if importado_via_web %}
@@ -383,18 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="form-check col-md-2 mb-2">
                 {{ form_web.oxigenio }} {{ form_web.oxigenio.label_tag }}
               </div>
-              <div class="col-md-4 mb-2 js-oxigenio-litros-container" style="display:none;">
-                {{ form_web.oxigenio_litros_min.label_tag }}
-                <div class="input-group">
-                  {{ form_web.oxigenio_litros_min }}
-                  <span class="input-group-text">L/min</span>
-                </div>
-                {% if form_web.oxigenio_litros_min.errors %}
-                  <div class="text-danger small">{{ form_web.oxigenio_litros_min.errors }}</div>
-                {% endif %}
-                <div class="form-text text-muted">Digite somente números. Exemplos: 0.5, 1.0, 2.0.</div>
-                <div class="form-text text-danger fw-semibold">Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.</div>
-              </div>
               <div class="form-check col-md-2 mb-2">
                 {{ form_web.maca }} {{ form_web.maca.label_tag }}
               </div>
@@ -436,56 +310,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     {# --- NOVO FORMULÁRIO VISUAL PREMIUM --- #}
-    <div class="d-flex justify-content-end mb-2">
-      <button type="button" id="btn-limpar-formulario" class="btn btn-afunda"
-        style="background:#e53935;color:#fff;font-size:0.97em;padding:7px 18px;border-radius:8px;box-shadow:0 4px 0 #b71c1c;border:none;"
-        onclick="
-          if(confirm('Tem certeza que deseja apagar todos os campos do formulário?')){
-            var form=document.getElementById('cadastrar-paciente-form');
-            form.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]),textarea,select').forEach(function(el){
-              if(el.type==='checkbox'||el.type==='radio') el.checked=false;
-              else el.value='';
-            });
-            ['paciente-draft:cadastrar-paciente-form','paciente-submit-pending:cadastrar-paciente-form'].forEach(function(k){localStorage.removeItem(k);sessionStorage.removeItem(k);});
-          }
-        ">
-        <i class="bi bi-trash me-1"></i> Limpar tudo
-      </button>
-    </div>
-    <form method="post" id="cadastrar-paciente-form" autocomplete="off">
-      {% if form.errors or form.non_field_errors %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-width:3px; font-size:1.15em; font-weight:600; margin-bottom:25px;">
-          <strong style="font-size:1.2em;">❌ Por favor, corrija os erros abaixo antes de salvar:</strong>
-          <ul class="mb-2 mt-3" style="font-size:1.05em;">
+    <form method="post" id="cadastrar-paciente-form" autocomplete="on">
+      {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          <strong>Por favor, corrija os erros abaixo:</strong>
+          <ul class="mb-0">
             {% for field in form %}
-              {% if field.errors %}
-                {% for error in field.errors %}
-                  <li style="margin-bottom:8px;">
-                    <strong>{{ field.label }} ({{ field.name }}):</strong> 
-                    <span style="color:#d32f2f; font-weight:700;">{{ error }}</span>
-                  </li>
-                {% endfor %}
-              {% endif %}
+              {% for error in field.errors %}
+                <li><b>{{ field.label }}:</b> {{ error }}</li>
+              {% endfor %}
             {% endfor %}
             {% for error in form.non_field_errors %}
-              <li style="margin-bottom:8px;">
-                <strong>Erro:</strong> 
-                <span style="color:#d32f2f; font-weight:700;">{{ error }}</span>
-              </li>
+              <li>{{ error }}</li>
             {% endfor %}
           </ul>
-          <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <script>
-          document.addEventListener('DOMContentLoaded', function() {
-            const errorAlert = document.querySelector('#cadastrar-paciente-form .alert-danger');
-            if (errorAlert) {
-              setTimeout(function() {
-                errorAlert.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 50);
-            }
-          });
-        </script>
       {% endif %}
       {% csrf_token %}
       <fieldset class="card shadow-sm mb-3">
@@ -498,11 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if form.nome.errors %}
                   <div class="text-danger small">{{ form.nome.errors }}</div>
                 {% endif %}
-                <div class="mt-1">
-                  <button type="button" class="btn btn-outline-primary btn-sm btn-afunda" data-bs-toggle="modal" data-bs-target="#modalBuscarPaciente">
-                    <i class="bi bi-search me-1"></i> Buscar paciente já cadastrado
-                  </button>
-                </div>
               </div>
               <div class="col-md-2 mb-2">
                 {{ form.cartao_sis.label_tag }}
@@ -560,17 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i class="bi bi-info-circle"></i>
               </span>
               {{ form.referencia }}
-              <script>
-              document.addEventListener('DOMContentLoaded', function() {
-                // Seleciona campos por id padrão Django
-                const ddd = document.getElementById('id_ddd');
-                const tel = document.getElementById('id_telefone');
-                const ref = document.getElementById('id_referencia');
-                if (ddd) ddd.setAttribute('tabindex', '1');
-                if (tel) tel.setAttribute('tabindex', '2');
-                if (ref) ref.setAttribute('tabindex', '3');
-              });
-              </script>
               {% if form.referencia.errors %}
                 <div class="text-danger small">{{ form.referencia.errors }}</div>
               {% endif %}
@@ -648,8 +471,8 @@ document.addEventListener('DOMContentLoaded', function() {
               {% if form.oxigenio_litros_min.errors %}
                 <div class="text-danger small">{{ form.oxigenio_litros_min.errors }}</div>
               {% endif %}
-              <div class="form-text text-muted">Digite somente números. Exemplos: 0.5, 1.0, 2.0.</div>
-              <div class="form-text text-danger fw-semibold">Paciente usuário de O2 deve ser alocado exclusivamente em ambulância.</div>
+              <div class="form-text text-muted">Exemplos: 0.5, 1.0, 2.0</div>
+              <div class="form-text text-danger fw-semibold">Paciente com O2 deve ser alocado em ambulância.</div>
             </div>
             <div class="form-check col-md-2 mb-2">
               {{ form.maca }} {{ form.maca.label_tag }}
@@ -691,10 +514,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </fieldset>
       {{ form.latitude }}
       {{ form.longitude }}
-      <div id="alerta-validacao-manual" class="alert alert-danger d-none" role="alert" style="border-width:3px; font-size:1.08em; font-weight:600; margin-top:12px;">
-        <strong>Não foi possível salvar. Corrija os campos destacados:</strong>
-        <ul class="mb-0 mt-2" id="lista-erros-validacao-manual"></ul>
-      </div>
       <div class="d-flex gap-2 mt-3">
         <button type="submit" class="btn btn-success btn-lg btn-afunda">
           Salvar Paciente
@@ -702,20 +521,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
       </div>
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Proteção: só cria Tooltip se bootstrap estiver disponível
-        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip === 'function') {
-          try {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-              return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-          } catch(e) {
-            console.warn('Aviso: Tooltips não disponíveis', e);
-          }
-        } else {
-          console.warn('Aviso: Bootstrap Tooltip não carregou corretamente');
-        }
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
       });
     </script>
     </form>
@@ -738,7 +546,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     }
-
     function aplicarMascaraCepNativa(input) {
       if (!input) return;
       input.addEventListener('input', function() {
@@ -746,21 +553,9 @@ document.addEventListener('DOMContentLoaded', function() {
         input.value = digits.replace(/(\d{5})(\d{0,3})/, '$1-$2').replace(/-$/, '');
       });
     }
-
-    // Preferência: plugin jQuery Mask; fallback: máscara nativa sem erro no console
     if (typeof $.fn.mask === 'function') {
-      try {
-        $("#id_telefone").mask(function(val) {
-          return val.replace(/\D/g, '').length === 9 ? '00000-0000' : '0000-00009';
-        });
-      } catch(e) {
-        aplicarMascaraTelefoneNativa(document.getElementById('id_telefone'));
-      }
-      try {
-        $("#id_cep").mask('00000-000');
-      } catch(e) {
-        aplicarMascaraCepNativa(document.getElementById('id_cep'));
-      }
+      try { $("#id_telefone").mask(function(val) { return val.replace(/\D/g, '').length === 9 ? '00000-0000' : '0000-00009'; }); } catch(e) { aplicarMascaraTelefoneNativa(document.getElementById('id_telefone')); }
+      try { $("#id_cep").mask('00000-000'); } catch(e) { aplicarMascaraCepNativa(document.getElementById('id_cep')); }
     } else {
       aplicarMascaraTelefoneNativa(document.getElementById('id_telefone'));
       aplicarMascaraCepNativa(document.getElementById('id_cep'));
@@ -769,208 +564,111 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+  /* ===== AUTO-SAVE RASCUNHO (sessionStorage) ===== */
   document.addEventListener('DOMContentLoaded', function() {
-    const formManual = document.getElementById('cadastrar-paciente-form');
-    const alertaValidacao = document.getElementById('alerta-validacao-manual');
-    const listaErros = document.getElementById('lista-erros-validacao-manual');
-
-    function obterLabelDoCampo(campo) {
-      if (!campo) return 'Campo inválido';
-      const id = campo.id;
-      if (!id) return campo.name || 'Campo inválido';
-      const label = document.querySelector('label[for="' + id + '"]');
-      if (label && label.textContent) {
-        return label.textContent.replace('*', '').trim();
-      }
-      return campo.name || 'Campo inválido';
-    }
-
-    if (formManual && alertaValidacao && listaErros) {
-      formManual.addEventListener('submit', function(evento) {
-        alertaValidacao.classList.add('d-none');
-        listaErros.innerHTML = '';
-        formManual.querySelectorAll('.campo-obrigatorio-erro').forEach(function(el) {
-          el.classList.remove('campo-obrigatorio-erro');
-        });
-
-        const invalidos = Array.from(formManual.querySelectorAll(':invalid'));
-        if (invalidos.length > 0) {
-          evento.preventDefault();
-          const errosUnicos = new Set();
-          invalidos.forEach(function(campo) {
-            campo.classList.add('campo-obrigatorio-erro');
-            const label = obterLabelDoCampo(campo);
-            const mensagem = campo.validationMessage || 'Valor inválido.';
-            errosUnicos.add(label + ': ' + mensagem);
-          });
-
-          Array.from(errosUnicos).forEach(function(msg) {
-            const li = document.createElement('li');
-            li.textContent = msg;
-            listaErros.appendChild(li);
-          });
-
-          alertaValidacao.classList.remove('d-none');
-          alertaValidacao.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          invalidos[0].focus();
-        }
-      });
-    }
-
     const formIds = ['cadastrar-paciente-form', 'revisao-paciente-web-form'];
     const draftPrefix = 'paciente-draft:';
     const pendingPrefix = 'paciente-submit-pending:';
 
-    function buildDraftKey(form) {
-      return draftPrefix + form.id;
-    }
-
-    function buildPendingKey(form) {
-      return pendingPrefix + form.id;
-    }
-
+    function buildDraftKey(form) { return draftPrefix + form.id; }
+    function buildPendingKey(form) { return pendingPrefix + form.id; }
     function clearDraftAndPending(form) {
-      const draftKey = buildDraftKey(form);
-      const pendingKey = buildPendingKey(form);
-      localStorage.removeItem(draftKey);
-      sessionStorage.removeItem(pendingKey);
+      sessionStorage.removeItem(buildDraftKey(form));
+      sessionStorage.removeItem(buildPendingKey(form));
     }
-
     function collectFormData(form) {
       const payload = {};
       form.querySelectorAll('input, select, textarea').forEach(function(field) {
         if (!field.name || field.disabled) return;
         if (['password', 'file', 'submit', 'button', 'hidden'].includes(field.type)) return;
-
-        if (field.type === 'checkbox') {
-          payload[field.name] = field.checked;
-          return;
-        }
-
-        if (field.type === 'radio') {
-          if (field.checked) {
-            payload[field.name] = field.value;
-          }
-          return;
-        }
-
+        if (field.type === 'checkbox') { payload[field.name] = field.checked; return; }
+        if (field.type === 'radio') { if (field.checked) payload[field.name] = field.value; return; }
         payload[field.name] = field.value;
       });
       return payload;
     }
-
     function applyFormData(form, payload) {
       Object.keys(payload).forEach(function(name) {
         const fields = form.querySelectorAll('[name="' + CSS.escape(name) + '"]');
         if (!fields.length) return;
-
         fields.forEach(function(field) {
-          if (field.type === 'checkbox') {
-            field.checked = Boolean(payload[name]);
-          } else if (field.type === 'radio') {
-            field.checked = field.value === payload[name];
-          } else {
-            field.value = payload[name] ?? '';
-          }
+          if (field.type === 'checkbox') { field.checked = Boolean(payload[name]); }
+          else if (field.type === 'radio') { field.checked = field.value === payload[name]; }
+          else { field.value = payload[name] ?? ''; }
           field.dispatchEvent(new Event('change', { bubbles: true }));
           field.dispatchEvent(new Event('input', { bubbles: true }));
         });
       });
     }
-
     function hasMeaningfulDraft(payload) {
-      return Object.values(payload).some(function(value) {
-        if (typeof value === 'boolean') return value;
-        return String(value || '').trim() !== '';
+      return Object.values(payload).some(function(v) {
+        if (typeof v === 'boolean') return v;
+        return String(v || '').trim() !== '';
       });
     }
-
     function debounce(fn, wait) {
-      let timeoutId;
-      return function() {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(fn, wait);
-      };
+      let t;
+      return function() { clearTimeout(t); t = setTimeout(fn, wait); };
     }
 
     if (window.__pacienteSaveSuccess) {
-      formIds.forEach(function(formId) {
-        const form = document.getElementById(formId);
-        if (!form) return;
-        clearDraftAndPending(form);
-        form.reset();
+      formIds.forEach(function(id) {
+        const f = document.getElementById(id);
+        if (!f) return;
+        clearDraftAndPending(f);
+        f.reset();
       });
     }
 
     formIds.forEach(function(formId) {
       const form = document.getElementById(formId);
       if (!form) return;
-
       const draftKey = buildDraftKey(form);
       const pendingKey = buildPendingKey(form);
       const saveDraft = debounce(function() {
         const payload = collectFormData(form);
-        if (hasMeaningfulDraft(payload)) {
-          localStorage.setItem(draftKey, JSON.stringify(payload));
-        } else {
-          localStorage.removeItem(draftKey);
-        }
+        if (hasMeaningfulDraft(payload)) { sessionStorage.setItem(draftKey, JSON.stringify(payload)); }
+        else { sessionStorage.removeItem(draftKey); }
       }, 250);
 
-      const hasValidationErrors = Boolean(form.querySelector('.alert-danger, .text-danger'));
-      if (sessionStorage.getItem(pendingKey) === '1' && !hasValidationErrors) {
-        clearDraftAndPending(form);
-      }
+      const hasErrors = Boolean(form.querySelector('.alert-danger, .text-danger'));
+      if (sessionStorage.getItem(pendingKey) === '1' && !hasErrors) { clearDraftAndPending(form); }
 
-      const existingDraft = localStorage.getItem(draftKey);
+      const existingDraft = sessionStorage.getItem(draftKey);
       if (existingDraft) {
         try {
           const payload = JSON.parse(existingDraft);
-          if (hasMeaningfulDraft(payload)) {
-            const shouldRestore = window.confirm('Encontramos um rascunho salvo deste formulário. Deseja restaurar os dados?');
-            if (shouldRestore) {
-              applyFormData(form, payload);
-            }
+          if (hasMeaningfulDraft(payload) && window.confirm('Encontramos um rascunho salvo deste formulário. Deseja restaurar os dados?')) {
+            applyFormData(form, payload);
           }
-        } catch (error) {
-          localStorage.removeItem(draftKey);
-        }
+        } catch(e) { sessionStorage.removeItem(draftKey); }
       }
 
       form.addEventListener('input', saveDraft);
       form.addEventListener('change', saveDraft);
-      form.addEventListener('submit', function() {
-        sessionStorage.setItem(pendingKey, '1');
-      });
-      form.addEventListener('reset', function() {
-        clearDraftAndPending(form);
-      });
+      form.addEventListener('submit', function() { sessionStorage.setItem(pendingKey, '1'); });
+      form.addEventListener('reset', function() { clearDraftAndPending(form); });
     });
   });
 </script>
 
 <script>
+  /* ===== MOSTRAR/OCULTAR CAMPO OXIGENIO L/MIN ===== */
   document.addEventListener('DOMContentLoaded', function() {
     function atualizarBlocoO2(form) {
       const checkO2 = form.querySelector('input[name="oxigenio"]');
       const blocoLitros = form.querySelector('.js-oxigenio-litros-container');
       const campoLitros = form.querySelector('input[name="oxigenio_litros_min"]');
       if (!checkO2 || !blocoLitros || !campoLitros) return;
-
       const mostrar = checkO2.checked;
       blocoLitros.style.display = mostrar ? '' : 'none';
       campoLitros.required = mostrar;
-      if (!mostrar) {
-        campoLitros.value = '';
-      }
+      if (!mostrar) campoLitros.value = '';
     }
-
     document.querySelectorAll('form').forEach(function(form) {
       const checkO2 = form.querySelector('input[name="oxigenio"]');
       if (!checkO2) return;
-      checkO2.addEventListener('change', function() {
-        atualizarBlocoO2(form);
-      });
+      checkO2.addEventListener('change', function() { atualizarBlocoO2(form); });
       atualizarBlocoO2(form);
     });
   });
@@ -996,20 +694,16 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script>
+  /* ===== BUSCA DE PACIENTE CADASTRADO + AUTOCOMPLETE NO CAMPO NOME ===== */
   document.addEventListener('DOMContentLoaded', function() {
-
     function setVal(id, value) {
       var el = document.getElementById(id);
       if (!el) return;
-      if (el.type === 'checkbox') {
-        el.checked = Boolean(value);
-      } else {
-        el.value = value == null ? '' : String(value);
-      }
+      if (el.type === 'checkbox') { el.checked = Boolean(value); }
+      else { el.value = value == null ? '' : String(value); }
       el.dispatchEvent(new Event('change', { bubbles: true }));
       el.dispatchEvent(new Event('input', { bubbles: true }));
     }
-
     function aplicarPaciente(item) {
       setVal('id_nome', item.nome);
       setVal('id_ddd', item.ddd);
@@ -1032,7 +726,6 @@ document.addEventListener('DOMContentLoaded', function() {
       setVal('id_evolucao', item.evolucao);
       setVal('id_observacoes', item.observacoes);
     }
-
     function buscarPacientes(termo) {
       var resultadosEl = document.getElementById('modal-busca-resultados');
       resultadosEl.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-hourglass-split"></i> Buscando...</div>';
@@ -1067,14 +760,12 @@ document.addEventListener('DOMContentLoaded', function() {
           resultadosEl.innerHTML = '<div class="alert alert-danger">Erro ao buscar. Tente novamente.</div>';
         });
     }
-
     window._carregarPaciente = function(idx) {
       var item = window._resultadosPacientes[idx];
       if (!item) return;
       aplicarPaciente(item);
       var modal = bootstrap.Modal.getInstance(document.getElementById('modalBuscarPaciente'));
       if (modal) modal.hide();
-      // feedback visual
       var btnAbrir = document.querySelector('[data-bs-target="#modalBuscarPaciente"]');
       if (btnAbrir) {
         btnAbrir.innerHTML = '<i class="bi bi-check-lg me-1"></i> Dados carregados!';
@@ -1085,17 +776,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
       }
     };
-
     var modalEl = document.getElementById('modalBuscarPaciente');
     if (modalEl) {
       modalEl.addEventListener('shown.bs.modal', function() {
         var input = document.getElementById('modal-busca-input');
-        // preenche com o que já foi digitado no campo Nome
         var nomeAtual = (document.getElementById('id_nome') || {}).value || '';
-        if (nomeAtual.length >= 2) {
-          input.value = nomeAtual;
-          buscarPacientes(nomeAtual);
-        }
+        if (nomeAtual.length >= 2) { input.value = nomeAtual; buscarPacientes(nomeAtual); }
         input.focus();
       });
       modalEl.addEventListener('hidden.bs.modal', function() {
@@ -1103,7 +789,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modal-busca-input').value = '';
       });
     }
-
     var btnBuscar = document.getElementById('modal-busca-btn');
     if (btnBuscar) {
       btnBuscar.addEventListener('click', function() {
@@ -1115,16 +800,9 @@ document.addEventListener('DOMContentLoaded', function() {
         buscarPacientes(termo);
       });
     }
-
     var inputModal = document.getElementById('modal-busca-input');
     if (inputModal) {
-      inputModal.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          document.getElementById('modal-busca-btn').click();
-        }
-      });
-      // Busca automática ao digitar dentro do modal (debounce 350ms)
+      inputModal.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('modal-busca-btn').click(); } });
       var _debounceModal = null;
       inputModal.addEventListener('input', function() {
         clearTimeout(_debounceModal);
@@ -1133,12 +811,10 @@ document.addEventListener('DOMContentLoaded', function() {
         _debounceModal = setTimeout(function() { buscarPacientes(termo); }, 350);
       });
     }
-
-    // Autocomplete direto no campo Nome do formulário principal (sem precisar clicar botão)
+    /* Autocomplete direto no campo Nome do formulário principal */
     var inputNome = document.getElementById('id_nome');
     var _debounceNome = null;
     var _dropdownNome = null;
-
     function criarDropdownNome() {
       if (_dropdownNome) return _dropdownNome;
       _dropdownNome = document.createElement('div');
@@ -1148,11 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
       inputNome.parentNode.appendChild(_dropdownNome);
       return _dropdownNome;
     }
-
-    function fecharDropdownNome() {
-      if (_dropdownNome) { _dropdownNome.innerHTML = ''; _dropdownNome.style.display = 'none'; }
-    }
-
+    function fecharDropdownNome() { if (_dropdownNome) { _dropdownNome.innerHTML = ''; _dropdownNome.style.display = 'none'; } }
     if (inputNome) {
       inputNome.addEventListener('input', function() {
         clearTimeout(_debounceNome);
@@ -1164,19 +836,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(data) {
               var lista = (data && data.resultados) ? data.resultados : [];
               var dd = criarDropdownNome();
-              if (lista.length === 0) {
-                dd.innerHTML = '<div class="px-3 py-2 text-muted small">Nenhum paciente encontrado</div>';
-                dd.style.display = 'block';
-                return;
-              }
+              if (lista.length === 0) { dd.innerHTML = '<div class="px-3 py-2 text-muted small">Nenhum paciente encontrado</div>'; dd.style.display = 'block'; return; }
               var html = '';
               lista.forEach(function(item, idx) {
                 var linha1 = item.nome || '';
-                var linha2 = [
-                  item.telefone ? '(' + (item.ddd || '') + ') ' + item.telefone : '',
-                  item.idade ? item.idade + ' anos' : '',
-                  item.bairro || '',
-                ].filter(Boolean).join(' · ');
+                var linha2 = [item.telefone ? '(' + (item.ddd || '') + ') ' + item.telefone : '', item.idade ? item.idade + ' anos' : '', item.bairro || ''].filter(Boolean).join(' · ');
                 html += '<div class="autocomplete-nome-item px-3 py-2" style="cursor:pointer; border-bottom:1px solid #f0f0f0;" data-idx="' + idx + '">';
                 html += '<div class="fw-bold small">' + linha1 + '</div>';
                 if (linha2) html += '<div class="text-muted" style="font-size:0.82rem;">' + linha2 + '</div>';
@@ -1185,14 +849,12 @@ document.addEventListener('DOMContentLoaded', function() {
               dd.innerHTML = html;
               dd.style.display = 'block';
               window._sugestoesNome = lista;
-              // hover effect
               dd.querySelectorAll('.autocomplete-nome-item').forEach(function(el) {
                 el.addEventListener('mouseenter', function() { el.style.background = '#e3f2fd'; });
                 el.addEventListener('mouseleave', function() { el.style.background = ''; });
                 el.addEventListener('mousedown', function(e) {
                   e.preventDefault();
-                  var idx = parseInt(el.getAttribute('data-idx'));
-                  var item = window._sugestoesNome[idx];
+                  var item = window._sugestoesNome[parseInt(el.getAttribute('data-idx'))];
                   if (item) { aplicarPaciente(item); fecharDropdownNome(); }
                 });
               });
@@ -1200,18 +862,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function() { fecharDropdownNome(); });
         }, 350);
       });
-
-      inputNome.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') fecharDropdownNome();
-      });
-
+      inputNome.addEventListener('keydown', function(e) { if (e.key === 'Escape') fecharDropdownNome(); });
       document.addEventListener('mousedown', function(e) {
-        if (_dropdownNome && !inputNome.contains(e.target) && !_dropdownNome.contains(e.target)) {
-          fecharDropdownNome();
-        }
+        if (_dropdownNome && !inputNome.contains(e.target) && !_dropdownNome.contains(e.target)) fecharDropdownNome();
       });
     }
-
   });
 </script>
 
@@ -1266,14 +921,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script>
-  // Preenche a data/hora atual no aviso (se elemento existir)
+  // Preenche a data/hora atual no aviso
   document.addEventListener('DOMContentLoaded', function() {
-    var elemento = document.getElementById('data-hora-atual');
-    if (elemento) {
-      var agora = new Date();
-      var dataHora = agora.toLocaleString('pt-BR', { hour12: false });
-      elemento.textContent = dataHora;
-    }
+    var agora = new Date();
+    var dataHora = agora.toLocaleString('pt-BR', { hour12: false });
+    document.getElementById('data-hora-atual').textContent = dataHora;
   });
 </script>
 
@@ -1300,6 +952,70 @@ document.addEventListener('DOMContentLoaded', function() {
   #cadastrar-paciente-form .is-invalid {
     border-color: #dc3545 !important;
     box-shadow: 0 0 0 0.2rem rgba(220,53,69,.25);
+  }
+
+  @media print {
+    /* Oculta tudo exceto a lista de pacientes */
+    .row.g-3.mb-3,
+    .alert-warning,
+    .alert-primary,
+    .alert-success,
+    .alert-danger,
+    .alert-info:not(#historicoPacientes .alert-info),
+    #instrucoesTopo,
+    h2 {
+      display: none !important;
+    }
+    /* Oculta cards e formulários */
+    .card.mb-3.shadow-sm,
+    #formularioWeb,
+    .text-center.mt-4.mb-2 {
+      display: none !important;
+    }
+    /* Oculta botão verde de impressão do cabeçalho */
+    .card-header .btn-success {
+      display: none !important;
+    }
+    /* Oculta a seção de Arquivos Recebidos e Exportação/Importação */
+    .mb-3:has(> .mb-3 > .btn-outline-dark),
+    .mb-3:has(> button.btn-outline-info) {
+      display: none !important;
+    }
+    /* Força exibição da lista mesmo que esteja oculta */
+    #historicoPacientes {
+      display: block !important;
+    }
+    /* Oculta mensagem de instrução dentro da lista */
+    #historicoPacientes .alert-info {
+      display: none !important;
+    }
+    /* Oculta checkbox (col 1), debug/vazia (col 10), ja_alocado (col 11), botões (col 12) — SOMENTE thead e tbody, não o tfoot */
+    #historicoPacientes thead th:nth-child(1),
+    #historicoPacientes tbody td:nth-child(1),
+    #historicoPacientes thead th:nth-child(10),
+    #historicoPacientes tbody td:nth-child(10),
+    #historicoPacientes thead th:nth-child(11),
+    #historicoPacientes tbody td:nth-child(11),
+    #historicoPacientes thead th:nth-child(12),
+    #historicoPacientes tbody td:nth-child(12) {
+      display: none !important;
+    }
+    /* Oculta botão "Excluir Selecionados" */
+    #historicoPacientes .d-flex.gap-2 {
+      display: none !important;
+    }
+    /* Garante que o rodapé (TOTAL GERAL) apareça na impressão */
+    #historicoPacientes tfoot {
+      display: table-footer-group !important;
+    }
+    #historicoPacientes tfoot tr {
+      display: table-row !important;
+    }
+    #historicoPacientes tfoot td {
+      display: table-cell !important;
+      visibility: visible !important;
+    }
+    @page { size: A4 landscape; margin: 8mm; }
   }
 </style>
 
