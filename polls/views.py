@@ -446,6 +446,131 @@ def cadastrar_transporte(request):
 			form = TransporteForm()
 	return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos})
 
+def cadastrar_transporte_lote(request):
+	"""Transporta varios pacientes selecionados no mesmo veiculo/condutor/data,
+	mas com clinica individual por paciente."""
+	from django.contrib import messages
+	from .models import Paciente, Veiculo, Clinica, Condutor, Enfermagem
+	import re
+
+	veiculos = Veiculo.objects.all().order_by('tipo_veiculo', 'patrimonio', 'placa')
+	clinicas = Clinica.objects.all().order_by('nome')
+	condutores = Condutor.objects.all().order_by('nome')
+	enfermagens = Enfermagem.objects.all().order_by('nome')
+
+	if request.method == 'POST':
+		ids_raw = request.POST.get('paciente_ids_lote', '')
+		ids_list = [int(x.strip()) for x in ids_raw.split(',') if x.strip().isdigit()]
+		pacientes_lote = list(Paciente.objects.filter(id__in=ids_list))
+
+		# Campos comuns
+		veiculo_id = request.POST.get('veiculo') or None
+		veiculo_livre = (request.POST.get('veiculo_livre') or '').strip()
+		condutor_id = request.POST.get('condutor') or None
+		condutor_manual = re.sub(r'\s+', ' ', (request.POST.get('condutor_manual') or '').strip())
+		enfermagem_id = request.POST.get('enfermagem') or None
+		enfermagem_manual = re.sub(r'\s+', ' ', (request.POST.get('enfermagem_manual') or '').strip())
+		data_transporte = request.POST.get('data_transporte') or None
+		hora_saida = request.POST.get('hora_saida') or None
+		hora_chegada = request.POST.get('hora_chegada') or None
+		observacoes = request.POST.get('observacoes') or ''
+
+		# Resolver veiculo
+		veiculo_obj = None
+		if veiculo_id:
+			try:
+				veiculo_obj = Veiculo.objects.get(id=veiculo_id)
+			except Veiculo.DoesNotExist:
+				pass
+		if not veiculo_obj and veiculo_livre:
+			veiculo_obj, _ = Veiculo.objects.get_or_create(
+				placa=veiculo_livre.upper(),
+				defaults={'tipo_veiculo': 'outros', 'placa': veiculo_livre.upper()}
+			)
+
+		# Resolver condutor
+		condutor_obj = None
+		if condutor_id:
+			try:
+				condutor_obj = Condutor.objects.get(id=condutor_id)
+			except Condutor.DoesNotExist:
+				pass
+		if not condutor_obj and condutor_manual:
+			condutor_obj, _ = Condutor.objects.get_or_create(nome__iexact=condutor_manual, defaults={'nome': condutor_manual})
+
+		# Resolver enfermagem
+		enfermagem_obj = None
+		if enfermagem_id:
+			try:
+				enfermagem_obj = Enfermagem.objects.get(id=enfermagem_id)
+			except Enfermagem.DoesNotExist:
+				pass
+		if not enfermagem_obj and enfermagem_manual:
+			enfermagem_obj, _ = Enfermagem.objects.get_or_create(nome__iexact=enfermagem_manual, defaults={'nome': enfermagem_manual})
+
+		erros = []
+		salvos = 0
+		for idx, pac in enumerate(pacientes_lote):
+			# Clínica individual por paciente
+			clinica_id = request.POST.get(f'clinica_{idx}') or None
+			clinica_manual_txt = re.sub(r'\s+', ' ', (request.POST.get(f'clinica_manual_{idx}') or '').strip())
+			clinica_obj = None
+			if clinica_id:
+				try:
+					clinica_obj = Clinica.objects.get(id=clinica_id)
+				except Clinica.DoesNotExist:
+					pass
+			if not clinica_obj and clinica_manual_txt:
+				clinica_obj, _ = Clinica.objects.get_or_create(nome__iexact=clinica_manual_txt, defaults={'nome': clinica_manual_txt})
+
+			if not data_transporte:
+				erros.append(f"{pac.nome}: data do transporte obrigatória.")
+				continue
+
+			try:
+				from .models import Transporte
+				t = Transporte(
+					paciente=pac,
+					veiculo=veiculo_obj,
+					condutor=condutor_obj,
+					enfermagem=enfermagem_obj,
+					clinica=clinica_obj,
+					data_transporte=data_transporte,
+					hora_saida=hora_saida or None,
+					hora_chegada=hora_chegada or None,
+					observacoes=observacoes,
+				)
+				t.full_clean(exclude=['hora_saida', 'hora_chegada'])
+				t.save()
+				salvos += 1
+				audit_logger.info("Transporte lote cadastrado", extra={"transporte_id": t.id, "paciente_id": pac.id})
+			except Exception as e:
+				erros.append(f"{pac.nome}: {e}")
+
+		if salvos:
+			messages.success(request, f'{salvos} transporte(s) cadastrado(s) com sucesso!')
+		for e in erros:
+			messages.error(request, f'Erro: {e}')
+		return redirect('transporte_pacientes:listar_transportes')
+
+	# GET
+	ids_param = request.GET.get('paciente_ids', '')
+	ids_list = [int(x.strip()) for x in ids_param.split(',') if x.strip().isdigit()]
+	pacientes_selecionados = list(Paciente.objects.filter(id__in=ids_list))
+	if not pacientes_selecionados:
+		messages.warning(request, 'Nenhum paciente selecionado.')
+		return redirect('transporte_pacientes:home')
+
+	return render(request, 'transporte_pacientes/cadastrar_transporte_lote.html', {
+		'pacientes': pacientes_selecionados,
+		'paciente_ids_lote': ids_param,
+		'veiculos': veiculos,
+		'clinicas': clinicas,
+		'condutores': condutores,
+		'enfermagens': enfermagens,
+		'today': __import__('datetime').date.today(),
+	})
+
 def listar_transportes(request):
 	"""Lista todos os transportes ordenados por data e hora de saida."""
 	transportes = Transporte.objects.select_related('paciente', 'veiculo', 'condutor', 'clinica', 'enfermagem').order_by('-data_transporte', '-hora_saida')

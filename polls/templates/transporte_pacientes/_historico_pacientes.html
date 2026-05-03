@@ -80,6 +80,9 @@
           </tfoot>
         </table>
       <div class="d-flex flex-wrap gap-2 m-2">
+        <button class="btn btn-afunda" style="background-color:#0d6efd; color:#fff; border:none;" onclick="transportarSelecionados()" type="button">
+          <i class="bi bi-truck"></i> Transportar Selecionados
+        </button>
         <button class="btn btn-afunda" style="background-color:#ff9800; color:#fff; border:none;" onclick="excluirSelecionadosPacientes()" type="button">
           <i class="bi bi-trash"></i> Excluir Selecionados
         </button>
@@ -157,6 +160,17 @@
       function toggleAllPacientes(master) {
         var checkboxes = document.querySelectorAll('.paciente-checkbox');
         checkboxes.forEach(cb => cb.checked = master.checked);
+      }
+
+      function transportarSelecionados() {
+        var checkboxes = document.querySelectorAll('.paciente-checkbox:checked');
+        if (checkboxes.length === 0) {
+          alert('Selecione pelo menos um paciente para transportar.');
+          return;
+        }
+        var ids = Array.from(checkboxes).map(cb => cb.value);
+        var url = "{% url 'transporte_pacientes:cadastrar_transporte_lote' %}?paciente_ids=" + ids.join(',');
+        window.location.href = url;
       }
       </script>
       </div>

@@ -17,6 +17,7 @@ urlpatterns = [
     path('enfermagem/editar/<int:enfermagem_id>/', views.editar_enfermagem, name='editar_enfermagem'),
     path('veiculos/editar/<int:veiculo_id>/', views.editar_veiculo, name='editar_veiculo'),
     path('transportes/cadastrar/', views.cadastrar_transporte, name='cadastrar_transporte'),
+    path('transportes/cadastrar-lote/', views.cadastrar_transporte_lote, name='cadastrar_transporte_lote'),
     path('transportes/', views.listar_transportes, name='listar_transportes'),
     path('transportes/excluir/<int:transporte_id>/', views.excluir_transporte, name='excluir_transporte'),
     path('api/pacientes/sugestoes/', views.buscar_pacientes_sugestoes, name='buscar_pacientes_sugestoes'),

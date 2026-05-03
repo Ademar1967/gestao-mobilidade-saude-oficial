@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block content %}
+{% if messages %}
+  <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:2000; min-width:340px; max-width:90vw;">
+    {% for message in messages %}
+      {% if message.tags == 'success' %}
+        <div class="alert alert-success fw-bold d-flex align-items-center shadow-lg" style="font-size:1.1em; border-left:6px solid #388e3c;">
+          <span class="bi bi-check-circle-fill me-2"></span>{{ message }}
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+      {% elif message.tags == 'error' or message.tags == 'danger' %}
+        <div class="alert alert-danger fw-bold d-flex align-items-center shadow-lg" style="font-size:1.1em; border-left:6px solid #d32f2f;">
+          <span class="bi bi-x-circle-fill me-2"></span>{{ message }}
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+      {% else %}
+        <div class="alert alert-warning fw-bold d-flex align-items-center shadow-lg" style="font-size:1.1em; border-left:6px solid #f57f17;">
+          <span class="bi bi-exclamation-triangle-fill me-2"></span>{{ message }}
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Transporte em Lote — {{ pacientes|length }} paciente(s)</h4>
+    </div>
+    <div class="card-body p-4" style="background:#f8fafc;">
+
+      <div class="alert alert-info d-flex align-items-start mb-4" style="border-left:5px solid #1976d2;">
+        <i class="bi bi-info-circle-fill me-2 mt-1" style="font-size:1.3em;"></i>
+        <div>
+          <strong>Como funciona:</strong> Preencha os dados comuns (veículo, condutor, data) uma única vez.
+          Para cada paciente, escolha a <strong>clínica de destino individual</strong>.
+          Um registro de transporte será criado para cada paciente.
+        </div>
+      </div>
+
+      <form method="post" id="form-lote">
+        {% csrf_token %}
+        <input type="hidden" name="paciente_ids_lote" value="{{ paciente_ids_lote }}">
+
+        <!-- CAMPOS COMUNS -->
+        <div class="card mb-4 border-primary">
+          <div class="card-header bg-primary bg-opacity-10 fw-bold text-primary">
+            <i class="bi bi-sliders me-1"></i> Dados comuns para todos os pacientes
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+
+              <!-- Veículo -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold"><i class="bi bi-truck-front me-1"></i>Veículo</label>
+                <select name="veiculo" id="id_veiculo_lote" class="form-select">
+                  <option value="">— Selecione um veículo —</option>
+                  {% for v in veiculos %}
+                    <option value="{{ v.id }}">{{ v }}</option>
+                  {% endfor %}
+                </select>
+                <div class="mt-2">
+                  <input type="text" name="veiculo_livre" id="id_veiculo_livre_lote" class="form-control"
+                    placeholder="Ou digite placa/patrimônio manualmente" autocomplete="off">
+                  <div class="form-text">Preencha este campo se o veículo não estiver na lista acima.</div>
+                </div>
+              </div>
+
+              <!-- Condutor -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold"><i class="bi bi-person-lines-fill me-1"></i>Condutor</label>
+                <select name="condutor" class="form-select">
+                  <option value="">— Selecione um condutor —</option>
+                  {% for c in condutores %}
+                    <option value="{{ c.id }}">{{ c.nome }}</option>
+                  {% endfor %}
+                </select>
+                <div class="mt-2">
+                  <input type="text" name="condutor_manual" class="form-control"
+                    placeholder="Ou digite o nome do condutor" autocomplete="off">
+                  <div class="form-text">Preencha se o condutor não estiver na lista.</div>
+                </div>
+              </div>
+
+              <!-- Enfermagem -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold"><i class="bi bi-heart-pulse me-1"></i>Enfermagem <span class="text-muted fw-normal">(opcional)</span></label>
+                <select name="enfermagem" class="form-select">
+                  <option value="">— Selecione —</option>
+                  {% for e in enfermagens %}
+                    <option value="{{ e.id }}">{{ e.nome }}</option>
+                  {% endfor %}
+                </select>
+                <div class="mt-2">
+                  <input type="text" name="enfermagem_manual" class="form-control"
+                    placeholder="Ou digite o nome da enfermagem" autocomplete="off">
+                </div>
+              </div>
+
+              <!-- Data e Horas -->
+              <div class="col-md-2">
+                <label class="form-label fw-bold"><i class="bi bi-calendar me-1"></i>Data *</label>
+                <input type="date" name="data_transporte" class="form-control" required
+                  value="{{ today|date:'Y-m-d' }}">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-bold"><i class="bi bi-clock me-1"></i>Horário Saída</label>
+                <input type="time" name="hora_saida" class="form-control">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-bold"><i class="bi bi-clock-history me-1"></i>Horário Chegada</label>
+                <input type="time" name="hora_chegada" class="form-control">
+              </div>
+
+              <!-- Observações -->
+              <div class="col-12">
+                <label class="form-label fw-bold"><i class="bi bi-chat-text me-1"></i>Observações gerais <span class="text-muted fw-normal">(opcional)</span></label>
+                <textarea name="observacoes" class="form-control" rows="2" placeholder="Observações comuns a todos os transportes..."></textarea>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- CLINICA POR PACIENTE -->
+        <div class="card mb-4 border-success">
+          <div class="card-header bg-success bg-opacity-10 fw-bold text-success">
+            <i class="bi bi-hospital me-1"></i> Clínica de destino por paciente
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-bordered mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:30px;">#</th>
+                  <th>Paciente</th>
+                  <th>Condições</th>
+                  <th>Clínica (selecionar ou digitar)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pac in pacientes %}
+                <tr>
+                  <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                  <td>
+                    <strong>{{ pac.nome }}</strong><br>
+                    <small class="text-muted">{{ pac.idade }} anos &bull; {{ pac.peso }} kg</small>
+                  </td>
+                  <td>
+                    {% if pac.oxigenio %}<span class="badge bg-info">O2{% if pac.oxigenio_litros_min %} {{ pac.oxigenio_litros_min }}L/min{% endif %}</span> {% endif %}
+                    {% if pac.maca %}<span class="badge bg-warning text-dark">Maca</span> {% endif %}
+                    {% if pac.cadeirante %}<span class="badge bg-danger">Cadeirante</span> {% endif %}
+                    {% if pac.acompanhante %}<span class="badge bg-success">Acompanhante</span> {% endif %}
+                  </td>
+                  <td>
+                    <select name="clinica_{{ forloop.counter0 }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-idx="{{ forloop.counter0 }}">
+                      <option value="">— Selecione a clínica —</option>
+                      {% for cl in clinicas %}
+                        <option value="{{ cl.id }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}{% if cl.cidade %}, {{ cl.cidade }}{% endif %}</option>
+                      {% endfor %}
+                    </select>
+                    <input type="text" name="clinica_manual_{{ forloop.counter0 }}"
+                      class="form-control form-control-sm input-clinica-manual-lote"
+                      placeholder="Ou digite o nome da clínica manualmente"
+                      autocomplete="off">
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BOTÕES -->
+        <div class="d-flex gap-2 flex-wrap mt-3">
+          <button type="submit" class="btn btn-success btn-lg btn-afunda" id="btnSalvarLote">
+            <i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s))
+          </button>
+          <a href="javascript:history.back()" class="btn btn-secondary btn-lg btn-afunda">
+            <i class="bi bi-arrow-left me-1"></i> Voltar
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Ao selecionar uma clínica no select, limpar o campo manual e vice-versa
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.select-clinica-lote').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      var idx = this.getAttribute('data-idx');
+      if (this.value) {
+        document.querySelector('[name="clinica_manual_' + idx + '"]').value = '';
+      }
+    });
+  });
+  document.querySelectorAll('.input-clinica-manual-lote').forEach(function(inp) {
+    inp.addEventListener('input', function() {
+      var name = this.getAttribute('name');
+      var idx = name.replace('clinica_manual_', '');
+      if (this.value.trim()) {
+        document.querySelector('[name="clinica_' + idx + '"]').value = '';
+      }
+    });
+  });
+
+  // Confirmação antes de salvar
+  document.getElementById('form-lote').addEventListener('submit', function(e) {
+    var data = document.querySelector('[name="data_transporte"]').value;
+    if (!data) {
+      e.preventDefault();
+      alert('Por favor, preencha a data do transporte.');
+      return;
+    }
+    document.getElementById('btnSalvarLote').disabled = true;
+    document.getElementById('btnSalvarLote').innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';
+  });
+});
+</script>
+{% endblock %}
