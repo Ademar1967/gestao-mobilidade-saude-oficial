@@ -820,7 +820,7 @@ def _load_autocomplete_df():
     frames = []
 
     # 1) CSV do CNES (431 hospitais da Grande SP)
-    cnes_path = base_dir / 'BACKUPS_MANUAIS' / 'hospitais_sp_cnes.csv'
+    cnes_path = base_dir / 'polls' / 'data' / 'hospitais_sp_cnes.csv'
     if cnes_path.exists():
         try:
             df_cnes = pd.read_csv(cnes_path, dtype=str).fillna('')
