@@ -24,3 +24,8 @@ staticfiles/
 # Security scan artifacts
 gitleaks-report.json
 trufflehog-results.json
+
+# CNES local artifacts (downloads/extracts/backups)
+BACKUPS_MANUAIS/
+BASE_DE_DADOS_CNES_*.zip
+tbEstabelecimento*.csv
