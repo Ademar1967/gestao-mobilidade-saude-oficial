@@ -227,6 +227,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Autocomplete AJAX para cada campo de clínica manual
+  if (typeof jQuery !== 'undefined' && typeof jQuery.fn.autocomplete === 'function') {
+    document.querySelectorAll('.input-clinica-manual-lote').forEach(function(inp) {
+      var name = inp.getAttribute('name');
+      var idx = name.replace('clinica_manual_', '');
+      jQuery(inp).autocomplete({
+        minLength: 2,
+        appendTo: 'body',
+        source: function(request, response) {
+          jQuery.getJSON('/api/clinicas/sugestoes/?q=' + encodeURIComponent(request.term), function(data) {
+            var resultados = (data && data.resultados) ? data.resultados : [];
+            var lista = resultados.map(function(item) {
+              return {
+                label: item.nome + (item.cidade ? ' — ' + item.cidade : ''),
+                value: item.nome
+              };
+            });
+            response(lista.slice(0, 10));
+          }).fail(function() { response([]); });
+        },
+        select: function(event, ui) {
+          // Ao selecionar, limpar o select correspondente
+          var sel = document.querySelector('[name="clinica_' + idx + '"]');
+          if (sel) sel.value = '';
+        }
+      }).on('autocompleteopen', function() {
+        jQuery('.ui-autocomplete').css('z-index', 3000);
+      });
+    });
+  }
+
   // Confirmação antes de salvar
   document.getElementById('form-lote').addEventListener('submit', function(e) {
     var data = document.querySelector('[name="data_transporte"]').value;
