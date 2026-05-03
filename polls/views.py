@@ -569,6 +569,7 @@ def cadastrar_transporte_lote(request):
 		'condutores': condutores,
 		'enfermagens': enfermagens,
 		'today': __import__('datetime').date.today(),
+		'acompanhantes_count': sum(1 for p in pacientes_selecionados if getattr(p, 'acompanhante', False)),
 	})
 
 def listar_transportes(request):

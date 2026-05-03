@@ -171,6 +171,26 @@
           </div>
         </div>
 
+        <!-- TOTALIZADOR DE CAPACIDADE -->
+        <div class="mb-4 p-3 rounded fw-bold text-white text-center" style="background:#1565c0; font-size:1.15em; letter-spacing:1px;">
+          🚐 TOTAL:
+          <strong>{{ pacientes|length }}</strong> paciente(s)
+          +
+          <strong id="total-acomp">0</strong> acompanhante(s)
+          =
+          <strong id="total-geral" style="font-size:1.3em;">{{ pacientes|length }}</strong> PESSOA(S) NO VEÍCULO
+        </div>
+
+        <script>
+        (function() {
+          var acompanhantes = {{ acompanhantes_count }};
+          var pacientes = {{ pacientes|length }};
+          var total = pacientes + acompanhantes;
+          document.getElementById('total-acomp').textContent = acompanhantes;
+          document.getElementById('total-geral').textContent = total;
+        })();
+        </script>
+
         <!-- BOTÕES -->
         <div class="d-flex gap-2 flex-wrap mt-3">
           <button type="submit" class="btn btn-success btn-lg btn-afunda" id="btnSalvarLote">
@@ -215,8 +235,14 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Por favor, preencha a data do transporte.');
       return;
     }
-    document.getElementById('btnSalvarLote').disabled = true;
-    document.getElementById('btnSalvarLote').innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';
+    var btn = document.getElementById('btnSalvarLote');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';
+    // Reabilita botão após 20s caso haja erro no servidor
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s))';
+    }, 20000);
   });
 });
 </script>
