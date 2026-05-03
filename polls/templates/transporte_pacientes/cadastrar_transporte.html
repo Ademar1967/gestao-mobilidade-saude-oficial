@@ -247,6 +247,9 @@ document.addEventListener('DOMContentLoaded', function() {
                       <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
                     </div>
                     <div class="form-text" style="color:#0d47a1; font-weight:600;">A clínica digitada será salva automaticamente ao clicar em Salvar Transporte.</div>
+                    <div id="info-endereco-clinica" style="display:none; margin-top:6px; padding:6px 10px; background:#f1f8e9; border:1px solid #81c784; border-radius:6px; font-size:0.85rem; color:#2e7d32;">
+                      <i class="bi bi-geo-alt-fill me-1"></i><span id="info-endereco-clinica-texto"></span>
+                    </div>
                   </div>
                   {% endif %}
                 </div>
@@ -332,6 +335,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         campo.dispatchEvent(new Event('change'));
                       }
+                        // Oculta endereço informativo se limpar campo de clínica manual
+                        if (campoId === 'id_clinica_manual') {
+                          var infoBox = document.getElementById('info-endereco-clinica');
+                          if (infoBox) infoBox.style.display = 'none';
+                        }
                     });
                   });
                 });
@@ -622,8 +630,118 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initAutocompleteAjax('id_veiculo_livre', '/api/veiculos/sugestoes/?q=', optionsToSource('id_veiculo'));
     initAutocompleteAjax('id_condutor_manual', '/api/condutores/sugestoes/?q=', optionsToSource('id_condutor'));
-    initAutocompleteAjax('id_clinica_manual', '/api/clinicas/sugestoes/?q=', optionsToSource('id_clinica'));
     initAutocompleteAjax('id_enfermagem_manual', '/api/enfermagem/sugestoes/?q=', optionsToSource('id_enfermagem'));
+
+    // Exibição de endereço da clínica escolhida (funciona com jQuery UI e datalist nativo)
+    (function() {
+      var input = document.getElementById('id_clinica_manual');
+      var infoBox = document.getElementById('info-endereco-clinica');
+      var infoTexto = document.getElementById('info-endereco-clinica-texto');
+      if (!input || !infoBox || !infoTexto) return;
+
+      var debounceInfoId = null;
+      var requestSeq = 0;
+
+      function norm(s) {
+        return String(s || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .trim();
+      }
+
+      function hideInfo() {
+        infoBox.style.display = 'none';
+        infoTexto.textContent = '';
+      }
+
+      function renderInfo(item) {
+        if (!item || (!item.endereco && !item.bairro && !item.cidade)) {
+          hideInfo();
+          return;
+        }
+        var partes = [];
+        if (item.endereco) partes.push(item.endereco);
+        if (item.bairro) partes.push(item.bairro);
+        if (item.cidade) partes.push(item.cidade);
+        infoTexto.textContent = partes.join(' — ');
+        infoBox.style.display = 'block';
+      }
+
+      function buscarEnderecoPorNome(nome) {
+        var texto = String(nome || '').trim();
+        if (!texto) {
+          hideInfo();
+          return;
+        }
+
+        var seq = ++requestSeq;
+        fetch('/api/clinicas/sugestoes/?q=' + encodeURIComponent(texto), { credentials: 'same-origin' })
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(data) {
+            if (seq !== requestSeq) return;
+            var resultados = (data && data.resultados) ? data.resultados : [];
+            var alvo = norm(texto);
+            var item = null;
+
+            for (var i = 0; i < resultados.length; i++) {
+              if (norm(resultados[i].nome) === alvo) {
+                item = resultados[i];
+                break;
+              }
+            }
+
+            if (!item && resultados.length === 1) {
+              item = resultados[0];
+            }
+            renderInfo(item);
+          })
+          .catch(function() {
+            if (seq === requestSeq) hideInfo();
+          });
+      }
+
+      if (typeof window.jQuery !== 'undefined' && typeof jQuery.fn.autocomplete === 'function') {
+        var $input = jQuery('#id_clinica_manual');
+        $input.autocomplete({
+          minLength: 2,
+          appendTo: 'body',
+          source: function(request, response) {
+            jQuery.getJSON('/api/clinicas/sugestoes/?q=' + encodeURIComponent(request.term), function(data) {
+              var resultados = (data && data.resultados) ? data.resultados : [];
+              response(resultados.map(function(item) {
+                return {
+                  label: item.nome,
+                  value: item.nome,
+                  endereco: item.endereco || '',
+                  bairro: item.bairro || '',
+                  cidade: item.cidade || ''
+                };
+              }));
+            }).fail(function() { response([]); });
+          },
+          select: function(event, ui) {
+            input.value = ui.item.value;
+            renderInfo(ui.item);
+            return false;
+          }
+        }).on('focus click', function() {
+          if (this.value.length >= 2) jQuery(this).autocomplete('search', this.value);
+        }).on('autocompleteopen', function() {
+          jQuery('.ui-autocomplete').css('z-index', 3000);
+        });
+      }
+
+      input.addEventListener('input', function() {
+        var valor = input.value || '';
+        clearTimeout(debounceInfoId);
+        debounceInfoId = setTimeout(function() {
+          buscarEnderecoPorNome(valor);
+        }, 180);
+      });
+      input.addEventListener('change', function() { buscarEnderecoPorNome(input.value || ''); });
+      input.addEventListener('blur', function() { buscarEnderecoPorNome(input.value || ''); });
+    })();
   });
 </script>
 {% endblock %}

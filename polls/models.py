@@ -73,6 +73,20 @@ class Paciente(models.Model):
         """Retorna True se o paciente já possui transporte associado."""
         return self.transportes.exists()
 
+    def dados_operacionais_transporte(self):
+        """Retorna apenas dados mínimos necessários para operação do transporte."""
+        return {
+            'nome': self.nome,
+            'peso_kg': f"{self.peso} kg" if self.peso is not None else '',
+            'oxigenio': self.oxigenio,
+            'oxigenio_litros_min': self.oxigenio_litros_min if self.oxigenio else None,
+            'maca': self.maca,
+            'cadeirante': self.cadeirante,
+            'acompanhante': self.acompanhante,
+            'endereco': self.endereco_formatado(),
+            'contato': self.contato_formatado(),
+        }
+
 class Veiculo(models.Model):
     TIPO_CHOICES = [
         ("ambulancia", "Ambulância Prefeitura"),
@@ -144,6 +158,19 @@ class Transporte(models.Model):
 		clinica_nome = self.clinica.nome if self.clinica else 'Clinica nao informada'
 		veiculo_nome = str(self.veiculo) if self.veiculo else 'Veiculo nao informado'
 		return f"{self.data_transporte} | {paciente_nome} -> {clinica_nome} | {veiculo_nome}"
+
+	def dados_minimos_r1_r2(self):
+		"""Pacote simples para tela operacional de condutor (R1/R2)."""
+		paciente_ops = self.paciente.dados_operacionais_transporte() if self.paciente else {}
+		return {
+			'perfil': 'R1' if self.enfermagem_id else 'R2',
+			'data_transporte': self.data_transporte,
+			'clinica': self.clinica.nome if self.clinica else '',
+			'veiculo': str(self.veiculo) if self.veiculo else '',
+			'condutor': self.condutor.nome if self.condutor else '',
+			'enfermagem': self.enfermagem.nome if self.enfermagem else '',
+			'paciente': paciente_ops,
+		}
 from django.db import models
 
 # Create your models here.

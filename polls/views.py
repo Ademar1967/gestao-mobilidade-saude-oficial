@@ -167,12 +167,14 @@ from .models import Transporte
 from django.shortcuts import render, redirect
 
 def buscar_clinicas_sugestoes(request):
-	"""Retorna sugestoes de clinicas por nome para autocomplete no formulario."""
+	"""Retorna sugestoes de clinicas por nome: primeiro do banco, depois do CNES."""
 	from django.http import JsonResponse
 	from .models import Clinica
 	termo = (request.GET.get('q') or '').strip()
 	if len(termo) < 2:
 		return JsonResponse({'sucesso': True, 'resultados': []})
+
+	# 1) Clínicas já cadastradas no banco (prioridade)
 	queryset = (
 		Clinica.objects
 		.only('id', 'nome', 'endereco', 'bairro', 'cidade', 'telefone')
@@ -192,9 +194,42 @@ def buscar_clinicas_sugestoes(request):
 			'cidade': c.cidade or '',
 			'telefone': c.telefone or '',
 			'uso_count': c.uso_count or 0,
+			'fonte': 'banco',
 		}
 		for c in queryset
 	]
+
+	# 2) Complementa com CNES se ainda há espaço (até 10 total)
+	vagas = 10 - len(resultados)
+	if vagas > 0:
+		# Garante cache carregado
+		global _AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM
+		if _AUTOCOMPLETE_DF is None:
+			_AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM = _load_autocomplete_df()
+		df_cnes = _AUTOCOMPLETE_DF
+		if df_cnes is not None:
+			nomes_banco = {r['nome'].lower() for r in resultados}
+			termo_norm = _normalize(termo)
+			nomes_norm = df_cnes['nome'].apply(_normalize)
+			mask = nomes_norm.str.contains(termo_norm, regex=False)
+			for _, row in df_cnes[mask].head(vagas * 2).iterrows():
+				if len(resultados) >= 10:
+					break
+				# Não duplicar o que já está no banco
+				if row['nome'].lower() in nomes_banco:
+					continue
+				cidade = row.get('municipio', '')
+				resultados.append({
+					'id': None,
+					'nome': f"{row['nome']} — {cidade}" if cidade else row['nome'],
+					'endereco': f"{row['logradouro']}, {row['numero']}".strip(', '),
+					'bairro': row.get('bairro', ''),
+					'cidade': cidade,
+					'telefone': '',
+					'uso_count': 0,
+					'fonte': 'cnes',
+				})
+
 	audit_logger.info("Sugestoes de clinica consultadas", extra={"termo": termo, "quantidade": len(resultados)})
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 
@@ -608,117 +643,142 @@ def editar_paciente(request, pk):
 	return render(request, 'transporte_pacientes/editar_paciente.html', {'form': form, 'paciente': paciente})
 from django.http import JsonResponse
 import pandas as pd
-# Autocomplete AJAX para endereÃ§o de unidade de saÃºde
+import unicodedata
+import logging
+
+# ── Cache em memória: carregado uma única vez no primeiro request ────────────
+_AUTOCOMPLETE_DF = None          # DataFrame unificado
+_AUTOCOMPLETE_NOMES_NORM = None  # Série de nomes normalizados (evita recalcular)
+
+# Mapa dos códigos IBGE → nome do município (Grande SP)
+_COD_MUNICIPIO = {
+    '355030': 'São Paulo', '350950': 'Arujá', '350280': 'Barueri',
+    '350570': 'Biritiba Mirim', '350760': 'Cajamar', '351060': 'Carapicuíba',
+    '351880': 'Guarulhos', '352500': 'Diadema', '351500': 'Embu das Artes',
+    '351510': 'Embu-Guaçu', '351570': 'Ferraz de Vasconcelos',
+    '351630': 'Francisco Morato', '351640': 'Franco da Rocha',
+    '352250': 'Itapecerica da Serra', '352310': 'Itapevi',
+    '352340': 'Itaquaquecetuba', '352590': 'Juquitiba',
+    '352940': 'Mauá', '353060': 'Mogi das Cruzes', '353440': 'Osasco',
+    '353910': 'Poá', '354330': 'Ribeirão Pires', '354340': 'Rio Grande da Serra',
+    '354780': 'Santa Isabel', '354870': 'Santana de Parnaíba',
+    '354880': 'Santo André', '354890': 'São Bernardo do Campo',
+    '354910': 'São Caetano do Sul', '355220': 'Suzano',
+    '355645': 'Taboão da Serra', '355715': 'Vargem Grande Paulista',
+}
+
+def _normalize(s):
+    return unicodedata.normalize('NFKD', str(s)).encode('ASCII', 'ignore').decode('ASCII').lower()
+
+def _load_autocomplete_df():
+    """Lê todos os CSVs uma única vez e retorna DataFrame unificado."""
+    base_dir = Path(__file__).resolve().parent.parent
+    frames = []
+
+    # 1) CSV do CNES (431 hospitais da Grande SP)
+    cnes_path = base_dir / 'BACKUPS_MANUAIS' / 'hospitais_sp_cnes.csv'
+    if cnes_path.exists():
+        try:
+            df_cnes = pd.read_csv(cnes_path, dtype=str).fillna('')
+            # Mapeia cod_municipio → nome do município
+            df_cnes['municipio'] = df_cnes['cod_municipio'].map(_COD_MUNICIPIO).fillna('Grande SP')
+            # Normaliza nomes para maiúsculas com título (melhor exibição)
+            df_cnes['nome'] = df_cnes['nome'].str.title()
+            # Seleciona apenas colunas necessárias
+            df_cnes = df_cnes[['nome', 'logradouro', 'numero', 'bairro', 'municipio', 'cep']]
+            frames.append(df_cnes)
+            logging.info(f"[AUTOCOMPLETE] CNES carregado: {len(df_cnes)} registros")
+        except Exception as e:
+            logging.warning(f"[AUTOCOMPLETE] Falha ao ler CNES: {e}")
+
+    # 2) CSVs manuais de referência
+    for fname in ['enderecos_sp_hospitais_referencia_corrigido.csv', 'enderecos_sp_hospitais_adicionais.csv']:
+        p = base_dir / fname
+        if p.exists():
+            try:
+                df_extra = pd.read_csv(p, dtype=str).fillna('')
+                if 'municipio' not in df_extra.columns:
+                    df_extra['municipio'] = ''
+                df_extra = df_extra[['nome', 'logradouro', 'numero', 'bairro', 'municipio', 'cep']]
+                frames.append(df_extra)
+                logging.info(f"[AUTOCOMPLETE] {fname} carregado: {len(df_extra)} registros")
+            except Exception as e:
+                logging.warning(f"[AUTOCOMPLETE] Falha ao ler {fname}: {e}")
+
+    if not frames:
+        return None, None
+
+    df = pd.concat(frames, ignore_index=True).drop_duplicates(subset=['nome', 'cep'])
+    nomes_norm = df['nome'].apply(_normalize)
+    return df, nomes_norm
+
+
+# Autocomplete AJAX para endereço de unidade de saúde
 def autocomplete_endereco_unidade(request):
-	import unicodedata
-	import logging
-	try:
-		from rapidfuzz import process, fuzz
-	except ImportError:
-		process = None
-		fuzz = None
-	def normalize(s):
-		return unicodedata.normalize('NFKD', str(s)).encode('ASCII', 'ignore').decode('ASCII').lower()
-	term = normalize(request.GET.get('term', ''))
-	# Corrige para garantir que o arquivo adicional seja buscado na raiz do projeto
-	import os
-	base_dir = Path(__file__).resolve().parent.parent
-	project_root = base_dir if (base_dir / 'manage.py').exists() else base_dir.parent
-	path2_candidates = [
-		project_root / 'enderecos_sp_hospitais_referencia_corrigido.csv',
-		base_dir / 'enderecos_sp_hospitais_referencia_corrigido.csv',
-	]
-	path3_candidates = [
-		project_root / 'enderecos_sp_hospitais_adicionais.csv',
-		base_dir / 'enderecos_sp_hospitais_adicionais.csv',
-	]
-	resultados = []
-	try:
-		# Tenta ler apenas os arquivos de hospitais disponíveis
-		frames = []
-		for candidate in path2_candidates:
-			if candidate.exists():
-				try:
-					df2 = pd.read_csv(candidate, sep=',', encoding='utf-8', quoting=0, on_bad_lines='warn')
-					frames.append(df2)
-					break
-				except Exception as e:
-					logging.warning(f"[AUTOCOMPLETE] Falha ao ler {candidate}: {e}")
-		for candidate in path3_candidates:
-			if candidate.exists():
-				try:
-					df3 = pd.read_csv(candidate, sep=',', encoding='utf-8', quoting=0, on_bad_lines='warn')
-					frames.append(df3)
-					break
-				except Exception as e:
-					logging.warning(f"[AUTOCOMPLETE] Falha ao ler {candidate}: {e}")
-		if not frames:
-			from .models import Clinica
-			clinicas = Clinica.objects.filter(nome__icontains=request.GET.get('term', '').strip()).order_by('nome')[:10]
-			fallback = []
-			for c in clinicas:
-				fallback.append({
-					'label': c.nome,
-					'value': c.endereco or '',
-					'logradouro': c.endereco or '',
-					'numero': '',
-					'cep': '',
-				})
-			logging.warning(f"[AUTOCOMPLETE] CSV ausente no servidor; usando fallback de Clinica. total={len(fallback)}")
-			return JsonResponse(fallback, safe=False)
-		df = pd.concat(frames, ignore_index=True)
-		if term:
-			# Verifica se as colunas existem
-			for col in ['nome','logradouro','numero','bairro','municipio','cep']:
-				if col not in df.columns:
-					logging.error(f"[AUTOCOMPLETE] Coluna ausente: {col}")
-					return JsonResponse({'error': f'Coluna ausente: {col}'}, status=500)
-			nomes_normalizados = df['nome'].apply(normalize)
-			# Busca direta
-			mask = nomes_normalizados.str.contains(term)
-			encontrados = df[mask]
-			# Sempre faz busca fuzzy se menos de 10 resultados
-			indices_usados = set(encontrados.index.tolist())
-			if encontrados.shape[0] < 10 and process and fuzz:
-				nomes_lista = nomes_normalizados.tolist()
-				fuzzy_matches = process.extract(term, nomes_lista, scorer=fuzz.WRatio, limit=20)
-				fuzzy_indices = [m[2] for m in fuzzy_matches if m[1] > 60 and m[2] not in indices_usados]
-				for idx in fuzzy_indices:
-					row = df.iloc[idx]
-					endereco_completo = f"{row['logradouro']}, {row['numero']}, {row['bairro']}, {row['municipio']}, {row['cep']}"
-					resultados.append({
-						'label': row['nome'],
-						'value': endereco_completo,
-						'logradouro': row['logradouro'],
-						'numero': int(row['numero']) if hasattr(row['numero'], 'item') or str(type(row['numero'])).startswith("<class 'numpy.") else row['numero'],
-						'cep': row['cep']
-					})
-					indices_usados.add(idx)
-					if len(resultados) + encontrados.shape[0] >= 10:
-						break
-			# Resultados diretos
-			for _, row in encontrados.head(10 - len(resultados)).iterrows():
-				endereco_completo = f"{row['logradouro']}, {row['numero']}, {row['bairro']}, {row['municipio']}, {row['cep']}"
-				resultados.append({
-					'label': row['nome'],
-					'value': endereco_completo,
-					'logradouro': row['logradouro'],
-					'numero': int(row['numero']) if hasattr(row['numero'], 'item') or str(type(row['numero'])).startswith("<class 'numpy.") else row['numero'],
-					'cep': row['cep']
-				})
-		# Remover duplicados mantendo ordem
-		seen = set()
-		resultados_unicos = []
-		for r in resultados:
-			if r['label'] not in seen:
-				resultados_unicos.append(r)
-				seen.add(r['label'])
-		logging.warning(f"[AUTOCOMPLETE] term: {term} | resultados: {resultados_unicos}")
-		return JsonResponse(resultados_unicos, safe=False)
-	except Exception as e:
-		# Tratamento de erro: loga e retorna erro amigÃ¡vel
-		logging.error(f"[AUTOCOMPLETE] Erro: {e}")
-		return JsonResponse({'error': str(e)}, status=500)
+    global _AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM
+    try:
+        from rapidfuzz import process, fuzz
+    except ImportError:
+        process = None
+        fuzz = None
+
+    # Carrega o cache na primeira chamada
+    if _AUTOCOMPLETE_DF is None:
+        _AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM = _load_autocomplete_df()
+
+    term = _normalize(request.GET.get('term', ''))
+    resultados = []
+
+    try:
+        # Fallback: banco de dados se CSVs não existirem
+        if _AUTOCOMPLETE_DF is None or term == '':
+            from .models import Clinica
+            clinicas = Clinica.objects.filter(nome__icontains=request.GET.get('term', '').strip()).order_by('nome')[:10]
+            return JsonResponse([{
+                'label': c.nome, 'value': c.endereco or '',
+                'logradouro': c.endereco or '', 'numero': '', 'cep': '',
+            } for c in clinicas], safe=False)
+
+        df = _AUTOCOMPLETE_DF
+        nomes_norm = _AUTOCOMPLETE_NOMES_NORM
+
+        # Busca direta por substring (rápida, em memória)
+        mask = nomes_norm.str.contains(term, regex=False)
+        encontrados = df[mask].head(10)
+        indices_usados = set(encontrados.index.tolist())
+
+        def row_to_dict(row):
+            endereco = f"{row['logradouro']}, {row['numero']}, {row['bairro']}, {row['municipio']}, {row['cep']}"
+            cidade = row['municipio']
+            label = f"{row['nome']} — {cidade}" if cidade else row['nome']
+            return {
+                'label': label,
+                'value': endereco.strip(', '),
+                'logradouro': row['logradouro'],
+                'numero': row['numero'],
+                'cep': row['cep'],
+            }
+
+        for _, row in encontrados.iterrows():
+            resultados.append(row_to_dict(row))
+
+        # Fuzzy apenas se poucos resultados diretos
+        if len(resultados) < 5 and process and fuzz:
+            fuzzy_matches = process.extract(term, nomes_norm.tolist(), scorer=fuzz.WRatio, limit=15)
+            for _, score, idx in fuzzy_matches:
+                if score > 65 and idx not in indices_usados and len(resultados) < 10:
+                    resultados.append(row_to_dict(df.iloc[idx]))
+                    indices_usados.add(idx)
+
+        # Remove duplicados mantendo ordem
+        seen = set()
+        resultados_unicos = [r for r in resultados if r['label'] not in seen and not seen.add(r['label'])]
+
+        return JsonResponse(resultados_unicos, safe=False)
+
+    except Exception as e:
+        logging.error(f"[AUTOCOMPLETE] Erro: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
@@ -1030,7 +1090,6 @@ def arquivos_recebidos_pacientes(request):
 		'pasta_entrada': entrada_dir,
 	})
 
-@login_required
 def cadastrar_paciente(request):
 	from .models import Paciente
 	from django.contrib import messages

@@ -1,11 +1,12 @@
 import pandas as pd
-import requests
+import ftplib
 import zipfile
 import io
 import os
 
-# URL oficial do CNES para estabelecimentos de saúde (atualizado periodicamente)
-URL = "https://ftp.datasus.gov.br/ftp/cnes/BASE_DE_DADOS_CNES_202603.zip"
+# Servidor FTP e caminho do arquivo CNES
+FTP_HOST = "ftp.datasus.gov.br"
+FTP_PATH = "/cnes/BASE_DE_DADOS_CNES_202603.ZIP"
 ZIP_NAME = "BASE_DE_DADOS_CNES_202603.zip"
 CSV_NAME = "tbEstabelecimento202603.csv"  # Nome do arquivo dentro do ZIP (ajustar conforme mês/ano)
 
@@ -15,14 +16,18 @@ OUTPUT_FILE = "hospitais_sp_cnes.csv"
 
 # Tenta abrir o ZIP localmente primeiro
 if os.path.exists(ZIP_NAME):
-	print(f"Arquivo {ZIP_NAME} encontrado localmente. Usando arquivo local.")
-	z = zipfile.ZipFile(ZIP_NAME)
+    print(f"Arquivo {ZIP_NAME} encontrado localmente. Usando arquivo local.")
+    z = zipfile.ZipFile(ZIP_NAME)
 else:
-	print("Baixando base CNES...")
-	r = requests.get(URL)
-	with open(ZIP_NAME, "wb") as f:
-		f.write(r.content)
-	z = zipfile.ZipFile(io.BytesIO(r.content))
+    print(f"Conectando ao FTP {FTP_HOST}...")
+    ftp = ftplib.FTP(FTP_HOST, timeout=120)
+    ftp.login()
+    print(f"Baixando {FTP_PATH} ...")
+    with open(ZIP_NAME, "wb") as f:
+        ftp.retrbinary(f"RETR {FTP_PATH}", f.write)
+    ftp.quit()
+    print("Download concluído.")
+    z = zipfile.ZipFile(ZIP_NAME)
 
 # Extrair o CSV desejado
 print("Extraindo CSV...")
@@ -72,12 +77,23 @@ COD_MUNICIPIOS_GRANDE_SP = [
     '355715', # Vargem Grande Paulista
 ]
 
-# Filtrar hospitais de todos esses municípios
-df_sp = df[(df['CO_MUNICIPIO_GESTOR'].isin(COD_MUNICIPIOS_GRANDE_SP)) & (df['TP_ESTAB'] == 'HOSPITAL')]
+# Filtrar hospitais (TP_UNIDADE=05) de todos esses municípios
+df_sp = df[(df['CO_MUNICIPIO_GESTOR'].isin(COD_MUNICIPIOS_GRANDE_SP)) & (df['TP_UNIDADE'] == '05')]
 
-# Selecionar colunas principais
-colunas = ['NO_FANTASIA', 'DS_ENDERECO', 'NU_ENDERECO', 'DS_BAIRRO', 'CO_CEP', 'NO_MUNICIPIO', 'CO_CNES']
-df_saida = df_sp[colunas]
+# Selecionar colunas principais (nomes reais do CSV CNES)
+colunas = ['NO_FANTASIA', 'NO_LOGRADOURO', 'NU_ENDERECO', 'NO_BAIRRO', 'CO_CEP', 'CO_MUNICIPIO_GESTOR', 'CO_CNES', 'NU_LATITUDE', 'NU_LONGITUDE', 'NU_TELEFONE']
+df_saida = df_sp[colunas].rename(columns={
+    'NO_FANTASIA': 'nome',
+    'NO_LOGRADOURO': 'logradouro',
+    'NU_ENDERECO': 'numero',
+    'NO_BAIRRO': 'bairro',
+    'CO_CEP': 'cep',
+    'CO_MUNICIPIO_GESTOR': 'cod_municipio',
+    'CO_CNES': 'co_cnes',
+    'NU_LATITUDE': 'latitude',
+    'NU_LONGITUDE': 'longitude',
+    'NU_TELEFONE': 'telefone',
+})
 
 # Garantir pasta de saída
 os.makedirs(OUTPUT_DIR, exist_ok=True)
