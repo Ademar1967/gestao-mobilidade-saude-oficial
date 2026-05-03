@@ -47,6 +47,8 @@ class AutocompleteProtecaoTest(TestCase):
         self.assertIn("initAutocompleteAjax('id_veiculo_livre'", html)
         self.assertIn("var $input = jQuery('#id_clinica_manual')", html)
         self.assertIn("buscarEnderecoPorNome", html)
+        self.assertIn("function nomeBase(", html)
+        self.assertIn("split('—')", html)
 
         # Fallback nativo com datalist (camada de resiliencia)
         self.assertIn("initNativeAutocompleteFallback('id_veiculo_livre'", html)

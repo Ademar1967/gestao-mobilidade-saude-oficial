@@ -655,6 +655,10 @@ document.addEventListener('DOMContentLoaded', function() {
         infoTexto.textContent = '';
       }
 
+      function nomeBase(valor) {
+        return String(valor || '').split('—')[0].trim();
+      }
+
       function renderInfo(item) {
         if (!item || (!item.endereco && !item.bairro && !item.cidade)) {
           hideInfo();
@@ -675,24 +679,35 @@ document.addEventListener('DOMContentLoaded', function() {
           return;
         }
 
+        var textoBusca = nomeBase(texto) || texto;
+
         var seq = ++requestSeq;
-        fetch('/api/clinicas/sugestoes/?q=' + encodeURIComponent(texto), { credentials: 'same-origin' })
+        fetch('/api/clinicas/sugestoes/?q=' + encodeURIComponent(textoBusca), { credentials: 'same-origin' })
           .then(function(r) { return r.ok ? r.json() : null; })
           .then(function(data) {
             if (seq !== requestSeq) return;
             var resultados = (data && data.resultados) ? data.resultados : [];
             var alvo = norm(texto);
+            var alvoBase = norm(textoBusca);
             var item = null;
 
             for (var i = 0; i < resultados.length; i++) {
-              if (norm(resultados[i].nome) === alvo) {
+              var nomeItem = String(resultados[i].nome || '');
+              var cand = norm(nomeItem);
+              var candBase = norm(nomeBase(nomeItem));
+              if (cand === alvo || candBase === alvoBase || (alvoBase && cand.indexOf(alvoBase) === 0)) {
                 item = resultados[i];
                 break;
               }
             }
 
-            if (!item && resultados.length === 1) {
-              item = resultados[0];
+            if (!item) {
+              for (var j = 0; j < resultados.length; j++) {
+                if ((resultados[j].endereco || '').trim()) {
+                  item = resultados[j];
+                  break;
+                }
+              }
             }
             renderInfo(item);
           })
