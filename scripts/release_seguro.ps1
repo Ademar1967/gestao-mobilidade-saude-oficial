@@ -4,6 +4,8 @@ param(
 
     [switch]$Push,
 
+    [switch]$SkipTests,
+
     [string]$Branch = "main"
 )
 
@@ -89,7 +91,17 @@ if ($LASTEXITCODE -ne 0) {
     throw "Falha no manage.py check. Release cancelado."
 }
 
-Write-Host "[4/6] Preparando stage apenas dos arquivos do release..." -ForegroundColor Cyan
+if (-not $SkipTests.IsPresent) {
+    Write-Host "[4/7] Executando testes automatizados (manage.py test)..." -ForegroundColor Cyan
+    & $pythonExe manage.py test
+    if ($LASTEXITCODE -ne 0) {
+        throw "Falha no manage.py test. Release cancelado."
+    }
+} else {
+    Write-Host "[4/7] Testes pulados via -SkipTests." -ForegroundColor Yellow
+}
+
+Write-Host "[5/7] Preparando stage apenas dos arquivos do release..." -ForegroundColor Cyan
 $pathsToAdd = $uniqueCandidates.Path
 
 # Limpa somente o indice (nao altera arquivos locais)
@@ -104,7 +116,7 @@ if (-not $stagedFiles) {
     throw "Nenhum arquivo ficou staged. Release cancelado."
 }
 
-Write-Host "[5/6] Arquivos staged para commit:" -ForegroundColor Cyan
+Write-Host "[6/7] Arquivos staged para commit:" -ForegroundColor Cyan
 $stagedFiles | ForEach-Object { Write-Host " - $_" }
 
 $confirmCommit = Read-Host "Digite SIM para confirmar o commit"
@@ -116,7 +128,7 @@ if ($confirmCommit -ne "SIM") {
 & git commit -m $CommitMessage
 Assert-LastExitCode "git commit"
 
-Write-Host "[6/6] Commit concluido com sucesso." -ForegroundColor Green
+Write-Host "[7/7] Commit concluido com sucesso." -ForegroundColor Green
 
 if ($Push.IsPresent) {
     Write-Host "Arquivos do ultimo commit:" -ForegroundColor Cyan
