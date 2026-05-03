@@ -229,7 +229,25 @@ def buscar_clinicas_sugestoes(request):
 					'uso_count': 0,
 					'fonte': 'cnes',
 				})
-
+	# 2b) Enriquecer resultados do banco que não têm endereço com dados do CSV
+	if _AUTOCOMPLETE_DF is None:
+		_AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM = _load_autocomplete_df()
+	if _AUTOCOMPLETE_DF is not None:
+		df_ref = _AUTOCOMPLETE_DF
+		nomes_norm_ref = df_ref['nome'].apply(_normalize)
+		for r in resultados:
+			if r['fonte'] == 'banco' and not r['endereco'] and not r['bairro']:
+				alvo_norm = _normalize(r['nome'])
+				matches = df_ref[nomes_norm_ref == alvo_norm]
+				if matches.empty:
+					# tenta match parcial
+					matches = df_ref[nomes_norm_ref.str.contains(alvo_norm[:10], regex=False)]
+				if not matches.empty:
+					row = matches.iloc[0]
+					cidade = row.get('municipio', '')
+					r['endereco'] = f"{row['logradouro']}, {row['numero']}".strip(', ')
+					r['bairro'] = row.get('bairro', '')
+					r['cidade'] = cidade or r['cidade']
 	audit_logger.info("Sugestoes de clinica consultadas", extra={"termo": termo, "quantidade": len(resultados)})
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 

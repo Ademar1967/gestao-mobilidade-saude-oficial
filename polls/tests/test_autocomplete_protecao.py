@@ -43,9 +43,10 @@ class AutocompleteProtecaoTest(TestCase):
         self.assertIn('id="id_veiculo_livre"', html)
         self.assertIn('id="id_clinica_manual"', html)
 
-        # Inicializacao jQuery UI (camada principal)
+        # Inicializacao principal: veiculo via helper ajax e clinica via bloco dedicado
         self.assertIn("initAutocompleteAjax('id_veiculo_livre'", html)
-        self.assertIn("initAutocompleteAjax('id_clinica_manual'", html)
+        self.assertIn("var $input = jQuery('#id_clinica_manual')", html)
+        self.assertIn("buscarEnderecoPorNome", html)
 
         # Fallback nativo com datalist (camada de resiliencia)
         self.assertIn("initNativeAutocompleteFallback('id_veiculo_livre'", html)
