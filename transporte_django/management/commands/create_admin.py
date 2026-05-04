@@ -11,7 +11,7 @@ class Command(BaseCommand):
         username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
         email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
         password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', 'admin123')
-        force_reset = True  # TEMPORARIO: forcando reset de senha - remover apos deploy
+        force_reset = os.environ.get('DJANGO_FORCE_PASSWORD_RESET', 'false').strip().lower() in ('1', 'true', 'yes', 'on')
 
         if User.objects.filter(username=username).exists():
             user = User.objects.get(username=username)
