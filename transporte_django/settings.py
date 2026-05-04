@@ -149,7 +149,7 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 # Sessão expira após inatividade (30 minutos por padrão). Pode ser ajustado por variável de ambiente.
-SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '720'))  # 12 minutos
+SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '28800'))  # 8 horas
 SESSION_SAVE_EVERY_REQUEST = True
 
 
