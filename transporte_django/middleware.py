@@ -12,6 +12,7 @@ URLS_PUBLICAS = [
     '/api/whatsapp/webhook/',
     '/api/token/',
     '/api/token/refresh/',
+    '/autocomplete_endereco_unidade/',
 ]
 
 class LoginObrigatorioMiddleware:
