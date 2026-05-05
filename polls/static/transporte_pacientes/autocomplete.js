@@ -9,7 +9,12 @@ $(document).ready(function() {
 
   nomeInput.autocomplete({
     source: function(request, response) {
-      $.getJSON('/autocomplete_endereco_unidade/', { term: request.term }, function(data) {
+      // Se o campo está vazio ou tem menos de 2 chars, mostra TODAS as 457
+      var show_all = (request.term.trim().length === 0) ? 'true' : 'false';
+      $.getJSON('/autocomplete_endereco_unidade/', {
+        term: request.term,
+        show_all: show_all
+      }, function(data) {
         response($.map(data || [], function(item) {
           return {
             label: item.label || '',
@@ -23,7 +28,7 @@ $(document).ready(function() {
         }));
       });
     },
-    minLength: 2,
+    minLength: 0,  // Permite mostrar sugestões mesmo com campo vazio
     select: function(event, ui) {
       // Preenche nome com label (nome do hospital)
       nomeInput.val(ui.item.label || '');

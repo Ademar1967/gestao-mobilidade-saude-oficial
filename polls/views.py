@@ -871,13 +871,18 @@ def autocomplete_endereco_unidade(request):
         _AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM = _load_autocomplete_df()
 
     term = _normalize(request.GET.get('term', ''))
+    show_all = request.GET.get('show_all', 'false').lower() in ('true', '1', 'yes', 'on')
+    max_results = None if show_all else 10  # None = sem limite (todas), 10 = padrão
     resultados = []
 
     try:
-        # Fallback: banco de dados se CSVs não existirem
-        if _AUTOCOMPLETE_DF is None or term == '':
+        # Se não há DataFrames e precisa mostrar tudo, tenta BD
+        if _AUTOCOMPLETE_DF is None:
             from .models import Clinica
-            clinicas = Clinica.objects.filter(nome__icontains=request.GET.get('term', '').strip()).order_by('nome')[:10]
+            clinicas = Clinica.objects.all() if show_all else Clinica.objects.filter(nome__icontains=request.GET.get('term', '').strip())
+            clinicas = clinicas.order_by('nome')
+            if max_results:
+                clinicas = clinicas[:max_results]
             return JsonResponse([{
                 'label': c.nome, 'value': c.endereco or '',
                 'logradouro': c.endereco or '', 'numero': '', 'cep': '',
@@ -886,9 +891,21 @@ def autocomplete_endereco_unidade(request):
         df = _AUTOCOMPLETE_DF
         nomes_norm = _AUTOCOMPLETE_NOMES_NORM
 
-        # Busca direta por substring (rápida, em memória)
-        mask = nomes_norm.str.contains(term, regex=False)
-        encontrados = df[mask].head(10)
+        # Se term vazio e show_all=true, retorna TODAS
+        if term == '' and show_all:
+            encontrados = df
+        # Se term vazio e show_all=false, retorna vazio
+        elif term == '':
+            encontrados = pd.DataFrame()
+        # Caso contrário, busca por substring
+        else:
+            mask = nomes_norm.str.contains(term, regex=False)
+            encontrados = df[mask]
+
+        # Limita resultado se necessário
+        if max_results:
+            encontrados = encontrados.head(max_results)
+
         indices_usados = set(encontrados.index.tolist())
 
         def row_to_dict(row):
@@ -906,8 +923,8 @@ def autocomplete_endereco_unidade(request):
         for _, row in encontrados.iterrows():
             resultados.append(row_to_dict(row))
 
-        # Fuzzy apenas se poucos resultados diretos
-        if len(resultados) < 5 and process and fuzz:
+        # Fuzzy apenas se poucos resultados diretos E não estiver mostrando tudo
+        if not show_all and len(resultados) < 5 and process and fuzz:
             fuzzy_matches = process.extract(term, nomes_norm.tolist(), scorer=fuzz.WRatio, limit=15)
             for _, score, idx in fuzzy_matches:
                 if score > 65 and idx not in indices_usados and len(resultados) < 10:
