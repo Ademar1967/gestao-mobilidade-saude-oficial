@@ -222,6 +222,26 @@ class PacienteForm(forms.ModelForm):
             self.fields['referencia'].widget.attrs['aria-label'] = 'Ponto de referência do endereço'
             self.fields['referencia'].widget.attrs['tabindex'] = 3
         # Esconde o campo cadeira_dobravel se não for cadeirante (feito no template)
+
+    def _validar_texto_simples(self, valor, campo):
+        """Rejeita caracteres especiais que não aparecem em nomes e endereços reais."""
+        import re
+        if valor and re.search(r'[<>"\';\\|{}()\[\]@#~!$%^*=+`]', valor):
+            raise forms.ValidationError(f'O campo {campo} contém caracteres inválidos.')
+        return valor
+
+    def clean_nome(self):
+        return self._validar_texto_simples(self.cleaned_data.get('nome', ''), 'Nome')
+
+    def clean_rua(self):
+        return self._validar_texto_simples(self.cleaned_data.get('rua', ''), 'Rua')
+
+    def clean_bairro(self):
+        return self._validar_texto_simples(self.cleaned_data.get('bairro', ''), 'Bairro')
+
+    def clean_cidade(self):
+        return self._validar_texto_simples(self.cleaned_data.get('cidade', ''), 'Cidade')
+
     def save(self, commit=True):
         """Salva o paciente montando o campo endereco legado, separando DDD e Cartão SIS."""
         instance = super().save(commit=False)
