@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Confirmação antes de salvar
+  // Confirmação antes de salvar, com checagem de clínica por paciente
   document.getElementById('form-lote').addEventListener('submit', function(e) {
     var data = document.querySelector('[name="data_transporte"]').value;
     if (!data) {
@@ -352,6 +352,32 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Por favor, preencha a data do transporte.');
       return;
     }
+
+    // Checa se todos os pacientes têm clínica (select OU manual)
+    var totalPacientes = {{ pacientes|length }};
+    var faltandoClinica = [];
+    for (var i = 0; i < totalPacientes; i++) {
+      var sel = document.querySelector('[name="clinica_' + i + '"]');
+      var inp = document.querySelector('[name="clinica_manual_' + i + '"]');
+      var clinicaSelecionada = (sel && sel.value) || (inp && inp.value.trim());
+      if (!clinicaSelecionada) {
+        faltandoClinica.push(i+1); // 1-based
+      }
+    }
+    if (faltandoClinica.length > 0) {
+      e.preventDefault();
+      var msg = 'Atenção! Os seguintes pacientes estão sem clínica de destino preenchida: ' + faltandoClinica.join(', ') + '.\nDeseja continuar mesmo assim?';
+      if (!confirm(msg)) {
+        return;
+      } else {
+        // Se usuário confirmar, submete mesmo assim
+        // Remove o listener para evitar loop
+        this.removeEventListener('submit', arguments.callee);
+        this.submit();
+        return;
+      }
+    }
+
     var btn = document.getElementById('btnSalvarLote');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';
