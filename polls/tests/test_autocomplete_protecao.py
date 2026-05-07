@@ -6,6 +6,13 @@ from polls.models import Clinica, Veiculo
 
 
 class AutocompleteProtecaoTest(TestCase):
+    def test_exportacao_pacientes_exige_login(self):
+        # Desloga o usuário
+        self.client.logout()
+        url = '/pacientes/exportar_csv/'
+        resp = self.client.get(url)
+        # Deve ser redirect (302) para login ou 401 para API
+        self.assertIn(resp.status_code, [302, 401], "Exportação de pacientes deveria exigir autenticação!")
     def test_cookie_sessao_seguro(self):
         # Realiza login
         self.client.logout()
