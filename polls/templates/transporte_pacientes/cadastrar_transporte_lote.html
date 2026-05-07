@@ -153,23 +153,31 @@
                     {% if pac.acompanhante %}<span class="badge bg-success">Acompanhante</span> {% endif %}
                   </td>
                   <td>
-                    <select name="clinica_{{ forloop.counter0 }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-idx="{{ forloop.counter0 }}" data-clinicas='{{ clinicas_json }}'>
-                      <option value="">— Selecione a clínica —</option>
-                      {% for cl in clinicas %}
-                        <option value="{{ cl.id }}" data-endereco="{{ cl.endereco|default:'' }}" data-cidade="{{ cl.cidade|default:'' }}" data-cep="{{ cl.cep|default:'' }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}{% if cl.cidade %}, {{ cl.cidade }}{% endif %}</option>
-                      {% endfor %}
-                    </select>
-                    <!-- Box verde com endereço da clínica selecionada -->
-                    <div id="endereco_box_{{ forloop.counter0 }}" class="alert alert-success d-none mt-2 mb-2" style="padding:10px; border-left:5px solid #28a745;">
-                      <strong>📍 Endereço da Clínica:</strong><br>
-                      <span id="endereco_text_{{ forloop.counter0 }}"></span>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="flex-grow-1">
+                        <select name="clinica_{{ forloop.counter0 }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-idx="{{ forloop.counter0 }}" data-clinicas='{{ clinicas_json }}'>
+                          <option value="">— Selecione a clínica —</option>
+                          {% for cl in clinicas %}
+                            <option value="{{ cl.id }}" data-endereco="{{ cl.endereco|default:'' }}" data-cidade="{{ cl.cidade|default:'' }}" data-cep="{{ cl.cep|default:'' }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}{% if cl.cidade %}, {{ cl.cidade }}{% endif %}</option>
+                          {% endfor %}
+                        </select>
+                        <!-- Box verde com endereço da clínica selecionada -->
+                        <div id="endereco_box_{{ forloop.counter0 }}" class="alert alert-success d-none mt-2 mb-2" style="padding:10px; border-left:5px solid #28a745;">
+                          <strong>📍 Endereço da Clínica:</strong><br>
+                          <span id="endereco_text_{{ forloop.counter0 }}"></span>
+                        </div>
+                        <input type="text" name="clinica_manual_{{ forloop.counter0 }}"
+                          class="form-control form-control-sm input-clinica-manual-lote"
+                          placeholder="Ou digite o nome da clínica manualmente"
+                          autocomplete="off">
+                      </div>
+                      <button type="button" class="btn btn-outline-danger btn-sm btn-excluir-paciente-lote" title="Remover paciente do lote" aria-label="Remover paciente" style="min-width:32px;">
+                        <i class="bi bi-trash"></i>
+                      </button>
                     </div>
-                    <input type="text" name="clinica_manual_{{ forloop.counter0 }}"
-                      class="form-control form-control-sm input-clinica-manual-lote"
-                      placeholder="Ou digite o nome da clínica manualmente"
-                      autocomplete="off">
                   </td>
                 </tr>
+                <!-- Script de exclusão de paciente removido do loop para evitar múltiplos bindings -->
                 {% endfor %}
               </tbody>
             </table>
@@ -233,8 +241,46 @@
 </div>
 
 <script>
-// Ao selecionar uma clínica no select, limpar o campo manual e vice-versa
+// Unificação de todos os scripts para evitar conflitos e múltiplos bindings
 document.addEventListener('DOMContentLoaded', function() {
+  // Exclusão de paciente do lote (remove linha da tabela com confirmação)
+  // Delegação de evento para garantir funcionamento mesmo após remoção dinâmica
+  document.querySelector('tbody').addEventListener('click', function(e) {
+    if (e.target.closest('.btn-excluir-paciente-lote')) {
+      e.preventDefault();
+      var btn = e.target.closest('.btn-excluir-paciente-lote');
+      var tr = btn.closest('tr');
+      var nome = tr.querySelector('strong') ? tr.querySelector('strong').textContent : '';
+      // Mensagem de confirmação
+      if (window.confirm('Deseja remover o paciente "' + nome + '" deste lote?')) {
+        tr.style.transition = 'opacity 0.3s';
+        tr.style.opacity = 0;
+        setTimeout(function() { tr.remove(); }, 300);
+      }
+    }
+  });
+
+  // Padroniza dropdown: busca endereço para clínicas do BD sem endereço
+  document.querySelectorAll('.select-clinica-lote').forEach(function(sel) {
+    Array.from(sel.options).forEach(function(opt) {
+      var nome = opt.textContent.split(' — ')[0].trim();
+      var endereco = opt.getAttribute('data-endereco') || '';
+      if (opt.value && !endereco) {
+        // Busca endereço via AJAX
+        jQuery.getJSON('/autocomplete_endereco_unidade/', { term: nome, show_all: 'false' }, function(data) {
+          if (data && data.length > 0) {
+            var enderecoNovo = data[0].value || '';
+            if (enderecoNovo) {
+              opt.textContent = nome + ' — ' + enderecoNovo;
+              opt.setAttribute('data-endereco', enderecoNovo);
+            }
+          }
+        });
+      }
+    });
+  });
+
+  // Ao selecionar uma clínica no select, limpar o campo manual e vice-versa
   document.querySelectorAll('.select-clinica-lote').forEach(function(sel) {
     sel.addEventListener('change', function() {
       var idx = this.getAttribute('data-idx');
@@ -398,6 +444,15 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s))';
     }, 20000);
   });
+
+  // Totalizador de acompanhantes
+  (function() {
+    var acompanhantes = {{ acompanhantes_count }};
+    var pacientes = {{ pacientes|length }};
+    var total = pacientes + acompanhantes;
+    document.getElementById('total-acomp').textContent = acompanhantes;
+    document.getElementById('total-geral').textContent = total;
+  })();
 });
 </script>
 {% endblock %}
