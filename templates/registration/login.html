@@ -41,7 +41,8 @@
           Lembrar usuário e senha
         </label>
       </div>
-      <button type="submit" class="btn btn-primary w-100" style="font-weight: 600;">Entrar</button>
+      <button type="submit" class="btn btn-primary w-100 mb-2" style="font-weight: 600;">Entrar</button>
+      <button type="button" class="btn btn-outline-danger w-100" id="limparLoginSalvo">Limpar login salvo</button>
     </form>
     <div class="mt-3 text-center">
       <small class="text-muted">© {{ year|default:2026 }} Transporte de Pacientes SP</small>
@@ -91,6 +92,19 @@
         passwordInput.type = isHidden ? 'text' : 'password';
         toggleIcon.className = isHidden ? 'bi bi-eye-slash' : 'bi bi-eye';
         toggleButton.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+      });
+    }
+    // Botão para limpar login salvo
+    const limparBtn = document.getElementById('limparLoginSalvo');
+    if (limparBtn) {
+      limparBtn.addEventListener('click', function() {
+        localStorage.removeItem(lembrarKey);
+        localStorage.removeItem(userKey);
+        localStorage.removeItem(passKey);
+        if (usernameInput) usernameInput.value = '';
+        if (passwordInput) passwordInput.value = '';
+        if (lembrarCheck) lembrarCheck.checked = false;
+        alert('Login salvo removido!');
       });
     }
   })();
