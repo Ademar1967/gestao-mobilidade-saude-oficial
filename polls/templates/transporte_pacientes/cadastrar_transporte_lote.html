@@ -223,16 +223,32 @@ document.addEventListener('DOMContentLoaded', function() {
       if (this.value) {
         // Clínica foi selecionada - mostrar endereço
         var selectedOption = this.options[this.selectedIndex];
-        var endereco = selectedOption.getAttribute('data-endereco') || 'Endereço não disponível';
+        var endereco = selectedOption.getAttribute('data-endereco') || '';
         var cidade = selectedOption.getAttribute('data-cidade') || '';
         var cep = selectedOption.getAttribute('data-cep') || '';
+        var nomeClinica = selectedOption.textContent.split(' — ')[0].trim();
 
-        var enderecoCompleto = endereco;
-        if (cidade) enderecoCompleto += ', ' + cidade;
-        if (cep) enderecoCompleto += ' - CEP: ' + cep;
-
-        enderecoText.textContent = enderecoCompleto;
-        enderecoBox.classList.remove('d-none');
+        if (endereco) {
+          // Clínica do BD tem endereço salvo
+          var enderecoCompleto = endereco;
+          if (cidade) enderecoCompleto += ', ' + cidade;
+          if (cep) enderecoCompleto += ' - CEP: ' + cep;
+          enderecoText.textContent = enderecoCompleto;
+          enderecoBox.classList.remove('d-none');
+        } else {
+          // Sem endereço no BD — buscar nos 442 do CNES via AJAX
+          enderecoText.textContent = '🔍 Buscando endereço...';
+          enderecoBox.classList.remove('d-none');
+          jQuery.getJSON('/autocomplete_endereco_unidade/', { term: nomeClinica, show_all: 'false' }, function(data) {
+            if (data && data.length > 0) {
+              enderecoText.textContent = data[0].value || data[0].label;
+            } else {
+              enderecoText.textContent = 'Endereço não encontrado — verifique o campo manual';
+            }
+          }).fail(function() {
+            enderecoText.textContent = 'Erro ao buscar endereço';
+          });
+        }
 
         // Limpar campo manual
         document.querySelector('[name="clinica_manual_' + idx + '"]').value = '';
@@ -293,8 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
             var endereco = ui.item.enderecoCompleto || 'Endereço não disponível';
             enderecoText.textContent = endereco;
             enderecoBox.classList.remove('d-none');
-          }
-          return false; enderecoBox.classList.remove('d-none');
           }
           return false;
         }
