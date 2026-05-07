@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Dispara monitor de deploy do Render em janela separada no Windows.
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$REPO_ROOT" ]; then
+  exit 0
+fi
+
+SCRIPT_WIN_PATH="$(cygpath -w "$REPO_ROOT/scripts/watch_render_deploy.ps1" 2>/dev/null)"
+if [ -z "$SCRIPT_WIN_PATH" ]; then
+  exit 0
+fi
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"$SCRIPT_WIN_PATH\"' -WindowStyle Normal" >/dev/null 2>&1 &
+exit 0
