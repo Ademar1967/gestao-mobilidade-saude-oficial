@@ -153,12 +153,17 @@
                     {% if pac.acompanhante %}<span class="badge bg-success">Acompanhante</span> {% endif %}
                   </td>
                   <td>
-                    <select name="clinica_{{ forloop.counter0 }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-idx="{{ forloop.counter0 }}">
+                    <select name="clinica_{{ forloop.counter0 }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-idx="{{ forloop.counter0 }}" data-clinicas='{{ clinicas_json }}'>
                       <option value="">— Selecione a clínica —</option>
                       {% for cl in clinicas %}
-                        <option value="{{ cl.id }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}{% if cl.cidade %}, {{ cl.cidade }}{% endif %}</option>
+                        <option value="{{ cl.id }}" data-endereco="{{ cl.endereco|default:'' }}" data-cidade="{{ cl.cidade|default:'' }}" data-cep="{{ cl.cep|default:'' }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}{% if cl.cidade %}, {{ cl.cidade }}{% endif %}</option>
                       {% endfor %}
                     </select>
+                    <!-- Box verde com endereço da clínica selecionada -->
+                    <div id="endereco_box_{{ forloop.counter0 }}" class="alert alert-success d-none mt-2 mb-2" style="padding:10px; border-left:5px solid #28a745;">
+                      <strong>📍 Endereço da Clínica:</strong><br>
+                      <span id="endereco_text_{{ forloop.counter0 }}"></span>
+                    </div>
                     <input type="text" name="clinica_manual_{{ forloop.counter0 }}"
                       class="form-control form-control-sm input-clinica-manual-lote"
                       placeholder="Ou digite o nome da clínica manualmente"
@@ -212,8 +217,28 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.select-clinica-lote').forEach(function(sel) {
     sel.addEventListener('change', function() {
       var idx = this.getAttribute('data-idx');
+      var enderecoBox = document.getElementById('endereco_box_' + idx);
+      var enderecoText = document.getElementById('endereco_text_' + idx);
+
       if (this.value) {
+        // Clínica foi selecionada - mostrar endereço
+        var selectedOption = this.options[this.selectedIndex];
+        var endereco = selectedOption.getAttribute('data-endereco') || 'Endereço não disponível';
+        var cidade = selectedOption.getAttribute('data-cidade') || '';
+        var cep = selectedOption.getAttribute('data-cep') || '';
+
+        var enderecoCompleto = endereco;
+        if (cidade) enderecoCompleto += ', ' + cidade;
+        if (cep) enderecoCompleto += ' - CEP: ' + cep;
+
+        enderecoText.textContent = enderecoCompleto;
+        enderecoBox.classList.remove('d-none');
+
+        // Limpar campo manual
         document.querySelector('[name="clinica_manual_' + idx + '"]').value = '';
+      } else {
+        // Nenhuma clínica selecionada - ocultar box
+        enderecoBox.classList.add('d-none');
       }
     });
   });
@@ -241,7 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var lista = resultados.map(function(item) {
               return {
                 label: item.nome + (item.cidade ? ' — ' + item.cidade : ''),
-                value: item.nome
+                value: item.nome,
+                data: item  // Incluir todos os dados da clínica
               };
             });
             response(lista.slice(0, 10));
@@ -251,6 +277,22 @@ document.addEventListener('DOMContentLoaded', function() {
           // Ao selecionar, limpar o select correspondente
           var sel = document.querySelector('[name="clinica_' + idx + '"]');
           if (sel) sel.value = '';
+
+          // Mostrar endereço no box verde
+          var enderecoBox = document.getElementById('endereco_box_' + idx);
+          var enderecoText = document.getElementById('endereco_text_' + idx);
+          if (enderecoBox && enderecoText && ui.item.data) {
+            var endereco = ui.item.data.endereco || 'Endereço não disponível';
+            var bairro = ui.item.data.bairro || '';
+            var cidade = ui.item.data.cidade || '';
+
+            var enderecoCompleto = endereco;
+            if (bairro) enderecoCompleto += ', ' + bairro;
+            if (cidade) enderecoCompleto += ' — ' + cidade;
+
+            enderecoText.textContent = enderecoCompleto;
+            enderecoBox.classList.remove('d-none');
+          }
         }
       }).on('autocompleteopen', function() {
         jQuery('.ui-autocomplete').css('z-index', 3000);
