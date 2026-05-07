@@ -187,6 +187,27 @@
         </div>
 
         <script>
+        // Padroniza dropdown: busca endereço para clínicas do BD sem endereço
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('.select-clinica-lote').forEach(function(sel) {
+            Array.from(sel.options).forEach(function(opt) {
+              var nome = opt.textContent.split(' — ')[0].trim();
+              var endereco = opt.getAttribute('data-endereco') || '';
+              if (opt.value && !endereco) {
+                // Busca endereço via AJAX
+                jQuery.getJSON('/autocomplete_endereco_unidade/', { term: nome, show_all: 'false' }, function(data) {
+                  if (data && data.length > 0) {
+                    var enderecoNovo = data[0].value || '';
+                    if (enderecoNovo) {
+                      opt.textContent = nome + ' — ' + enderecoNovo;
+                      opt.setAttribute('data-endereco', enderecoNovo);
+                    }
+                  }
+                });
+              }
+            });
+          });
+        });
         (function() {
           var acompanhantes = {{ acompanhantes_count }};
           var pacientes = {{ pacientes|length }};
@@ -295,8 +316,14 @@ document.addEventListener('DOMContentLoaded', function() {
           }).fail(function() { response([]); });
         },
         select: function(event, ui) {
-          // Preenche o campo com o nome da clínica
-          inp.value = ui.item.label || '';
+          // Preenche o campo com "NOME — ENDEREÇO"
+          var nome = ui.item.label || '';
+          var endereco = ui.item.enderecoCompleto || '';
+          var textoCompleto = nome;
+          if (endereco && endereco !== nome) {
+            textoCompleto = nome + ' — ' + endereco;
+          }
+          inp.value = textoCompleto;
 
           // Limpar o select correspondente
           var sel = document.querySelector('[name="clinica_' + idx + '"]');
@@ -306,8 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
           var enderecoBox = document.getElementById('endereco_box_' + idx);
           var enderecoText = document.getElementById('endereco_text_' + idx);
           if (enderecoBox && enderecoText) {
-            var endereco = ui.item.enderecoCompleto || 'Endereço não disponível';
-            enderecoText.textContent = endereco;
+            enderecoText.textContent = endereco || 'Endereço não disponível';
             enderecoBox.classList.remove('d-none');
           }
           return false;
