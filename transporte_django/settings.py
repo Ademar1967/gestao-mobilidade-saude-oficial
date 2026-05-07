@@ -148,9 +148,11 @@ USE_TZ = True
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
-# Sessão expira após inatividade (30 minutos por padrão). Pode ser ajustado por variável de ambiente.
+# Sessão salva no banco de dados — persiste mesmo quando Render reinicia o servidor
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '28800'))  # 8 horas
 SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o navegador
 
 
 
