@@ -261,38 +261,42 @@ document.addEventListener('DOMContentLoaded', function() {
         minLength: 2,
         appendTo: 'body',
         source: function(request, response) {
-          jQuery.getJSON('/api/clinicas/sugestoes/?q=' + encodeURIComponent(request.term), function(data) {
-            var resultados = (data && data.resultados) ? data.resultados : [];
-            var lista = resultados.map(function(item) {
+          jQuery.getJSON('/autocomplete_endereco_unidade/', {
+            term: request.term,
+            show_all: 'false'
+          }, function(data) {
+            var lista = (data || []).map(function(item) {
               return {
-                label: item.nome + (item.cidade ? ' — ' + item.cidade : ''),
-                value: item.nome,
-                data: item  // Incluir todos os dados da clínica
+                label: item.label || '',
+                value: item.label || '',
+                enderecoCompleto: item.value || '',
+                logradouro: item.logradouro || '',
+                numero: item.numero || '',
+                cep: item.cep || ''
               };
             });
-            response(lista.slice(0, 10));
+            response(lista);
           }).fail(function() { response([]); });
         },
         select: function(event, ui) {
-          // Ao selecionar, limpar o select correspondente
+          // Preenche o campo com o nome da clínica
+          inp.value = ui.item.label || '';
+
+          // Limpar o select correspondente
           var sel = document.querySelector('[name="clinica_' + idx + '"]');
           if (sel) sel.value = '';
 
           // Mostrar endereço no box verde
           var enderecoBox = document.getElementById('endereco_box_' + idx);
           var enderecoText = document.getElementById('endereco_text_' + idx);
-          if (enderecoBox && enderecoText && ui.item.data) {
-            var endereco = ui.item.data.endereco || 'Endereço não disponível';
-            var bairro = ui.item.data.bairro || '';
-            var cidade = ui.item.data.cidade || '';
-
-            var enderecoCompleto = endereco;
-            if (bairro) enderecoCompleto += ', ' + bairro;
-            if (cidade) enderecoCompleto += ' — ' + cidade;
-
-            enderecoText.textContent = enderecoCompleto;
+          if (enderecoBox && enderecoText) {
+            var endereco = ui.item.enderecoCompleto || 'Endereço não disponível';
+            enderecoText.textContent = endereco;
             enderecoBox.classList.remove('d-none');
           }
+          return false; enderecoBox.classList.remove('d-none');
+          }
+          return false;
         }
       }).on('autocompleteopen', function() {
         jQuery('.ui-autocomplete').css('z-index', 3000);
