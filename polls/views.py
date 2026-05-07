@@ -545,7 +545,8 @@ def cadastrar_transporte_lote(request):
 				salvos += 1
 				audit_logger.info("Transporte lote cadastrado", extra={"transporte_id": t.id, "paciente_id": pac.id})
 			except Exception as e:
-				erros.append(f"{pac.nome}: {e}")
+				   print(f"[ERRO TRANSPORTE LOTE] Paciente: {pac.nome} | Erro: {e}")
+				   erros.append(f"{pac.nome}: {e}")
 
 		if salvos:
 			messages.success(request, f'{salvos} transporte(s) cadastrado(s) com sucesso!')

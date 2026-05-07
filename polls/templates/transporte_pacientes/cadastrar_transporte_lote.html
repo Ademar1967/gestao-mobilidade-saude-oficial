@@ -344,16 +344,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Confirmação antes de salvar, com checagem de clínica por paciente
+  // Confirmação antes de salvar, com checagem de todos os campos obrigatórios
   document.getElementById('form-lote').addEventListener('submit', function(e) {
+    var faltando = [];
+    // Veículo obrigatório: select OU campo manual
+    var veiculo = document.querySelector('[name="veiculo"]').value;
+    var veiculoLivre = document.querySelector('[name="veiculo_livre"]').value.trim();
+    if (!veiculo && !veiculoLivre) {
+      faltando.push('Veículo');
+    }
+    // Condutor obrigatório: select OU campo manual
+    var condutor = document.querySelector('[name="condutor"]').value;
+    var condutorManual = document.querySelector('[name="condutor_manual"]').value.trim();
+    if (!condutor && !condutorManual) {
+      faltando.push('Condutor');
+    }
+    // Data obrigatória
     var data = document.querySelector('[name="data_transporte"]').value;
     if (!data) {
-      e.preventDefault();
-      alert('Por favor, preencha a data do transporte.');
-      return;
+      faltando.push('Data do transporte');
     }
-
-    // Checa se todos os pacientes têm clínica (select OU manual)
+    // Clínica obrigatória por paciente
     var totalPacientes = {{ pacientes|length }};
     var faltandoClinica = [];
     for (var i = 0; i < totalPacientes; i++) {
@@ -365,19 +376,19 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     if (faltandoClinica.length > 0) {
+      faltando.push('Clínica de destino dos pacientes: ' + faltandoClinica.join(', '));
+    }
+    // Se houver qualquer campo faltando, pede confirmação
+    if (faltando.length > 0) {
       e.preventDefault();
-      var msg = 'Atenção! Os seguintes pacientes estão sem clínica de destino preenchida: ' + faltandoClinica.join(', ') + '.\nDeseja continuar mesmo assim?';
-      if (!confirm(msg)) {
-        return;
-      } else {
+      var msg = '⚠️ Atenção! Existem campos obrigatórios em branco ou incompletos:\n\n- ' + faltando.join('\n- ') + '\n\nSe continuar, o transporte será registrado mesmo com dados faltando.\n\nTem certeza que deseja prosseguir assim mesmo?';
+      if (window.confirm(msg)) {
         // Se usuário confirmar, submete mesmo assim
-        // Remove o listener para evitar loop
         this.removeEventListener('submit', arguments.callee);
         this.submit();
-        return;
-      }
+      } // Se cancelar, não faz nada
+      return;
     }
-
     var btn = document.getElementById('btnSalvarLote');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando...';

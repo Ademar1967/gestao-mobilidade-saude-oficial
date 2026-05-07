@@ -1,0 +1,209 @@
+/* =====================================================
+   PALETA DE CORES - PADRÃO INTERNACIONAL DE SAÚDE
+   Azul hospitalar + Branco + Verde + Vermelho urgência
+   ===================================================== */
+
+:root {
+  --cor-primaria:      #005eb8;  /* Azul NHS/hospitalar */
+  --cor-primaria-esc:  #004a93;  /* Azul escuro (hover) */
+  --cor-primaria-cla:  #e8f0fb;  /* Azul claro (fundos) */
+  --cor-sucesso:       #1e7e34;  /* Verde saúde */
+  --cor-sucesso-cla:   #d4edda;
+  --cor-perigo:        #b02a37;  /* Vermelho urgência */
+  --cor-perigo-cla:    #f8d7da;
+  --cor-alerta:        #e0a800;  /* Amarelo atenção */
+  --cor-alerta-cla:    #fff3cd;
+  --cor-fundo:         #f4f7fb;  /* Fundo geral azul acinzentado */
+  --cor-card:          #ffffff;
+  --cor-texto:         #1a1a2e;  /* Texto principal escuro */
+  --cor-texto-sec:     #4a5568;  /* Texto secundário */
+  --cor-borda:         #c8d8f0;
+}
+
+/* ----- BODY / FUNDO ----- */
+body {
+  background: linear-gradient(135deg, var(--cor-fundo) 0%, #f1f5fb 100%);
+  color: var(--cor-texto);
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* ----- NAVBAR ----- */
+nav.navbar {
+  background: linear-gradient(90deg, var(--cor-primaria) 0%, var(--cor-primaria-esc) 100%) !important;
+  border-bottom: 4px solid var(--cor-primaria-esc);
+  box-shadow: 0 4px 12px rgba(0, 94, 184, 0.25);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+/* ----- CARDS ----- */
+.card {
+  border: 2px solid var(--cor-borda);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 94, 184, 0.12);
+  background-color: var(--cor-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 94, 184, 0.18);
+}
+
+.card-header {
+  background: linear-gradient(90deg, var(--cor-primaria-cla) 0%, #e8f0fb 100%);
+  border-bottom: 2px solid var(--cor-borda);
+  border-radius: 10px 10px 0 0;
+  font-weight: 700;
+  color: var(--cor-primaria-esc);
+  font-size: 1.02rem;
+}
+
+/* ----- BOTÕES PRINCIPAIS ----- */
+.btn-primary {
+  background-color: var(--cor-primaria) !important;
+  border-color: var(--cor-primaria-esc) !important;
+  color: #fff !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--cor-primaria-esc) !important;
+  border-color: var(--cor-primaria-esc) !important;
+}
+
+.btn-success {
+  background-color: var(--cor-sucesso) !important;
+  border-color: var(--cor-sucesso) !important;
+  color: #fff !important;
+}
+
+.btn-danger {
+  background-color: var(--cor-perigo) !important;
+  border-color: var(--cor-perigo) !important;
+  color: #fff !important;
+}
+
+/* ----- BOTÃO ALERTA (AMARELO) ----- */
+.btn-warning {
+  background-color: var(--cor-alerta) !important;
+  border-color: var(--cor-alerta) !important;
+  color: #212529 !important;
+}
+.btn-warning:hover, .btn-warning:focus {
+  background-color: #ffd700 !important; /* amarelo mais forte no hover */
+  border-color: #ffd700 !important;
+}
+
+/* ----- BADGE ALERTA (AMARELO) ----- */
+.badge.bg-warning { background-color: var(--cor-alerta) !important; color: #212529 !important; }
+
+/* ----- EFEITO AFUNDAR EM TODOS OS BOTÕES ----- */
+.btn {
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn:active {
+  transform: translateY(3px) !important;
+  box-shadow: none !important;
+}
+
+/* ----- TABELAS ----- */
+.table {
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: linear-gradient(90deg, var(--cor-primaria) 0%, var(--cor-primaria-esc) 100%);
+  color: #fff;
+  font-weight: 700;
+}
+
+.table thead th {
+  border-color: var(--cor-primaria-esc);
+  font-weight: 700;
+  padding: 1rem;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--cor-primaria-cla);
+}
+
+.table-hover tbody tr:hover {
+  background-color: #e6f2ff;
+}
+
+/* ----- TÍTULOS DE PÁGINA ----- */
+h1 {
+  color: var(--cor-primaria);
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  border-bottom: 3px solid var(--cor-primaria);
+  padding-bottom: 0.5rem;
+}
+
+h2, h3 {
+  color: var(--cor-primaria-esc);
+  font-weight: 700;
+}
+
+/* ----- ALERTAS ----- */
+.alert-success {
+  background-color: var(--cor-sucesso-cla);
+  border-color: var(--cor-sucesso);
+  color: var(--cor-sucesso);
+}
+.alert-danger {
+  background-color: var(--cor-perigo-cla);
+  border-color: var(--cor-perigo);
+  color: var(--cor-perigo);
+}
+.alert-warning {
+  background-color: var(--cor-alerta-cla);
+  border-color: var(--cor-alerta);
+  color: #7a5900;
+}
+.alert-info {
+  background-color: var(--cor-primaria-cla);
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria-esc);
+}
+
+/* ----- BADGES ----- */
+.badge.bg-primary { background-color: var(--cor-primaria) !important; }
+.badge.bg-success { background-color: var(--cor-sucesso) !important; }
+.badge.bg-danger  { background-color: var(--cor-perigo) !important; }
+
+/* ----- LINKS ----- */
+a { color: var(--cor-primaria); }
+a:hover { color: var(--cor-primaria-esc); }
+
+/* ----- FORMULÁRIOS ----- */
+.form-control:focus, .form-select:focus {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 0 0 0.2rem rgba(0, 94, 184, 0.18);
+}
+
+/* ----- RODAPÉ / FOOTER (se houver) ----- */
+footer {
+  background-color: var(--cor-primaria);
+  color: #fff;
+}
+
+/* ===== CAMPO DE OXIGENIO - MOSTRAR/OCULTAR ===== */
+.js-oxigenio-litros-container[style*="display:none"],
+.js-oxigenio-litros-container[style*="display: none"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+.js-oxigenio-litros-container {
+  display: block;
+  visibility: visible;
+}
