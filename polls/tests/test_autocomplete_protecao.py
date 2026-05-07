@@ -6,6 +6,23 @@ from polls.models import Clinica, Veiculo
 
 
 class AutocompleteProtecaoTest(TestCase):
+    def test_cookie_sessao_seguro(self):
+        # Realiza login
+        self.client.logout()
+        login_url = reverse('login')
+        resp = self.client.post(login_url, {'username': 'teste_autocomplete', 'password': 'segredo123'}, follow=True)
+        # Procura o cookie de sessão
+        session_cookie = None
+        for c in resp.client.cookies.values():
+            if c.key == 'sessionid':
+                session_cookie = c
+                break
+        self.assertIsNotNone(session_cookie, 'Cookie de sessão não encontrado após login!')
+        # Verifica flags de segurança
+        self.assertTrue(session_cookie.get('httponly', False), 'Cookie de sessão deve ser HttpOnly!')
+        self.assertTrue(session_cookie.get('secure', False), 'Cookie de sessão deve ser Secure!')
+        self.assertIn(session_cookie.get('samesite', '').lower(), ['lax', 'strict'], 'Cookie de sessão deve ter SameSite Lax ou Strict!')
+
     def test_endpoints_sensiveis_exigem_login(self):
         # Desloga o usuário
         self.client.logout()
@@ -19,6 +36,7 @@ class AutocompleteProtecaoTest(TestCase):
             resp = self.client.get(url, {"q": "Teste"})
             # Pode ser redirect (302) para login ou 401 para API
             self.assertIn(resp.status_code, [302, 401], f"Endpoint {url} deveria exigir autenticação!")
+
     def setUp(self):
         user_model = get_user_model()
         self.user = user_model.objects.create_user(
