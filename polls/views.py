@@ -148,6 +148,7 @@ from django.shortcuts import render, redirect
 
 from django.http import HttpResponse
 
+@login_required
 def exportar_pacientes_csv(request):
     """Exporta todos os pacientes cadastrados como arquivo CSV para download."""
     from .models import Paciente
