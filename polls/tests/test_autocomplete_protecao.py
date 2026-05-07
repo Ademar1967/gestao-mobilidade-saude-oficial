@@ -6,6 +6,19 @@ from polls.models import Clinica, Veiculo
 
 
 class AutocompleteProtecaoTest(TestCase):
+    def test_endpoints_sensiveis_exigem_login(self):
+        # Desloga o usuário
+        self.client.logout()
+
+        # Endpoints sensíveis: autocomplete de pacientes e outros que retornam dados pessoais
+        endpoints = [
+            reverse("transporte_pacientes:buscar_pacientes_sugestoes"),
+            # Adicione outros endpoints sensíveis se necessário
+        ]
+        for url in endpoints:
+            resp = self.client.get(url, {"q": "Teste"})
+            # Pode ser redirect (302) para login ou 401 para API
+            self.assertIn(resp.status_code, [302, 401], f"Endpoint {url} deveria exigir autenticação!")
     def setUp(self):
         user_model = get_user_model()
         self.user = user_model.objects.create_user(
