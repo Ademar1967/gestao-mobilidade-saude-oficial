@@ -64,20 +64,21 @@
     var lembrarKey = 'lembrarLogin_' + envKey;
     var userKey = 'loginUser_' + envKey;
     var passKey = 'loginPass_' + envKey;
-    // Preencher campos se lembrar estiver ativo
+    // Preencher campos se lembrar estiver ativo (agora só usuário)
     if (localStorage.getItem(lembrarKey) === '1') {
       if (lembrarCheck) lembrarCheck.checked = true;
       if (usernameInput) usernameInput.value = localStorage.getItem(userKey) || '';
-      if (passwordInput) passwordInput.value = localStorage.getItem(passKey) || '';
+      if (passwordInput) passwordInput.value = '';
     }
-    // Salvar ao submeter
+    // Salvar ao submeter (agora só usuário)
     const form = document.querySelector('form');
     if (form) {
       form.addEventListener('submit', function() {
         if (lembrarCheck && lembrarCheck.checked) {
           localStorage.setItem(lembrarKey, '1');
           localStorage.setItem(userKey, usernameInput.value);
-          localStorage.setItem(passKey, passwordInput.value);
+          // Não salva mais a senha!
+          localStorage.removeItem(passKey);
         } else {
           localStorage.removeItem(lembrarKey);
           localStorage.removeItem(userKey);
@@ -104,7 +105,7 @@
         if (usernameInput) usernameInput.value = '';
         if (passwordInput) passwordInput.value = '';
         if (lembrarCheck) lembrarCheck.checked = false;
-        alert('Login salvo removido!');
+        alert('Login salvo removido! (A senha nunca será lembrada por segurança)');
       });
     }
   })();
