@@ -167,6 +167,14 @@
 													<div class="col-md-12">{{ form.observacoes.label }}{{ form.observacoes|as_crispy_field }}</div>
 												</div>
 											</fieldset>
+											<div class="mb-3 mt-3 p-2 border rounded bg-light">
+												<div class="form-check">
+													{{ form.consentimento_lgpd|as_crispy_field }}
+												</div>
+												<small class="text-muted">
+													Ao marcar esta opção, você declara que o paciente ou responsável foi informado sobre o uso dos dados pessoais para fins de transporte e atendimento em saúde, conforme a <a href="/politica-privacidade/" target="_blank">Política de Privacidade</a> e a LGPD.
+												</small>
+											</div>
 											<button type="submit" class="btn btn-success mt-2">Salvar Paciente</button>
 										</form>
 										<button class="btn btn-historico mt-4 mb-2" type="button" onclick="toggleHistorico()">

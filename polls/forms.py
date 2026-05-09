@@ -195,6 +195,11 @@ class EnfermagemForm(forms.ModelForm):
         }
 
 class PacienteForm(forms.ModelForm):
+        consentimento_lgpd = forms.BooleanField(
+            label='Li e concordo com o tratamento dos dados pessoais conforme a LGPD',
+            required=True,
+            help_text='O paciente ou responsável autoriza o uso dos dados para transporte e atendimento em saúde.'
+        )
     ddd = forms.CharField(label='DDD', max_length=2, required=False, widget=forms.TextInput(attrs={'placeholder': 'DDD', 'style': 'max-width:50px;'}))
     cartao_sis = forms.CharField(label='Cartão SIS', max_length=10, required=False, widget=forms.TextInput(attrs={'placeholder': 'Cartão SIS', 'style': 'max-width:110px;'}))
     def __init__(self, *args, **kwargs):
@@ -245,6 +250,8 @@ class PacienteForm(forms.ModelForm):
     def save(self, commit=True):
         """Salva o paciente montando o campo endereco legado, separando DDD e Cartão SIS."""
         instance = super().save(commit=False)
+        # Garante que o consentimento LGPD seja salvo corretamente
+        instance.consentimento_lgpd = self.cleaned_data.get('consentimento_lgpd', False)
         # Monta o campo endereco legado para compatibilidade
         rua = self.cleaned_data.get('rua', '')
         numero = self.cleaned_data.get('numero', '')

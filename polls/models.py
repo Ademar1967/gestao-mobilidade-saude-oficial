@@ -44,6 +44,11 @@ class Paciente(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude do paciente")
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude do paciente")
 
+    consentimento_lgpd = models.BooleanField(
+        default=False,
+        help_text="Paciente ou responsável consentiu com o tratamento de dados pessoais (LGPD)?"
+    )
+
     def __str__(self):
         return self.nome
 
