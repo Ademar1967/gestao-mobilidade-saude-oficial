@@ -6,6 +6,8 @@ from .views import editar_paciente, login_view
 
 app_name = 'transporte_pacientes'
 urlpatterns = [
+                path('api/clinicas/sugestoes/', views.buscar_clinicas_sugestoes, name='buscar_clinicas_sugestoes'),
+                path('api/veiculos/sugestoes/', views.buscar_veiculos_sugestoes, name='buscar_veiculos_sugestoes'),
             path('transportes/', views.listar_transportes, name='listar_transportes'),
         path('api/pacientes/sugestoes/', views.buscar_pacientes_sugestoes, name='buscar_pacientes_sugestoes'),
     path('whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),
@@ -13,9 +15,11 @@ urlpatterns = [
     path('enfermagem/editar/<int:enfermagem_id>/', views.editar_enfermagem, name='editar_enfermagem'),
     path('enfermagem/cadastrar/', views.cadastrar_enfermagem, name='cadastrar_enfermagem'),
     path('enfermagem/excluir/<int:enfermagem_id>/', views.excluir_enfermagem, name='excluir_enfermagem'),
+    path('enfermagem/excluir_selecionadas/', views.excluir_selecionadas_enfermagem, name='excluir_selecionadas_enfermagem'),
     path('api/pacientes/<int:paciente_id>/detalhes/', views.paciente_detalhes_api, name='paciente_detalhes_api'),
     path('clinicas/excluir_selecionadas/', views.excluir_selecionadas_clinicas, name='excluir_selecionadas_clinicas'),
     path('clinicas/excluir_todas/', views.excluir_todas_clinicas, name='excluir_todas_clinicas'),
+    path('condutores/excluir_selecionados/', views_condutor_delete.excluir_selecionados_condutor, name='excluir_selecionados_condutor'),
     path('login/', login_view, name='login'),
     path('', views.home, name='home'),
     path('autocomplete_endereco_unidade/', views.autocomplete_endereco_unidade, name='autocomplete_endereco_unidade'),
