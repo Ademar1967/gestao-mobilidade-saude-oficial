@@ -49,6 +49,9 @@ class Paciente(models.Model):
         help_text="Paciente ou responsável consentiu com o tratamento de dados pessoais (LGPD)?"
     )
 
+    # Novo campo opcional para horário da consulta
+    horario_consulta = models.TimeField(null=True, blank=True, help_text="Horário da consulta do paciente (opcional)")
+
     def __str__(self):
         return self.nome
 

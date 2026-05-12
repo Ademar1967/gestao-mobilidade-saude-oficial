@@ -195,6 +195,12 @@ class EnfermagemForm(forms.ModelForm):
         }
 
 class PacienteForm(forms.ModelForm):
+    horario_consulta = forms.TimeField(
+        label='Horário da Consulta',
+        required=False,
+        widget=forms.TimeInput(attrs={'placeholder': 'Ex: 14:30', 'type': 'time', 'aria-label': 'Horário da consulta (opcional)'}),
+        help_text='Se souber, informe o horário da consulta (opcional).'
+    )
     consentimento_lgpd = forms.BooleanField(
         label='Li e concordo com o tratamento dos dados pessoais conforme a LGPD',
         required=True,
@@ -204,6 +210,10 @@ class PacienteForm(forms.ModelForm):
     cartao_sis = forms.CharField(label='Cartão SIS', max_length=10, required=False, widget=forms.TextInput(attrs={'placeholder': 'Cartão SIS', 'style': 'max-width:110px;'}))
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'horario_consulta' in self.fields:
+            self.fields['horario_consulta'].widget.attrs['placeholder'] = 'Ex: 14:30'
+            self.fields['horario_consulta'].widget.attrs['aria-label'] = 'Horário da consulta (opcional)'
+            self.fields['horario_consulta'].widget.attrs['tabindex'] = 4
         if 'latitude' in self.fields:
             self.fields['latitude'].required = False
         if 'longitude' in self.fields:

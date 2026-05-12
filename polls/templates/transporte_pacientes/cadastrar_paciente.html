@@ -330,6 +330,13 @@
                   <div class="text-danger small">{{ form.cartao_sis.errors }}</div>
                 {% endif %}
               </div>
+              <div class="col-md-3 mb-2">
+                {{ form.horario_consulta.label_tag }} {{ form.horario_consulta }}
+                <small class="form-text text-muted">{{ form.horario_consulta.help_text }}</small>
+                {% if form.horario_consulta.errors %}
+                  <div class="text-danger small">{{ form.horario_consulta.errors }}</div>
+                {% endif %}
+              </div>
             </div>
             <div class="col-md-2 mb-2">
               {{ form.idade.label_tag }}<span class="text-danger">*</span> {{ form.idade }}
