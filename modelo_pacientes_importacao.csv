@@ -1,0 +1,4 @@
+nome,idade,telefone,cartao_sis,rua,numero,bairro,cidade,estado,cep,oxigenio,oxigenio_litros_min,maca,cadeirante,acompanhante,peso,referencia,observacoes
+João da Silva,45,11999999999,1234567890,Rua das Flores,100,Centro,São Paulo,SP,01000-000,True,2.0,False,False,True,80,"Próximo ao mercado","Casa com difícil acesso, escadaria"
+Maria Souza,60,11988887777,9876543210,Rua Azul,200,Jardim,Guarulhos,SP,07000-000,False,,True,True,False,65,"Fundos","Sem escadaria, fácil acesso"
+Carlos Lima,30,11977776666,1122334455,Rua Verde,50,Vila Nova,Santo André,SP,09000-000,True,3.5,True,False,False,90,"Apto 12","Escadaria, acesso por portão lateral"

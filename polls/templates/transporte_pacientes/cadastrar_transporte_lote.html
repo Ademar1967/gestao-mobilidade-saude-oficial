@@ -245,6 +245,26 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Exclusão de paciente do lote (remove linha da tabela com confirmação)
   // Delegação de evento para garantir funcionamento mesmo após remoção dinâmica
+  function atualizarTotalizador() {
+    // Conta pacientes (linhas da tabela)
+    var pacientes = document.querySelectorAll('tbody tr').length;
+    // Conta acompanhantes (badges na coluna condições)
+    var acompanhantes = 0;
+    document.querySelectorAll('tbody tr').forEach(function(tr) {
+      if (tr.querySelector('.badge.bg-success')) {
+        acompanhantes++;
+      }
+    });
+    var total = pacientes + acompanhantes;
+    document.getElementById('total-acomp').textContent = acompanhantes;
+    document.getElementById('total-geral').textContent = total;
+    // Atualiza texto do botão salvar
+    var btn = document.getElementById('btnSalvarLote');
+    if (btn) {
+      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes (' + pacientes + ' paciente(s))';
+    }
+  }
+
   document.querySelector('tbody').addEventListener('click', function(e) {
     if (e.target.closest('.btn-excluir-paciente-lote')) {
       e.preventDefault();
@@ -255,7 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (window.confirm('Deseja remover o paciente "' + nome + '" deste lote?')) {
         tr.style.transition = 'opacity 0.3s';
         tr.style.opacity = 0;
-        setTimeout(function() { tr.remove(); }, 300);
+        setTimeout(function() {
+          tr.remove();
+          atualizarTotalizador();
+        }, 300);
       }
     }
   });
@@ -445,14 +468,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 20000);
   });
 
-  // Totalizador de acompanhantes
-  (function() {
-    var acompanhantes = {{ acompanhantes_count }};
-    var pacientes = {{ pacientes|length }};
-    var total = pacientes + acompanhantes;
-    document.getElementById('total-acomp').textContent = acompanhantes;
-    document.getElementById('total-geral').textContent = total;
-  })();
+  // Inicializa totalizador ao carregar
+  atualizarTotalizador();
 });
 </script>
 {% endblock %}

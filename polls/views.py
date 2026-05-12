@@ -1,4 +1,71 @@
-﻿from django.db import models
+﻿from django.views.decorators.http import require_GET
+from django.http import JsonResponse
+from .models import Paciente, Transporte
+
+# --- API: Detalhes completos do paciente para busca global ---
+from django.contrib.auth.decorators import login_required
+@require_GET
+@login_required
+def paciente_detalhes_api(request, paciente_id):
+    # print(f"[DEBUG] Requisição detalhes paciente id={paciente_id}")
+    try:
+        p = Paciente.objects.get(id=paciente_id)
+        print(f"[DEBUG] Paciente encontrado: {p.nome} (id={p.id})")
+    except Paciente.DoesNotExist:
+        print(f"[DEBUG] Paciente id={paciente_id} NÃO encontrado!")
+        return JsonResponse({'erro': 'Paciente não encontrado.'}, status=404)
+    except Exception as exc:
+        print(f"[DEBUG] Erro inesperado ao buscar paciente id={paciente_id}: {exc}")
+        return JsonResponse({'erro': f'Erro inesperado: {exc}'}, status=500)
+
+    atualizacoes = []
+    try:
+        transportes = Transporte.objects.filter(paciente=p).order_by('-data_transporte')[:5]
+        print(f"[DEBUG] Transportes encontrados: {len(transportes)}")
+        for t in transportes:
+            if not t.data_transporte:
+                print(f"[DEBUG] Transporte id={t.id} ignorado (data_transporte nula)")
+                continue
+            clinica_nome = t.clinica.nome if t.clinica else ''
+            veiculo_nome = str(t.veiculo) if t.veiculo else ''
+            try:
+                data_str = t.data_transporte.strftime('%d/%m/%Y')
+                atualizacoes.append(f"{data_str} - {clinica_nome} - {veiculo_nome}")
+                print(f"[DEBUG] Atualização adicionada: {data_str} - {clinica_nome} - {veiculo_nome}")
+            except Exception as exc:
+                print(f"[DEBUG] Erro ao montar atualização transporte id={t.id}: {exc}")
+                continue
+    except Exception as exc:
+        print(f"[DEBUG] Erro ao buscar transportes: {exc}")
+
+    dados = {
+        'id': p.id,
+        'nome': p.nome or '',
+        'idade': p.idade or '',
+        'peso': str(p.peso) if p.peso is not None else '',
+        'cartao_sis': p.cartao_sis or '',
+        'ddd': p.ddd or '',
+        'telefone': p.telefone or '',
+        'rua': p.rua or '',
+        'numero': p.numero or '',
+        'bairro': p.bairro or '',
+        'cidade': p.cidade or '',
+        'estado': p.estado or '',
+        'cep': p.cep or '',
+        'referencia': p.referencia or '',
+        'observacoes': p.observacoes or '',
+        'status': p.status or '',
+        'oxigenio': bool(p.oxigenio),
+        'oxigenio_litros_min': str(p.oxigenio_litros_min) if p.oxigenio_litros_min is not None else '',
+        'maca': bool(p.maca),
+        'cadeirante': bool(p.cadeirante),
+        'acompanhante': bool(p.acompanhante),
+        'evolucao': p.evolucao or '',
+        'atualizacoes': atualizacoes,
+    }
+    print(f"[DEBUG] JSON de resposta: {dados}")
+    return JsonResponse(dados)
+from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
@@ -345,6 +412,7 @@ def buscar_pacientes_sugestoes(request):
 	for p in queryset:
 		resultados.append({
 			'id': p.id,
+			'debug_id': str(p.id),  # Para debug visual no front
 			'nome': p.nome or '',
 			'ddd': p.ddd or '',
 			'telefone': p.telefone or '',

@@ -64,6 +64,11 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Transporte de Pacientes</a>
         {% if user.is_authenticated %}
+        <form class="d-flex me-3 position-relative" id="busca-paciente-navbar" autocomplete="off" style="min-width:260px;" onsubmit="return false;">
+          <input class="form-control form-control-sm" type="search" id="input-busca-paciente-navbar" placeholder="Buscar paciente (nome, tel, SUS/SIS)" aria-label="Buscar paciente" style="min-width:180px;">
+          <button class="btn btn-warning btn-sm ms-2" type="button" id="btn-busca-paciente-navbar"><i class="bi bi-search"></i></button>
+          <div id="autocomplete-paciente-navbar" class="dropdown-menu shadow" style="position:absolute; top:100%; left:0; right:0; z-index:3000;"></div>
+        </form>
         <div class="d-flex align-items-center gap-2">
           <span class="text-white small">{{ user.username }}</span>
           <form method="post" action="{% url 'logout' %}" class="m-0">
@@ -73,62 +78,194 @@
         </div>
         {% endif %}
       </div>
+    <!-- Modal para exibir dados completos do paciente -->
+    <div class="modal fade" id="modalPacienteNavbar" tabindex="-1" aria-labelledby="modalPacienteNavbarLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="modalPacienteNavbarLabel"><i class="bi bi-person-vcard me-2"></i>Dados do Paciente</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body" id="modalPacienteNavbarBody">
+            <div class="text-center text-muted py-3">Carregando...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+    // Busca global de pacientes na navbar
+    document.addEventListener('DOMContentLoaded', function() {
+      var input = document.getElementById('input-busca-paciente-navbar');
+      var dropdown = document.getElementById('autocomplete-paciente-navbar');
+      var btn = document.getElementById('btn-busca-paciente-navbar');
+      var modal = new bootstrap.Modal(document.getElementById('modalPacienteNavbar'));
+      var modalBody = document.getElementById('modalPacienteNavbarBody');
+      if (!input || !dropdown) return;
+      function showDropdown(items) {
+        dropdown.innerHTML = '';
+        if (!items.length) {
+          dropdown.innerHTML = '<div class="dropdown-item text-muted">Nenhum paciente encontrado</div>';
+          dropdown.classList.add('show');
+          return;
+        }
+        items.forEach(function(item) {
+          var html = '<div class="dropdown-item" style="cursor:pointer;" data-id="'+item.id+'">';
+          html += '<b>'+item.nome+'</b> <span class="badge bg-secondary ms-1">ID: '+(item.debug_id||item.id)+'</span> | <span class="text-muted">'+(item.cartao_sis||'')+'</span> | '+(item.telefone||'')+' | '+(item.idade||'')+' anos';
+          html += '</div>';
+          dropdown.innerHTML += html;
+        });
+        dropdown.classList.add('show');
+        dropdown.querySelectorAll('.dropdown-item').forEach(function(el) {
+          el.addEventListener('click', function() {
+            var id = el.getAttribute('data-id');
+            // Só permite abrir detalhes se o id for numérico
+            if (id && /^\d+$/.test(id)) {
+              fetchPacienteCompleto(id);
+            } else {
+              modalBody.innerHTML = '<div class="alert alert-info">Para ver detalhes completos, cadastre o paciente no sistema.</div>';
+              modal.show();
+            }
+            dropdown.classList.remove('show');
+          });
+        });
+      }
+      function buscarPacientes(term) {
+        if (!term || term.length < 2) { dropdown.classList.remove('show'); return; }
+        fetch('/api/pacientes/sugestoes/?q='+encodeURIComponent(term))
+          .then(r=>r.json())
+          .then(data=>{
+            var lista = (data && data.resultados) ? data.resultados : [];
+            showDropdown(lista);
+          });
+      }
+      function fetchPacienteCompleto(id) {
+        modalBody.innerHTML = '<div class="text-center text-muted py-3">Carregando...</div>';
+        modal.show();
+        fetch('/api/pacientes/'+id+'/detalhes/', { credentials: 'same-origin' })
+          .then(async r => {
+            let data;
+            try { data = await r.json(); } catch (e) { data = {}; }
+            if (r.status === 403 && data.erro === 'nao_autenticado') {
+              throw { type: 'auth', data, status: r.status };
+            }
+            if (r.status === 404 || data.erro === 'Paciente não encontrado.') {
+              throw { type: 'notfound', data, status: r.status };
+            }
+            if (!r.ok) {
+              throw { type: 'other', data, status: r.status };
+            }
+            return data;
+          })
+          .then(data => {
+            if (!data || !data.id) {
+              modalBody.innerHTML = '<div class="alert alert-warning">Paciente não encontrado.<br><pre style="font-size:12px;">'+JSON.stringify(data, null, 2)+'</pre></div>';
+              return;
+            }
+            var html = '<div class="row g-2">';
+            html += '<div class="col-md-6"><b>Nome:</b> '+data.nome+'</div>';
+            html += '<div class="col-md-3"><b>Idade:</b> '+(data.idade||'')+'</div>';
+            html += '<div class="col-md-3"><b>Peso:</b> '+(data.peso||'')+' kg</div>';
+            html += '<div class="col-md-6"><b>Cartão SUS/SIS:</b> '+(data.cartao_sis||'')+'</div>';
+            html += '<div class="col-md-6"><b>Telefone:</b> '+(data.ddd||'')+' '+(data.telefone||'')+'</div>';
+            html += '<div class="col-md-12"><b>Endereço:</b> '+[data.rua, data.numero, data.bairro, data.cidade, data.estado, data.cep].filter(Boolean).join(', ')+'</div>';
+            html += '<div class="col-md-12"><b>Referência:</b> '+(data.referencia||'')+'</div>';
+            html += '<div class="col-md-12"><b>Observações:</b> '+(data.observacoes||'')+'</div>';
+            html += '<div class="col-md-12"><b>Status:</b> '+(data.status||'')+'</div>';
+            html += '</div>';
+            if (data.atualizacoes && data.atualizacoes.length) {
+              html += '<hr><b>Atualizações recentes:</b><ul>';
+              data.atualizacoes.forEach(function(a) {
+                html += '<li>'+a+'</li>';
+              });
+              html += '</ul>';
+            }
+            modalBody.innerHTML = html;
+          })
+          .catch(err => {
+            let msg = 'Erro ao buscar dados do paciente.';
+            let tipo = 'danger';
+            let extra = '';
+            if (err && typeof err === 'object') {
+              if (err.type === 'auth') { msg = 'Sua sessão expirou. Faça login novamente.'; tipo = 'warning'; }
+              else if (err.type === 'notfound') { msg = 'Paciente não encontrado.'; tipo = 'warning'; }
+              if (err.data) { extra = '<br><pre style="font-size:12px;">'+JSON.stringify(err.data, null, 2)+'</pre>'; }
+            }
+            modalBody.innerHTML = '<div class="alert alert-'+tipo+'">'+msg+extra+'</div>';
+          });
+      }
+      input.addEventListener('input', function() {
+        buscarPacientes(input.value.trim());
+      });
+      btn.addEventListener('click', function() {
+        buscarPacientes(input.value.trim());
+      });
+      input.addEventListener('focus', function() {
+        if (input.value.trim().length >= 2) buscarPacientes(input.value.trim());
+      });
+      document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && e.target !== input) dropdown.classList.remove('show');
+      });
+    });
+    </script>
     </nav>
     <div class="container">
       {% block content %}{% endblock %}
-      <!-- Scripts essenciais para autocomplete -->
-      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-      <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-      <script src="{% static 'transporte_pacientes/autocomplete.js' %}"></script>
-      <!-- Bootstrap Bundle para Collapse e outros componentes -->
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-      <!-- Proteção para bootstrap global -->
-      <script>
-        if (typeof window.bootstrap === 'undefined' && typeof bootstrap !== 'undefined') {
-          window.bootstrap = bootstrap;
+
+    <!-- Scripts essenciais para autocomplete e Bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="{% static 'transporte_pacientes/autocomplete.js' %}"></script>
+    <!-- Bootstrap Bundle para Modal, Collapse e outros componentes -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Proteção para bootstrap global
+      if (typeof window.bootstrap === 'undefined' && typeof bootstrap !== 'undefined') {
+        window.bootstrap = bootstrap;
+      }
+      // Garante que erros de modal Bootstrap não travem a busca
+      window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes('bootstrap')) {
+          e.preventDefault();
         }
-      </script>
-      {% if user.is_authenticated %}
-      <script>
-        (function () {
-          const TIMEOUT_MS = 3 * 60 * 1000;
-          let timer;
-
-          function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-          }
-
-          function resetTimer() {
-            clearTimeout(timer);
-            timer = setTimeout(doAutoLogout, TIMEOUT_MS);
-          }
-
-          function doAutoLogout() {
-            const csrfToken = getCookie('csrftoken');
-            fetch('{% url "logout" %}', {
-              method: 'POST',
-              headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              credentials: 'same-origin',
-              body: ''
-            }).finally(function () {
-              window.location.href = '{% url "login" %}?next=/';
-            });
-          }
-
-          ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (eventName) {
-            document.addEventListener(eventName, resetTimer, { passive: true });
+      });
+    </script>
+    {% if user.is_authenticated %}
+    <script>
+      (function () {
+        const TIMEOUT_MS = 3 * 60 * 1000;
+        let timer;
+        function getCookie(name) {
+          const value = `; ${document.cookie}`;
+          const parts = value.split(`; ${name}=`);
+          if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        function resetTimer() {
+          clearTimeout(timer);
+          timer = setTimeout(doAutoLogout, TIMEOUT_MS);
+        }
+        function doAutoLogout() {
+          const csrfToken = getCookie('csrftoken');
+          fetch('{% url "logout" %}', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': csrfToken,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            credentials: 'same-origin',
+            body: ''
+          }).finally(function () {
+            window.location.href = '{% url "login" %}?next=/';
           });
-
-          resetTimer();
-        })();
-      </script>
-      {% endif %}
-      <script>
+        }
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (eventName) {
+          document.addEventListener(eventName, resetTimer, { passive: true });
+        });
+        resetTimer();
+      })();
+    </script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
           const draftPrefix = 'autosave-draft:';
           const pendingPrefix = 'autosave-pending:';

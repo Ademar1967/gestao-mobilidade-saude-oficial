@@ -31,8 +31,8 @@ def strtobool(val):
         return False
     raise ValueError(f"invalid truth value: {val}")
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!')
-# DEBUG: False por padrão (produção), True apenas se DJANGO_DEBUG=1
-DEBUG = bool(strtobool(os.environ.get('DJANGO_DEBUG', '0')))
+# DEBUG: Forçado para True para debug local
+DEBUG = True
 # ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS, ou domínio do Render por padrão
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'transporte-de-enfermos.onrender.com']
 

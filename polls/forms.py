@@ -195,11 +195,11 @@ class EnfermagemForm(forms.ModelForm):
         }
 
 class PacienteForm(forms.ModelForm):
-        consentimento_lgpd = forms.BooleanField(
-            label='Li e concordo com o tratamento dos dados pessoais conforme a LGPD',
-            required=True,
-            help_text='O paciente ou responsável autoriza o uso dos dados para transporte e atendimento em saúde.'
-        )
+    consentimento_lgpd = forms.BooleanField(
+        label='Li e concordo com o tratamento dos dados pessoais conforme a LGPD',
+        required=True,
+        help_text='O paciente ou responsável autoriza o uso dos dados para transporte e atendimento em saúde.'
+    )
     ddd = forms.CharField(label='DDD', max_length=2, required=False, widget=forms.TextInput(attrs={'placeholder': 'DDD', 'style': 'max-width:50px;'}))
     cartao_sis = forms.CharField(label='Cartão SIS', max_length=10, required=False, widget=forms.TextInput(attrs={'placeholder': 'Cartão SIS', 'style': 'max-width:110px;'}))
     def __init__(self, *args, **kwargs):
