@@ -2,6 +2,13 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
+{% with breadcrumbs=[
+  {'label': 'Início', 'url': url 'transporte_pacientes:home'},
+  {'label': 'Pacientes', 'url': url 'transporte_pacientes:home'},
+  {'label': 'Editar Paciente', 'url': ''}
+] %}
+  {% include 'partials/breadcrumbs_dynamic.html' %}
+{% endwith %}
 <!-- MELHORIA ATIVA: Este formulário foi atualizado com melhorias de usabilidade. Última atualização: 07/03/2026. -->
 <div class="container mt-4">
   <div class="row justify-content-center">

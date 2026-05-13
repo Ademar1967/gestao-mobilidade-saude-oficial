@@ -9,7 +9,12 @@
 
 
 
+{% include 'partials/navbar.html' %}
 {% block content %}
+
+{% with breadcrumbs="[{ 'label': 'Início', 'url': '/' }, { 'label': 'Pacientes', 'url': '/' }, { 'label': 'Cadastrar Paciente', 'url': '' }]" %}
+  {% include 'partials/breadcrumbs_dynamic.html' %}
+{% endwith %}
 
 
 

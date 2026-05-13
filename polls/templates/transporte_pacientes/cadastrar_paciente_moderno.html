@@ -42,6 +42,11 @@
 	   </div>
 	<!-- ...restante do template... -->
 							<div class="row g-2">
+								<div class="col-md-4">
+									{{ form.horario_consulta.label }}
+									{{ form.horario_consulta|as_crispy_field }}
+									<small class="form-text text-muted">{{ form.horario_consulta.help_text }}</small>
+								</div>
 								{# <div class="col-md-4">{{ form.tratamento.label }}{{ form.tratamento|as_crispy_field }}</div> #}
 								{# <div class="col-md-4">{{ form.status.label }}<span class="asterisk">*</span>{{ form.status|as_crispy_field }}</div> #}
 								{# <div class="col-md-4">{{ form.oxigenio.label }}{{ form.oxigenio|as_crispy_field }}</div> #}
@@ -90,6 +95,13 @@
 							{% load crispy_forms_tags %}
 
 							{% block content %}
+							{% with breadcrumbs=[
+								{'label': 'Início', 'url': url 'transporte_pacientes:home'},
+								{'label': 'Pacientes', 'url': url 'transporte_pacientes:home'},
+								{'label': 'Cadastrar Paciente (Moderno)', 'url': ''}
+							] %}
+								{% include 'partials/breadcrumbs_dynamic.html' %}
+							{% endwith %}
 							<style>
 								.btn-historico {
 									background: linear-gradient(90deg, #ff9800 80%, #ffd54f 100%);

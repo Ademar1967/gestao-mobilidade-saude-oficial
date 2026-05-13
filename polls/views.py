@@ -1551,7 +1551,12 @@ def pacientes_json(request):
 from django.shortcuts import render
 
 def mapa_pacientes(request):
-    return render(request, 'transporte_pacientes/mapa_pacientes.html')
+	breadcrumbs = [
+		{'label': 'Início', 'url': '/'},
+		{'label': 'Pacientes', 'url': '/'},
+		{'label': 'Mapa de Pacientes', 'url': ''}
+	]
+	return render(request, 'transporte_pacientes/mapa_pacientes_novo.html', {'breadcrumbs': breadcrumbs})
 
 def excluir_transporte(request, transporte_id):
     """Exclui um transporte específico por ID."""

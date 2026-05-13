@@ -1,7 +1,15 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
+{% include 'partials/navbar.html' %}
 {% block content %}
+{% with breadcrumbs=[
+  {'label': 'Início', 'url': url 'transporte_pacientes:home'},
+  {'label': 'Pacientes', 'url': url 'transporte_pacientes:home'},
+  {'label': 'Buscar/Editar Paciente', 'url': ''}
+] %}
+  {% include 'partials/breadcrumbs_dynamic.html' %}
+{% endwith %}
 <style>
   #melhoria-alert .btn-ok-melhoria {
     background-color: #1976d2 !important;

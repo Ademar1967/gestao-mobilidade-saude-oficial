@@ -1,5 +1,12 @@
 {% extends 'base.html' %}
 {% block content %}
+{% with breadcrumbs=[
+  {'label': 'Início', 'url': '/'},
+  {'label': 'Pacientes', 'url': '/'},
+  {'label': 'Mapa de Pacientes', 'url': ''}
+] %}
+  {% include 'partials/breadcrumbs_dynamic.html' %}
+{% endwith %}
 <div class="container mt-4">
   <h4>Pacientes no Mapa</h4>
   <div id="map" style="height: 500px; width: 100%;"></div>
@@ -10,9 +17,9 @@
   document.addEventListener('DOMContentLoaded', function() {
     var map = L.map('map').setView([-23.55052, -46.633308], 10); // São Paulo
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+// ...existing code...
+  });
+});
     fetch('/pacientes-json/')
       .then(response => response.json())
       .then(data => {
