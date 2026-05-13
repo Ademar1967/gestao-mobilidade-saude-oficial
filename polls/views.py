@@ -4,6 +4,10 @@ from .models import Paciente, Transporte
 
 # --- API: Detalhes completos do paciente para busca global ---
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+def politica_privacidade(request):
+	return render(request, 'politica_privacidade.html')
 @require_GET
 @login_required
 def paciente_detalhes_api(request, paciente_id):
@@ -495,7 +499,12 @@ def cadastrar_transporte(request):
 			messages.success(request, 'Transporte cadastrado com sucesso!')
 			# Após salvar, exibe mensagem e mantém usuário na tela de cadastro
 			form = TransporteForm()  # Limpa o formulário
-			return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos})
+			breadcrumbs = [
+				{'label': 'Início', 'url': '/'},
+				{'label': 'Transportes', 'url': '/transportes/'},
+				{'label': 'Cadastrar Transporte', 'url': ''},
+			]
+			return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos, 'breadcrumbs': breadcrumbs})
 		audit_logger.warning("Falha de validacao ao cadastrar transporte", extra={"erros": form.errors.as_json()})
 		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
 		if first_error:
@@ -631,6 +640,11 @@ def cadastrar_transporte_lote(request):
 		messages.warning(request, 'Nenhum paciente selecionado.')
 		return redirect('transporte_pacientes:home')
 
+	breadcrumbs = [
+		{'label': 'Início', 'url': '/'},
+		{'label': 'Transportes', 'url': '/transportes/'},
+		{'label': 'Transporte em Lote', 'url': ''},
+	]
 	return render(request, 'transporte_pacientes/cadastrar_transporte_lote.html', {
 		'pacientes': pacientes_selecionados,
 		'paciente_ids_lote': ids_param,
@@ -640,12 +654,17 @@ def cadastrar_transporte_lote(request):
 		'enfermagens': enfermagens,
 		'today': __import__('datetime').date.today(),
 		'acompanhantes_count': sum(1 for p in pacientes_selecionados if getattr(p, 'acompanhante', False)),
+		'breadcrumbs': breadcrumbs,
 	})
 
 def listar_transportes(request):
 	"""Lista todos os transportes ordenados por data e hora de saida."""
 	transportes = Transporte.objects.select_related('paciente', 'veiculo', 'condutor', 'clinica', 'enfermagem').order_by('-data_transporte', '-hora_saida')
-	return render(request, 'transporte_pacientes/listar_transportes.html', {'transportes': transportes})
+	breadcrumbs = [
+		{'label': 'Início', 'url': '/'},
+		{'label': 'Transportes', 'url': ''},
+	]
+	return render(request, 'transporte_pacientes/listar_transportes.html', {'transportes': transportes, 'breadcrumbs': breadcrumbs})
 def excluir_selecionadas_enfermagem(request):
 	"""Exclui os membros de enfermagem marcados via checkbox na listagem."""
 	from .models import Enfermagem
@@ -686,7 +705,16 @@ def cadastrar_enfermagem(request):
 	else:
 		form = EnfermagemForm()
 	enfermagens = Enfermagem.objects.all().order_by('-id')
-	return render(request, 'transporte_pacientes/cadastrar_enfermagem.html', {'form': form, 'enfermagens': enfermagens})
+	breadcrumbs = [
+		{'label': 'Início', 'url': '/'},
+		{'label': 'Enfermagem', 'url': '/enfermagem/'},
+		{'label': 'Cadastrar Enfermagem', 'url': ''},
+	]
+	return render(request, 'transporte_pacientes/cadastrar_enfermagem.html', {
+		'form': form,
+		'enfermagens': enfermagens,
+		'breadcrumbs': breadcrumbs,
+	})
 def excluir_selecionadas_clinicas(request):
 	"""Exclui as clinicas marcadas via checkbox na listagem."""
 	from .models import Clinica
@@ -1453,7 +1481,16 @@ def cadastrar_condutor(request):
 		form = CondutorForm()
 	from .models import Condutor
 	condutores = Condutor.objects.all().order_by('-id')
-	return render(request, 'transporte_pacientes/cadastrar_condutor.html', {'form': form, 'condutores': condutores})
+	breadcrumbs = [
+		{'label': 'Início', 'url': '/'},
+		{'label': 'Condutores', 'url': '/condutores/'},
+		{'label': 'Cadastrar Condutor', 'url': ''},
+	]
+	return render(request, 'transporte_pacientes/cadastrar_condutor.html', {
+		'form': form,
+		'condutores': condutores,
+		'breadcrumbs': breadcrumbs,
+	})
 
 def cadastrar_clinica(request):
 	from django.contrib import messages
@@ -1469,7 +1506,17 @@ def cadastrar_clinica(request):
 	else:
 		form = ClinicaForm()
 	clinicas = Clinica.objects.all()
-	return render(request, 'transporte_pacientes/cadastrar_clinica.html', {'form': form, 'clinicas': clinicas, 'unidades_salvas': clinicas})
+	breadcrumbs = [
+		{'label': 'Início', 'url': '/'},
+		{'label': 'Hospitais/Clínicas', 'url': '/clinicas/'},
+		{'label': 'Cadastrar Clínica', 'url': ''},
+	]
+	return render(request, 'transporte_pacientes/cadastrar_clinica.html', {
+		'form': form,
+		'clinicas': clinicas,
+		'unidades_salvas': clinicas,
+		'breadcrumbs': breadcrumbs,
+	})
 
 def preview_clinicas(request):
     from .models import Clinica
@@ -1567,3 +1614,6 @@ def excluir_transporte(request, transporte_id):
         transporte.delete()
         messages.success(request, 'Transporte excluído com sucesso!')
     return redirect('transporte_pacientes:listar_transportes')
+
+def politica_privacidade(request):
+    return render(request, 'politica_privacidade.html')

@@ -15,14 +15,32 @@ if not settings.DEBUG:
 	print("ATENÇÃO: Este script não deve ser executado em produção!")
 	sys.exit(1)
 
-total = Paciente.objects.count()
-if total == 0:
-	print('Nenhum paciente encontrado.')
+
+# Função para identificar se o campo tem só barras, espaços ou está vazio
+def contem_so_barras_espacos(valor):
+	if not valor:
+		return False
+	return all(c in {'/', ' ', '|', '-'} for c in valor)
+
+# Filtra pacientes cujo nome contenha 10 ou mais barras consecutivas
+import re
+suspeitos = []
+for p in Paciente.objects.all():
+	if re.search(r'/ {0,}/ {9,}', p.nome) or re.search(r'/ {10,}', p.nome):
+		suspeitos.append(p)
+
+if not suspeitos:
+	print('Nenhum paciente com nome contendo 10 ou mais barras consecutivas encontrado.')
 	sys.exit(0)
 
-confirm = input(f'Tem certeza que deseja excluir TODOS os {total} pacientes? (s/N): ')
+print('Pacientes suspeitos encontrados:')
+for p in suspeitos:
+	print(f'ID: {p.id} | Nome: {p.nome}')
+
+confirm = input(f'Deseja excluir esses {len(suspeitos)} pacientes? (s/N): ')
 if confirm.lower() == 's':
-	Paciente.objects.all().delete()
-	print(f'Todos os {total} pacientes foram excluídos com sucesso!')
+	for p in suspeitos:
+		p.delete()
+	print(f'{len(suspeitos)} paciente(s) excluído(s) com sucesso!')
 else:
 	print('Operação cancelada.')

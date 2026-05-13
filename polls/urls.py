@@ -38,6 +38,7 @@ urlpatterns = [
     path('condutores/exportar_excel/', views.exportar_condutores_excel, name='exportar_condutores_excel'),
     path('clinicas/exportar_excel/', views.exportar_clinicas_excel, name='exportar_clinicas_excel'),
     path('pacientes/preview/', views.preview_pacientes, name='preview_pacientes'),
+    path('politica-privacidade/', views.politica_privacidade, name='politica_privacidade'),
     path('clinicas/preview/', views.preview_clinicas, name='preview_clinicas'),
     path('condutores/preview/', views.preview_condutores, name='preview_condutores'),
     path('veiculos/preview/', views.preview_veiculos, name='preview_veiculos'),

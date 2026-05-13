@@ -1,7 +1,6 @@
 
 {% extends 'base.html' %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'transporte_pacientes/form-clean.css' %}">
 {% load crispy_forms_tags %}
 
 
@@ -12,9 +11,7 @@
 {% include 'partials/navbar.html' %}
 {% block content %}
 
-{% with breadcrumbs="[{ 'label': 'Início', 'url': '/' }, { 'label': 'Pacientes', 'url': '/' }, { 'label': 'Cadastrar Paciente', 'url': '' }]" %}
-  {% include 'partials/breadcrumbs_dynamic.html' %}
-{% endwith %}
+{% include 'partials/breadcrumbs_dynamic.html' %}
 
 
 
@@ -30,6 +27,7 @@
       Instructions in English
       <i class="bi bi-chevron-down transition" id="icon-en"></i>
     </button>
+  </div>
   <style>
     .btn-info {
       background: linear-gradient(90deg, #0dcaf0 80%, #31d2f2 100%);
@@ -523,10 +521,19 @@
         <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
       </div>
     <script>
-      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-      });
+      function initTooltips() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+          var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+          });
+        }
+      }
+      if (document.readyState === 'complete') {
+        initTooltips();
+      } else {
+        window.addEventListener('DOMContentLoaded', initTooltips);
+      }
     </script>
     </form>
 {% block scripts %}
@@ -929,12 +936,16 @@ if (inputNome) {
 
 
 
+
 <script>
   // Preenche a data/hora atual no aviso
   document.addEventListener('DOMContentLoaded', function() {
     var agora = new Date();
     var dataHora = agora.toLocaleString('pt-BR', { hour12: false });
-    document.getElementById('data-hora-atual').textContent = dataHora;
+    var el = document.getElementById('data-hora-atual');
+    if (el) {
+      el.textContent = dataHora;
+    }
   });
 </script>
 
@@ -1030,6 +1041,7 @@ if (inputNome) {
 
 {% endblock %}
 
+
 {% block extra_scripts %}
 <script>
   function toggleHistorico() {
@@ -1047,8 +1059,8 @@ if (inputNome) {
   document.addEventListener('DOMContentLoaded', function() {
     var historico = document.getElementById('historicoPacientes');
     var btnText = document.getElementById('toggleHistoricoText');
-    if (historico && btnText) {
-      if (historico.style.display === 'none' || historico.style.display === '') {
+    if (btnText) {
+      if (!historico || historico.style.display === 'none' || historico.style.display === '') {
         btnText.textContent = 'Mostrar lista de pacientes';
       } else {
         btnText.textContent = 'Ocultar lista de pacientes';

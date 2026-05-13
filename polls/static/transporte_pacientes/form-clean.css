@@ -1,27 +1,6 @@
 /* Remove bordas dos campos de input dos formulários de paciente */
-.card-body form input,
-.card-body form select,
-.card-body form textarea,
-.card-body form .form-control {
-  border: none !important;
-  box-shadow: none !important;
-  background-color: #f8fafc !important;
-  outline: none !important;
-}
 
-.card-body form input:focus,
-.card-body form select:focus,
-.card-body form textarea:focus,
-.card-body form .form-control:focus {
-  border: none !important;
-  box-shadow: 0 0 0 2px #90caf9 !important;
-  background-color: #f1f8ff !important;
-  outline: none !important;
-}
 
-/* Remove borda do Chrome autofill */
-.card-body form input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #f8fafc inset !important;
-  box-shadow: 0 0 0 1000px #f8fafc inset !important;
-  border: none !important;
-}
+
+
+

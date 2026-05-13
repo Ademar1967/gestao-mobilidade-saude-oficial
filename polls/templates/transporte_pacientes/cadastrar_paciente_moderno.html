@@ -245,6 +245,7 @@
 											</form>
 										</div>
 										<script>
+										document.addEventListener('DOMContentLoaded', function() {
 											function toggleHistorico() {
 												var historico = document.getElementById('historicoPacientes');
 												var btnText = document.getElementById('toggleHistoricoText');
@@ -252,123 +253,128 @@
 													historico.classList.add('show');
 													historico.style.maxHeight = '600px';
 													historico.style.opacity = 1;
-													btnText.textContent = 'Ocultar lista de pacientes salvos';
+													if (btnText) btnText.textContent = 'Ocultar lista de pacientes salvos';
 												} else {
 													historico.classList.remove('show');
 													historico.style.maxHeight = 0;
 													historico.style.opacity = 0;
-													btnText.textContent = 'Exibir lista de pacientes salvos';
+													if (btnText) btnText.textContent = 'Exibir lista de pacientes salvos';
 												}
 											}
 
 											// Selecionar todos os checkboxes
-											document.addEventListener('DOMContentLoaded', function() {
-												var selectAll = document.getElementById('selectAllPacientes');
-												if (selectAll) {
-													selectAll.addEventListener('change', function() {
-														var checkboxes = document.querySelectorAll('input[name="paciente_ids"]');
-														checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
-													});
-												}
-												// Enviar IDs selecionados no form de exclusão
-												var formExcluir = document.getElementById('formExcluirPacientes');
-												if (formExcluir) {
-													formExcluir.addEventListener('submit', function(e) {
-														var selecionados = Array.from(document.querySelectorAll('input[name="paciente_ids"]:checked')).map(cb => cb.value);
-														if (selecionados.length === 0) {
-															alert('Selecione pelo menos um paciente para excluir.');
-															e.preventDefault();
-															return false;
-														}
-														document.getElementById('pacientesSelecionados').value = selecionados.join(',');
-													});
-												}
-
-												// Exclusão individual de paciente via AJAX
-												document.querySelectorAll('.btn-excluir-paciente').forEach(function(btn) {
-													btn.addEventListener('click', function() {
-														if (confirm('Tem certeza que deseja excluir este paciente?')) {
-															var pacienteId = this.getAttribute('data-id');
-															fetch('{% url "transporte_pacientes:excluir_paciente_ajax" %}', {
-																method: 'POST',
-																headers: {
-																	'Content-Type': 'application/x-www-form-urlencoded',
-																	'X-CSRFToken': '{{ csrf_token }}'
-																},
-																body: 'id=' + encodeURIComponent(pacienteId)
-															})
-															.then(response => response.json())
-															.then(data => {
-																if (data.success) {
-																	// Remove a linha da tabela
-																	btn.closest('tr').remove();
-																	// Opcional: feedback visual
-																	alert('Paciente excluído com sucesso!');
-																} else {
-																	alert('Erro ao excluir paciente.');
-																}
-															})
-															.catch(() => alert('Erro ao excluir paciente.'));
-														}
-													});
+											var selectAll = document.getElementById('selectAllPacientes');
+											if (selectAll) {
+												selectAll.addEventListener('change', function() {
+													var checkboxes = document.querySelectorAll('input[name="paciente_ids"]');
+													checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
 												});
-
-												// AJAX para atualização instantânea do histórico de pacientes
-												const form = document.getElementById('pacienteForm');
-												if (form) {
-													form.addEventListener('submit', function(e) {
+											}
+											// Enviar IDs selecionados no form de exclusão
+											var formExcluir = document.getElementById('formExcluirPacientes');
+											if (formExcluir) {
+												formExcluir.addEventListener('submit', function(e) {
+													var selecionados = Array.from(document.querySelectorAll('input[name="paciente_ids"]:checked')).map(cb => cb.value);
+													if (selecionados.length === 0) {
+														alert('Selecione pelo menos um paciente para excluir.');
 														e.preventDefault();
-														const formData = new FormData(form);
-														fetch(window.location.href, {
+														return false;
+													}
+													document.getElementById('pacientesSelecionados').value = selecionados.join(',');
+												});
+											}
+
+											// Exclusão individual de paciente via AJAX
+											document.querySelectorAll('.btn-excluir-paciente').forEach(function(btn) {
+												btn.addEventListener('click', function() {
+													if (confirm('Tem certeza que deseja excluir este paciente?')) {
+														var pacienteId = this.getAttribute('data-id');
+														fetch('{% url "transporte_pacientes:excluir_paciente_ajax" %}', {
 															method: 'POST',
 															headers: {
-																'X-Requested-With': 'XMLHttpRequest',
+																'Content-Type': 'application/x-www-form-urlencoded',
+																'X-CSRFToken': '{{ csrf_token }}'
 															},
-															body: formData
+															body: 'id=' + encodeURIComponent(pacienteId)
 														})
-														.then(response => response.text())
-														.then(html => {
-															// Extrai apenas a tabela de pacientes do HTML retornado
-															const parser = new DOMParser();
-															const doc = parser.parseFromString(html, 'text/html');
-															const novaTabela = doc.querySelector('#historicoPacientes');
-															if (novaTabela) {
-																document.getElementById('historicoPacientes').innerHTML = novaTabela.innerHTML;
-																// Garante que a lista fique visível após salvar
-																document.getElementById('historicoPacientes').classList.add('show');
-																document.getElementById('historicoPacientes').style.maxHeight = '600px';
-																document.getElementById('historicoPacientes').style.opacity = 1;
-																document.getElementById('toggleHistoricoText').textContent = 'Ocultar lista de pacientes salvos';
+														.then(response => response.json())
+														.then(data => {
+															if (data.success) {
+																// Remove a linha da tabela
+																btn.closest('tr').remove();
+																// Opcional: feedback visual
+																alert('Paciente excluído com sucesso!');
+															} else {
+																alert('Erro ao excluir paciente.');
 															}
-															// Limpa o formulário após salvar
-															form.reset();
 														})
-														.catch(err => {
-															alert('Erro ao salvar paciente!');
-														});
-													});
-												}
+														.catch(() => alert('Erro ao excluir paciente.'));
+													}
+												});
 											});
-																				</script>
-<!-- Bootstrap JS para evitar erro 'bootstrap is not defined' -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+											// AJAX para atualização instantânea do histórico de pacientes
+											const form = document.getElementById('pacienteForm');
+											if (form) {
+												form.addEventListener('submit', function(e) {
+													e.preventDefault();
+													const formData = new FormData(form);
+													fetch(window.location.href, {
+														method: 'POST',
+														headers: {
+															'X-Requested-With': 'XMLHttpRequest',
+														},
+														body: formData
+													})
+													.then(response => response.text())
+													.then(html => {
+														// Extrai apenas a tabela de pacientes do HTML retornado
+														const parser = new DOMParser();
+														const doc = parser.parseFromString(html, 'text/html');
+														const novaTabela = doc.querySelector('#historicoPacientes');
+														if (novaTabela) {
+															document.getElementById('historicoPacientes').innerHTML = novaTabela.innerHTML;
+															// Garante que a lista fique visível após salvar
+															document.getElementById('historicoPacientes').classList.add('show');
+															document.getElementById('historicoPacientes').style.maxHeight = '600px';
+															document.getElementById('historicoPacientes').style.opacity = 1;
+															var btnText = document.getElementById('toggleHistoricoText');
+															if (btnText) btnText.textContent = 'Ocultar lista de pacientes salvos';
+														}
+														// Limpa o formulário após salvar
+														form.reset();
+													})
+													.catch(err => {
+														alert('Erro ao salvar paciente!');
+													});
+												});
+											}
+
+											// Torna a função global para uso no botão
+											window.toggleHistorico = toggleHistorico;
+										});
+										</script>
 <!-- Função utilitária para evitar erro ao acessar elemento inexistente -->
+
 <script>
+// Função utilitária para evitar erro ao acessar elemento inexistente
 function setTextIfExists(id, text) {
 	var el = document.getElementById(id);
 	if (el) el.textContent = text;
 }
 
-// Exemplo de fetch para buscar paciente com tratamento de erro 404
-// fetch('/api/pacientes/6/detalhes/')
-//   .then(r => {
-//     if (!r.ok) throw new Error('Paciente não encontrado');
-//     return r.json();
-//   })
-//   .then(data => { ... })
-//   .catch(err => alert('Erro ao buscar dados do paciente: ' + err.message));
+// Garante que todo JS customizado só execute após o DOM estar pronto
+document.addEventListener('DOMContentLoaded', function() {
+	// (Cole aqui todo o JS customizado que manipula elementos ou usa Bootstrap)
+	// Exemplo:
+	// var el = document.getElementById('toggleHistoricoText');
+	// if (el) el.textContent = 'Exemplo seguro';
+	// ...
+});
 </script>
+
+<!-- Bootstrap JS para evitar erro 'bootstrap is not defined' -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 									</div>
 								</div>
 							</div>

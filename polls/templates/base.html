@@ -220,15 +220,24 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
       // Proteção para bootstrap global
-      if (typeof window.bootstrap === 'undefined' && typeof bootstrap !== 'undefined') {
-        window.bootstrap = bootstrap;
+      function garantirBootstrapGlobal() {
+        if (typeof window.bootstrap === 'undefined' && typeof bootstrap !== 'undefined') {
+          window.bootstrap = bootstrap;
+        }
       }
+      garantirBootstrapGlobal();
       // Garante que erros de modal Bootstrap não travem a busca
       window.addEventListener('error', function(e) {
         if (e.message && e.message.includes('bootstrap')) {
           e.preventDefault();
         }
       });
+      // Caso algum script rode antes do bundle, tenta garantir após o carregamento
+      if (document.readyState === 'complete') {
+        garantirBootstrapGlobal();
+      } else {
+        window.addEventListener('DOMContentLoaded', garantirBootstrapGlobal);
+      }
     </script>
     {% if user.is_authenticated %}
     <script>
@@ -384,5 +393,8 @@
         });
       </script>
       {% block extra_scripts %}{% endblock %}
+    <footer style="text-align:center; margin-top:2em; color:#888; font-size:0.95em;">
+      <a href="/politica-privacidade/" style="color:#007bff; text-decoration:underline;">Política de Privacidade</a>
+    </footer>
     </body>
     </html>
