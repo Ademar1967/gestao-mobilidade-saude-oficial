@@ -1,4 +1,3 @@
-
 from django.urls import path
 from . import views
 from . import views_condutor_delete
@@ -55,4 +54,5 @@ urlpatterns = [
     path('pacientes-json/', views.pacientes_json, name='pacientes_json'),
     path('mapa-pacientes/', views.mapa_pacientes, name='mapa_pacientes'),
     path('transporte/cadastrar-lote/', views.cadastrar_transporte_lote, name='cadastrar_transporte_lote'),
+    path('api/pacientes/count/', views.pacientes_count_api, name='pacientes_count_api'),
 ]

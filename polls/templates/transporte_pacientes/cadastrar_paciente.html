@@ -117,7 +117,89 @@
 
 
 
+
 <h2 class="mb-3 mt-2" style="font-weight:700; color:#1976d2;">Cadastro e Gerenciamento de Pacientes</h2>
+
+
+<style>
+  #contador-pacientes {
+    background: linear-gradient(90deg, #1976d2 70%, #f57c00 100%);
+    color: #fff;
+    border-left: 8px solid #f57c00;
+    box-shadow: 0 2px 12px 0 rgba(25,118,210,0.08);
+    font-size: 1.25em;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 18px 24px;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2em;
+    transition: box-shadow 0.2s;
+  }
+  #contador-pacientes .icone {
+    font-size: 2.2em;
+    color: #fffde7;
+    filter: drop-shadow(0 2px 4px #0d47a1cc);
+  }
+  #contador-pacientes .total-geral {
+    color: #ffd600;
+    font-size: 1.5em;
+    font-weight: 900;
+    margin: 0 0.25em;
+    text-shadow: 1px 2px 6px #0d47a1cc;
+  }
+  #contador-pacientes .detalhes {
+    font-size: 0.95em;
+    color: #ffe0b2;
+    font-weight: 500;
+    margin-left: 0.5em;
+  }
+  #contador-pacientes .detalhes strong {
+    color: #fffde7;
+    font-weight: 700;
+  }
+</style>
+<div id="contador-pacientes">
+  <i class="bi bi-people-fill icone"></i>
+  <span>
+    <span style="font-size:1.08em;">Total de pessoas cadastradas hoje:</span>
+    <span id="total-geral-pessoas" class="total-geral">{{ total_geral }}</span>
+    <span class="detalhes">(Pacientes: <strong id="total-pacientes">{{ total_pacientes }}</strong>  |  Acompanhantes: <strong id="total-acompanhantes">{{ total_acompanhantes }}</strong>)</span>
+  </span>
+</div>
+
+<script>
+// Atualização dinâmica do contador após cadastro/exclusão sem recarregar a página
+document.addEventListener('DOMContentLoaded', function() {
+  function atualizarContador(novos) {
+    if (!novos) return;
+    document.getElementById('total-pacientes').textContent = novos.pacientes;
+    document.getElementById('total-acompanhantes').textContent = novos.acompanhantes;
+    document.getElementById('total-geral-pessoas').textContent = novos.geral;
+  }
+  // Exemplo: escute eventos customizados para atualizar contador
+  window.atualizarContadorPacientes = atualizarContador;
+
+  // Função para buscar contagem atual via AJAX
+  function fetchContador() {
+    fetch('/api/pacientes/count/')
+      .then(r => r.json())
+      .then(data => atualizarContador(data));
+  }
+
+  // Atualiza contador após exclusão via AJAX
+  document.body.addEventListener('ajax:pacienteExcluido', function() {
+    fetchContador();
+  });
+
+  // Atualiza contador após cadastro bem-sucedido
+  if (window.__pacienteSaveSuccess) {
+    fetchContador();
+  }
+});
+</script>
 
 {# 1. Feedback de sucesso/erro #}
 {% if messages %}

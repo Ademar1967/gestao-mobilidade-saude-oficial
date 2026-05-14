@@ -1,4 +1,22 @@
 ﻿from django.views.decorators.http import require_GET
+
+# ...existing code...
+
+@require_GET
+def pacientes_count_api(request):
+	from .models import Paciente
+	from django.utils import timezone
+	hoje = timezone.localdate()
+	pacientes = Paciente.objects.filter(data_cadastro__date=hoje)
+	total_pacientes = pacientes.count()
+	total_acompanhantes = pacientes.filter(acompanhante=True).count()
+	total_geral = total_pacientes + total_acompanhantes
+	return JsonResponse({
+		'pacientes': total_pacientes,
+		'acompanhantes': total_acompanhantes,
+		'geral': total_geral
+	})
+from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 from .models import Paciente, Transporte
 
