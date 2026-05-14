@@ -204,11 +204,60 @@ window.onbeforeprint = function() { removePrintButtons(); };
           <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
         </div>
         <div class="card-body">
+                    <!-- Filtros avançados -->
+                    <form method="get" class="row g-2 align-items-end mb-3" style="background:#f8f9fa; border-radius:8px; padding:12px 8px 2px 8px; box-shadow:0 1px 4px #0001;">
+                      <div class="col-md-3 col-12">
+                        <label for="filtro_paciente" class="form-label mb-1">Paciente</label>
+                        <select name="paciente" id="filtro_paciente" class="form-select">
+                          <option value="">Todos</option>
+                          {% for p in pacientes %}
+                            <option value="{{ p.id }}" {% if filtros.paciente == p.id|stringformat:'s' %}selected{% endif %}>{{ p.nome }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-3 col-12">
+                        <label for="filtro_clinica" class="form-label mb-1">Clínica</label>
+                        <select name="clinica" id="filtro_clinica" class="form-select">
+                          <option value="">Todas</option>
+                          {% for c in clinicas %}
+                            <option value="{{ c.id }}" {% if filtros.clinica == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-2 col-6">
+                        <label for="filtro_data" class="form-label mb-1">Data</label>
+                        <input type="date" name="data_transporte" id="filtro_data" class="form-control" value="{{ filtros.data_transporte }}">
+                      </div>
+                      <div class="col-md-2 col-6">
+                        <label for="filtro_condutor" class="form-label mb-1">Condutor</label>
+                        <select name="condutor" id="filtro_condutor" class="form-select">
+                          <option value="">Todos</option>
+                          {% for cond in condutores %}
+                            <option value="{{ cond.id }}" {% if filtros.condutor == cond.id|stringformat:'s' %}selected{% endif %}>{{ cond.nome }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-2 col-6">
+                        <label for="filtro_veiculo" class="form-label mb-1">Veículo</label>
+                        <select name="veiculo" id="filtro_veiculo" class="form-select">
+                          <option value="">Todos</option>
+                          {% for v in veiculos %}
+                            <option value="{{ v.id }}" {% if filtros.veiculo == v.id|stringformat:'s' %}selected{% endif %}>{{ v }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-md-2 col-12 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                      </div>
+                      <div class="col-md-2 col-12 d-flex align-items-end">
+                        <a href="?" class="btn btn-outline-secondary w-100">Limpar</a>
+                      </div>
+                    </form>
           <div id="botoes-acoes" class="no-print" style="margin-bottom: 18px;">
+
             <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true">Imprimir</button>
             <button type="button" class="btn-novo" style="margin-left: 10px;" onclick="window.print()">Impressão Direta</button>
-            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="margin-left: 10px;">Novo Transporte</a>
-
+            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="margin-left: 10px; background: #ffc107; color: #222; border: 2px solid #ff9800; box-shadow: 0 0 12px #ff9800, 0 2px 8px rgba(56,142,60,0.13); font-size: 20px; font-weight: bold; text-shadow: 0 1px 0 #fff;">➕ Novo Transporte</a>
             <button type="button" class="btn-novo" style="margin-left: 10px; background: #1976d2; color: #fff;" onclick="abrirModalPrevia()">Prévia Excel/Imprimir</button>
 
           <!-- Modal de pré-visualização -->

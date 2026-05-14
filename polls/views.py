@@ -659,12 +659,52 @@ def cadastrar_transporte_lote(request):
 
 def listar_transportes(request):
 	"""Lista todos os transportes ordenados por data e hora de saida."""
-	transportes = Transporte.objects.select_related('paciente', 'veiculo', 'condutor', 'clinica', 'enfermagem').order_by('-data_transporte', '-hora_saida')
+	from .models import Paciente, Clinica, Condutor, Veiculo
+	qs = Transporte.objects.select_related('paciente', 'veiculo', 'condutor', 'clinica', 'enfermagem').order_by('-data_transporte', '-hora_saida')
+
+	paciente_id = request.GET.get('paciente')
+	clinica_id = request.GET.get('clinica')
+	data_transporte = request.GET.get('data_transporte')
+	condutor_id = request.GET.get('condutor')
+	veiculo_id = request.GET.get('veiculo')
+
+	if paciente_id:
+		qs = qs.filter(paciente_id=paciente_id)
+	if clinica_id:
+		qs = qs.filter(clinica_id=clinica_id)
+	if data_transporte:
+		qs = qs.filter(data_transporte=data_transporte)
+	if condutor_id:
+		qs = qs.filter(condutor_id=condutor_id)
+	if veiculo_id:
+		qs = qs.filter(veiculo_id=veiculo_id)
+
+	# Para selects de filtro
+	pacientes = Paciente.objects.all().order_by('nome')
+	clinicas = Clinica.objects.all().order_by('nome')
+	condutores = Condutor.objects.all().order_by('nome')
+	veiculos = Veiculo.objects.all().order_by('patrimonio', 'placa')
+
 	breadcrumbs = [
 		{'label': 'Início', 'url': '/'},
 		{'label': 'Transportes', 'url': ''},
 	]
-	return render(request, 'transporte_pacientes/listar_transportes.html', {'transportes': transportes, 'breadcrumbs': breadcrumbs})
+	context = {
+		'transportes': qs,
+		'breadcrumbs': breadcrumbs,
+		'pacientes': pacientes,
+		'clinicas': clinicas,
+		'condutores': condutores,
+		'veiculos': veiculos,
+		'filtros': {
+			'paciente': paciente_id or '',
+			'clinica': clinica_id or '',
+			'data_transporte': data_transporte or '',
+			'condutor': condutor_id or '',
+			'veiculo': veiculo_id or '',
+		}
+	}
+	return render(request, 'transporte_pacientes/listar_transportes.html', context)
 def excluir_selecionadas_enfermagem(request):
 	"""Exclui os membros de enfermagem marcados via checkbox na listagem."""
 	from .models import Enfermagem

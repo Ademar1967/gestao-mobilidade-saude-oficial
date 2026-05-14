@@ -1,5 +1,3 @@
-
-
 import requests
 import re
 import sys
@@ -7,9 +5,8 @@ import os
 
 BASE_URL = 'http://127.0.0.1:8000'
 LOGIN_URL = f'{BASE_URL}/login/'
-BUSCA_URL = f'{BASE_URL}/api/condutores/sugestoes/?q=Condutor'
+BUSCA_URL = f'{BASE_URL}/api/pacientes/sugestoes/?q=Teste'
 
-# Permite passar usuário e senha por argumento ou variável de ambiente
 def get_credenciais():
     if len(sys.argv) >= 3:
         return sys.argv[1], sys.argv[2]
@@ -22,7 +19,6 @@ def get_credenciais():
     return usuario, senha
 
 usuario, senha = get_credenciais()
-
 session = requests.Session()
 
 # 1. Captura CSRF token da página de login
@@ -52,7 +48,7 @@ if 'sessionid' not in session.cookies.get_dict():
     exit(1)
 print('Login realizado com sucesso.')
 
-# 3. Buscar condutor (simulando AJAX e enviando CSRF)
+# 3. Buscar paciente (simulando AJAX e enviando CSRF)
 csrf_cookie = session.cookies.get('csrftoken')
 sessionid_cookie = session.cookies.get('sessionid')
 ajax_headers = {
@@ -62,7 +58,6 @@ ajax_headers = {
 if csrf_cookie:
     ajax_headers['X-CSRFToken'] = csrf_cookie
 
-# Debug: mostrar cookies e headers
 print('Cookies atuais na sessão:')
 for k, v in session.cookies.get_dict().items():
     print(f'  {k}: {v}')
@@ -70,7 +65,6 @@ print('\nHeaders enviados:')
 for k, v in ajax_headers.items():
     print(f'  {k}: {v}')
 
-# Garantir envio do sessionid manualmente, se necessário
 resp = session.get(BUSCA_URL, headers=ajax_headers, cookies={'sessionid': sessionid_cookie, 'csrftoken': csrf_cookie} if sessionid_cookie else None)
 print('\nStatus:', resp.status_code)
 print('Resposta:')

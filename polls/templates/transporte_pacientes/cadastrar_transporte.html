@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% block extra_scripts %}
@@ -33,6 +34,40 @@ document.addEventListener('DOMContentLoaded', function() {
       bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
     }
   });
+
+  // --- Preenchimento automático dos dados do paciente selecionado ---
+  var pacienteSelect = document.getElementById('id_paciente');
+  if (pacienteSelect) {
+    pacienteSelect.addEventListener('change', function() {
+      var pacienteId = pacienteSelect.value;
+      if (!pacienteId) return;
+      fetch('/api/pacientes/' + pacienteId + '/detalhes/')
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          // Preencher campos do formulário com os dados recebidos
+          if (data && !data.erro) {
+            if (data.rua !== undefined) document.getElementById('id_rua') && (document.getElementById('id_rua').value = data.rua);
+            if (data.numero !== undefined) document.getElementById('id_numero') && (document.getElementById('id_numero').value = data.numero);
+            if (data.bairro !== undefined) document.getElementById('id_bairro') && (document.getElementById('id_bairro').value = data.bairro);
+            if (data.cidade !== undefined) document.getElementById('id_cidade') && (document.getElementById('id_cidade').value = data.cidade);
+            if (data.estado !== undefined) document.getElementById('id_estado') && (document.getElementById('id_estado').value = data.estado);
+            if (data.cep !== undefined) document.getElementById('id_cep') && (document.getElementById('id_cep').value = data.cep);
+            if (data.referencia !== undefined) document.getElementById('id_referencia') && (document.getElementById('id_referencia').value = data.referencia);
+            if (data.observacoes !== undefined) document.getElementById('id_observacoes') && (document.getElementById('id_observacoes').value = data.observacoes);
+            if (data.ddd !== undefined) document.getElementById('id_ddd') && (document.getElementById('id_ddd').value = data.ddd);
+            if (data.telefone !== undefined) document.getElementById('id_telefone') && (document.getElementById('id_telefone').value = data.telefone);
+            if (data.peso !== undefined) document.getElementById('id_peso') && (document.getElementById('id_peso').value = data.peso);
+            if (data.oxigenio !== undefined) document.getElementById('id_oxigenio') && (document.getElementById('id_oxigenio').checked = data.oxigenio);
+            if (data.oxigenio_litros_min !== undefined) document.getElementById('id_oxigenio_litros_min') && (document.getElementById('id_oxigenio_litros_min').value = data.oxigenio_litros_min);
+            if (data.maca !== undefined) document.getElementById('id_maca') && (document.getElementById('id_maca').checked = data.maca);
+            if (data.cadeirante !== undefined) document.getElementById('id_cadeirante') && (document.getElementById('id_cadeirante').checked = data.cadeirante);
+            if (data.acompanhante !== undefined) document.getElementById('id_acompanhante') && (document.getElementById('id_acompanhante').checked = data.acompanhante);
+            if (data.evolucao !== undefined) document.getElementById('id_evolucao') && (document.getElementById('id_evolucao').value = data.evolucao);
+            // Adicione outros campos conforme necessário
+          }
+        });
+    });
+  }
 
   var btnSalvar = document.getElementById('btnSalvar');
   var spinner = document.getElementById('spinnerSalvar');
@@ -146,7 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                 </div>
             {% else %}
-                {{ form.paciente|as_crispy_field }}
+                    {{ form.paciente|as_crispy_field }}
+                    <div class="form-text" style="color:#1976d2; font-weight:600; margin-top:-0.5em;">
+                      Ao selecionar um paciente já cadastrado, os dados serão preenchidos automaticamente para facilitar o cadastro de transporte.
+                    </div>
             {% endif %}
             </div>
             <!-- Bloco: Veículo -->
