@@ -333,7 +333,7 @@ def buscar_condutores_sugestoes(request):
 		return JsonResponse({'sucesso': True, 'resultados': []})
 
 	queryset = (
-		Condutor.objects.only('id', 'nome')
+		Condutor.objects
 		.annotate(
 			uso_count=models.Count('transportes'),
 			ultima_data=models.Max('transportes__data_transporte')

@@ -1,3 +1,4 @@
+
 from django.urls import path
 from . import views
 from . import views_condutor_delete
@@ -6,8 +7,10 @@ from .views import editar_paciente, login_view
 
 app_name = 'transporte_pacientes'
 urlpatterns = [
-                path('api/clinicas/sugestoes/', views.buscar_clinicas_sugestoes, name='buscar_clinicas_sugestoes'),
-                path('api/veiculos/sugestoes/', views.buscar_veiculos_sugestoes, name='buscar_veiculos_sugestoes'),
+    path('api/clinicas/sugestoes/', views.buscar_clinicas_sugestoes, name='buscar_clinicas_sugestoes'),
+    path('api/veiculos/sugestoes/', views.buscar_veiculos_sugestoes, name='buscar_veiculos_sugestoes'),
+    path('api/enfermagem/sugestoes/', views.buscar_enfermagem_sugestoes, name='buscar_enfermagem_sugestoes'),
+    path('api/condutores/sugestoes/', views.buscar_condutores_sugestoes, name='buscar_condutores_sugestoes'),
             path('transportes/', views.listar_transportes, name='listar_transportes'),
         path('api/pacientes/sugestoes/', views.buscar_pacientes_sugestoes, name='buscar_pacientes_sugestoes'),
     path('whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),

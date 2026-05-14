@@ -3,6 +3,30 @@
 
 {% include 'partials/navbar.html' %}
 {% include 'partials/breadcrumbs_dynamic.html' %}
+<style>
+  .btn-novo {
+    background: #388e3c !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 12px 28px !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    box-shadow: 0 2px 8px rgba(56, 142, 60, 0.13) !important;
+    cursor: pointer !important;
+    transition: box-shadow 0.1s, transform 0.1s !important;
+    margin-bottom: 20px !important;
+    margin-right: 0 !important;
+    outline: none !important;
+    display: inline-block !important;
+    min-width: 180px !important;
+    min-height: 48px !important;
+  }
+  .btn-novo:active {
+    box-shadow: 0 1px 2px #388e3c;
+    transform: translateY(2px) scale(0.98);
+  }
+</style>
 {% block content %}
   <!-- MELHORIA ATIVA: Alerta padronizado no topo -->
   <div id="melhoria-alert" class="alert alert-success d-flex align-items-center shadow-sm" style="border-left: 6px solid #43a047; background: linear-gradient(90deg, #e8f5e9 80%, #c8e6c9 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem;">
@@ -26,9 +50,16 @@
     <div class="row justify-content-center">
       <div class="col-lg-8 col-md-10 col-12">
         <div class="card mb-4" style="background-color: #d4f8d4; border-color: #a8e6a3;">
-          <div class="card-header" style="background-color: #a8e6a3; color: #155724; border-bottom: 1px solid #7ed957;">
-            <i class="bi bi-person-vcard me-2" style="font-size:1.5rem;"></i>
-            <h4 class="mb-0 d-inline">Cadastro de Enfermagem</h4>
+          <div class="card-header" style="background-color: #a8e6a3; color: #155724; border-bottom: 1px solid #7ed957; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <i class="bi bi-person-vcard me-2" style="font-size:1.5rem;"></i>
+              <h4 class="mb-0 d-inline">Cadastro de Enfermagem</h4>
+            </div>
+            <div class="no-print">
+              <a href="{% url 'transporte_pacientes:cadastrar_enfermagem' %}" class="btn btn-novo ms-2" style="min-width:180px;">
+                <i class="bi bi-plus-lg me-1"></i> Nova Enfermagem
+              </a>
+            </div>
           </div>
           <div class="card-body" style="background-color: #d4f8d4; color: #155724;">
             {% if form.errors %}
