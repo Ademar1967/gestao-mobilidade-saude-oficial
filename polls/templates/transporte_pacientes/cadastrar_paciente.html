@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
@@ -663,7 +662,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- Mostrar/ocultar campo O2 L/min ---
 document.addEventListener('DOMContentLoaded', function() {
-  // ...existing code for O2 field toggle...
+  var oxigenioCheckbox = document.getElementById('id_oxigenio');
+  var litrosContainer = document.querySelector('.js-oxigenio-litros-container');
+  function toggleLitros() {
+    if (oxigenioCheckbox && litrosContainer) {
+      if (oxigenioCheckbox.checked) {
+        litrosContainer.style.display = '';
+      } else {
+        litrosContainer.style.display = 'none';
+        var litrosInput = document.getElementById('id_oxigenio_litros_min');
+        if (litrosInput) litrosInput.value = '';
+      }
+    }
+  }
+  if (oxigenioCheckbox) {
+    oxigenioCheckbox.addEventListener('change', toggleLitros);
+    toggleLitros(); // Executa ao carregar
+  }
 });
 
 // --- Autocomplete e modal de detalhes do paciente ---
