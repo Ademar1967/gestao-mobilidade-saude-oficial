@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="bi bi-calendar-range"></i> Estatística de Transportes por Mês/Ano</h2>
+  <table class="table table-bordered table-striped mb-4">
+    <thead class="table-info">
+      <tr>
+        <th>Mês/Ano</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in dados %}
+      <tr>
+        <td>{{ row.mes }}</td>
+        <td>{{ row.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <canvas id="graficoPeriodo" height="120"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('graficoPeriodo').getContext('2d');
+    var labels = [{% for row in dados %}'{{ row.mes|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var data = [{% for row in dados %}{{ row.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Total de Transportes',
+          data: data,
+          backgroundColor: 'rgba(33, 150, 243, 0.3)',
+          borderColor: 'rgba(33, 150, 243, 1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: 'Transportes por Mês/Ano' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

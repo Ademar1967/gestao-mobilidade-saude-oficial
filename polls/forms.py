@@ -15,6 +15,16 @@ logger = logging.getLogger("paciente_form")
 # Permite cadastrar um transporte integrando paciente, veículo, condutor, clínica e enfermagem.
 
 class TransporteForm(forms.ModelForm):
+    tipo_transporte = forms.ChoiceField(
+        choices=[
+            ("CONSULTA", "Consulta (ida)"),
+            ("RETORNO", "Retorno (volta)"),
+            ("OUTRO_MUNICIPIO", "Outro/Município"),
+            ("OUTRO_FORA", "Outro/Fora do Município"),
+        ],
+        label="Tipo de Transporte",
+        help_text="Selecione se é ida para consulta, retorno, ou outro."
+    )
     veiculo_livre = forms.CharField(
         required=False,
         label='Veículo (digitar manualmente)',

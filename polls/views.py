@@ -1,4 +1,81 @@
-﻿from django.http import JsonResponse
+﻿
+from django.db.models import Count
+from django.contrib.admin.views.decorators import staff_member_required
+
+# --- ESTATÍSTICA: Transportes por veículo ---
+@staff_member_required
+def estatistica_transportes_veiculo(request):
+	from .models import Transporte, Veiculo
+	qs = (
+		Transporte.objects.values('veiculo__patrimonio', 'veiculo__placa')
+		.annotate(total=Count('id'))
+		.order_by('-total')
+	)
+	dados = [
+		{'veiculo': (row['veiculo__patrimonio'] or row['veiculo__placa'] or 'Não informado'), 'total': row['total']}
+		for row in qs
+	]
+	return render(request, 'transporte_pacientes/estatistica_veiculo.html', {'dados': dados})
+
+# --- ESTATÍSTICA: Transportes por motorista (condutor) ---
+@staff_member_required
+def estatistica_transportes_condutor(request):
+	from .models import Transporte, Condutor
+	qs = (
+		Transporte.objects.values('condutor__nome')
+		.annotate(total=Count('id'))
+		.order_by('-total')
+	)
+	dados = [
+		{'condutor': row['condutor__nome'] or 'Não informado', 'total': row['total']}
+		for row in qs
+	]
+	return render(request, 'transporte_pacientes/estatistica_condutor.html', {'dados': dados})
+
+# --- ESTATÍSTICA: Transportes por mês/ano ---
+@staff_member_required
+def estatistica_transportes_periodo(request):
+	from .models import Transporte
+	from django.db.models.functions import TruncMonth
+	qs = (
+		Transporte.objects.annotate(mes=TruncMonth('data_transporte'))
+		.values('mes')
+		.annotate(total=Count('id'))
+		.order_by('mes')
+	)
+	dados = [
+		{'mes': row['mes'].strftime('%m/%Y') if row['mes'] else 'Sem data', 'total': row['total']}
+		for row in qs
+	]
+	return render(request, 'transporte_pacientes/estatistica_periodo.html', {'dados': dados})
+
+# --- ESTATÍSTICA: Transportes por clínica ---
+@staff_member_required
+def estatistica_transportes_clinica(request):
+	from .models import Transporte, Clinica
+	qs = (
+		Transporte.objects.values('clinica__nome')
+		.annotate(total=Count('id'))
+		.order_by('-total')
+	)
+	dados = [
+		{'clinica': row['clinica__nome'] or 'Não informado', 'total': row['total']}
+		for row in qs
+	]
+	return render(request, 'transporte_pacientes/estatistica_clinica.html', {'dados': dados})
+
+# --- ESTATÍSTICA: Transportes por tipo ---
+@staff_member_required
+def estatistica_transportes_tipo(request):
+	from .models import Transporte
+	tipos = dict(Transporte._meta.get_field('tipo_transporte').choices)
+	qs = Transporte.objects.values('tipo_transporte').annotate(total=Count('id')).order_by('tipo_transporte')
+	dados = [
+		{'tipo': tipos.get(row['tipo_transporte'], row['tipo_transporte']), 'total': row['total']}
+		for row in qs
+	]
+	return render(request, 'transporte_pacientes/estatistica_tipo.html', {'dados': dados})
+from django.http import JsonResponse
 # Endpoint para sugerir dados de retorno invertidos
 def retorno_sugestao_api(request):
 	from .models import Transporte, Paciente

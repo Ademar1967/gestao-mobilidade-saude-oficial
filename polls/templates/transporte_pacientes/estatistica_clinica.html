@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="bi bi-hospital"></i> Estatística de Transportes por Clínica</h2>
+  <table class="table table-bordered table-striped mb-4">
+    <thead class="table-secondary">
+      <tr>
+        <th>Clínica</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in dados %}
+      <tr>
+        <td>{{ row.clinica }}</td>
+        <td>{{ row.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <canvas id="graficoClinica" height="120"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('graficoClinica').getContext('2d');
+    var labels = [{% for row in dados %}'{{ row.clinica|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var data = [{% for row in dados %}{{ row.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Total de Transportes',
+          data: data,
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: 'Transportes por Clínica' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

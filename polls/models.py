@@ -147,38 +147,50 @@ class Clinica(models.Model):
 # --- MODELO DE INTEGRAÇÃO: TRANSPORTE ---
 # Este modelo integra todas as entidades principais do app e registra cada transporte realizado.
 class Transporte(models.Model):
-	paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='transportes')
-	veiculo = models.ForeignKey('Veiculo', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-	condutor = models.ForeignKey('Condutor', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-	clinica = models.ForeignKey('Clinica', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-	enfermagem = models.ForeignKey('Enfermagem', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-	data_transporte = models.DateField()
-	hora_saida = models.TimeField(null=True, blank=True)
-	hora_chegada = models.TimeField(null=True, blank=True)
-	observacoes = models.TextField(blank=True)
+    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='transportes')
+    veiculo = models.ForeignKey('Veiculo', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
+    condutor = models.ForeignKey('Condutor', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
+    clinica = models.ForeignKey('Clinica', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
+    enfermagem = models.ForeignKey('Enfermagem', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
+    data_transporte = models.DateField()
+    hora_saida = models.TimeField(null=True, blank=True)
+    hora_chegada = models.TimeField(null=True, blank=True)
+    TIPO_CHOICES = [
+        ("CONSULTA", "Consulta (ida)"),
+        ("RETORNO", "Retorno (volta)"),
+        ("OUTRO_MUNICIPIO", "Outro/Município"),
+        ("OUTRO_FORA", "Outro/Fora do Município"),
+    ]
+    tipo_transporte = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default="CONSULTA",
+        help_text="Tipo de transporte: consulta, retorno, etc."
+    )
+    observacoes = models.TextField(blank=True)
 
-	def __str__(self):
-		return f"Transporte de {self.paciente} para {self.clinica} em {self.data_transporte}"
+    def __str__(self):
+        return f"Transporte de {self.paciente} para {self.clinica} em {self.data_transporte}"
 
-	def resumo_operacional(self):
-		"""Retorna resumo do transporte no formato 'Data | Paciente -> Clinica | Veiculo'."""
-		paciente_nome = self.paciente.nome if self.paciente else 'Paciente nao informado'
-		clinica_nome = self.clinica.nome if self.clinica else 'Clinica nao informada'
-		veiculo_nome = str(self.veiculo) if self.veiculo else 'Veiculo nao informado'
-		return f"{self.data_transporte} | {paciente_nome} -> {clinica_nome} | {veiculo_nome}"
+    def resumo_operacional(self):
+        """Retorna resumo do transporte no formato 'Data | Paciente -> Clinica | Veiculo'."""
+        paciente_nome = self.paciente.nome if self.paciente else 'Paciente nao informado'
+        clinica_nome = self.clinica.nome if self.clinica else 'Clinica nao informada'
+        veiculo_nome = str(self.veiculo) if self.veiculo else 'Veiculo nao informado'
+        return f"{self.data_transporte} | {paciente_nome} -> {clinica_nome} | {veiculo_nome}"
 
-	def dados_minimos_r1_r2(self):
-		"""Pacote simples para tela operacional de condutor (R1/R2)."""
-		paciente_ops = self.paciente.dados_operacionais_transporte() if self.paciente else {}
-		return {
-			'perfil': 'R1' if self.enfermagem_id else 'R2',
-			'data_transporte': self.data_transporte,
-			'clinica': self.clinica.nome if self.clinica else '',
-			'veiculo': str(self.veiculo) if self.veiculo else '',
-			'condutor': self.condutor.nome if self.condutor else '',
-			'enfermagem': self.enfermagem.nome if self.enfermagem else '',
-			'paciente': paciente_ops,
-		}
+    def dados_minimos_r1_r2(self):
+        """Pacote simples para tela operacional de condutor (R1/R2)."""
+        paciente_ops = self.paciente.dados_operacionais_transporte() if self.paciente else {}
+        return {
+            'perfil': 'R1' if self.enfermagem_id else 'R2',
+            'data_transporte': self.data_transporte,
+            'clinica': self.clinica.nome if self.clinica else '',
+            'veiculo': str(self.veiculo) if self.veiculo else '',
+            'condutor': self.condutor.nome if self.condutor else '',
+            'enfermagem': self.enfermagem.nome if self.enfermagem else '',
+            'paciente': paciente_ops,
+        }
 from django.db import models
 
 # Create your models here.

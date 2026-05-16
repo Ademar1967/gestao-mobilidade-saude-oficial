@@ -198,61 +198,66 @@ window.onbeforeprint = function() { removePrintButtons(); };
 
 <div class="container mt-4">
   <div class="row justify-content-center">
-    <div class="col-lg-10 col-md-12 col-12">
-      <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-          <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
+    <div class="col-lg-11 col-md-12 col-12">
+      <div class="card mb-4 shadow-sm" style="border-radius:18px;">
+        <div class="card-header bg-white d-flex flex-column flex-md-row align-items-center justify-content-between" style="border-bottom:2.5px solid #1976d2; border-radius:18px 18px 0 0; padding:1.2em 1.5em;">
+          <h4 class="mb-0 titulo-impressao" style="color:#1976d2; font-size:2.1em; font-weight:800; letter-spacing:1px; display:flex; align-items:center;"><span class="bi bi-truck me-2" style="font-size:1.3em;"></span>Lista de Transportes Agendados</h4>
+          <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
+            <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true"><span class="bi bi-printer me-1"></span>Imprimir</button>
+            <button type="button" class="btn-novo" style="background:#1976d2; color:#fff;" onclick="abrirModalPrevia()"><span class="bi bi-file-earmark-spreadsheet me-1"></span>Prévia Excel/Imprimir</button>
+            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="background: #43a047; color: #fff; border: 2px solid #388e3c; font-size: 20px; font-weight: bold;"><span class="bi bi-plus-circle me-1"></span>Novo Transporte</a>
+          </div>
         </div>
-        <div class="card-body">
-                    <!-- Filtros avançados -->
-                    <form method="get" class="row g-2 align-items-end mb-3" style="background:#f8f9fa; border-radius:8px; padding:12px 8px 2px 8px; box-shadow:0 1px 4px #0001;">
-                      <div class="col-md-3 col-12">
-                        <label for="filtro_paciente" class="form-label mb-1">Paciente</label>
-                        <select name="paciente" id="filtro_paciente" class="form-select">
-                          <option value="">Todos</option>
-                          {% for p in pacientes %}
-                            <option value="{{ p.id }}" {% if filtros.paciente == p.id|stringformat:'s' %}selected{% endif %}>{{ p.nome }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                      <div class="col-md-3 col-12">
-                        <label for="filtro_clinica" class="form-label mb-1">Clínica</label>
-                        <select name="clinica" id="filtro_clinica" class="form-select">
-                          <option value="">Todas</option>
-                          {% for c in clinicas %}
-                            <option value="{{ c.id }}" {% if filtros.clinica == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                      <div class="col-md-2 col-6">
-                        <label for="filtro_data" class="form-label mb-1">Data</label>
-                        <input type="date" name="data_transporte" id="filtro_data" class="form-control" value="{{ filtros.data_transporte }}">
-                      </div>
-                      <div class="col-md-2 col-6">
-                        <label for="filtro_condutor" class="form-label mb-1">Condutor</label>
-                        <select name="condutor" id="filtro_condutor" class="form-select">
-                          <option value="">Todos</option>
-                          {% for cond in condutores %}
-                            <option value="{{ cond.id }}" {% if filtros.condutor == cond.id|stringformat:'s' %}selected{% endif %}>{{ cond.nome }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                      <div class="col-md-2 col-6">
-                        <label for="filtro_veiculo" class="form-label mb-1">Veículo</label>
-                        <select name="veiculo" id="filtro_veiculo" class="form-select">
-                          <option value="">Todos</option>
-                          {% for v in veiculos %}
-                            <option value="{{ v.id }}" {% if filtros.veiculo == v.id|stringformat:'s' %}selected{% endif %}>{{ v }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                      <div class="col-md-2 col-12 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                      </div>
-                      <div class="col-md-2 col-12 d-flex align-items-end">
-                        <a href="?" class="btn btn-outline-secondary w-100">Limpar</a>
-                      </div>
-                    </form>
+        <div class="card-body" style="background:#f8fafc; border-radius:0 0 18px 18px;">
+          <!-- Filtros avançados -->
+          <form method="get" class="row g-3 align-items-end mb-4 p-3" style="background:#f5f7fa; border-radius:12px; box-shadow:0 1px 6px #0001; border:1.5px solid #e3eaf2;">
+            <div class="col-md-3 col-12">
+              <label for="filtro_paciente" class="form-label mb-1"><span class="bi bi-person me-1"></span>Paciente</label>
+              <select name="paciente" id="filtro_paciente" class="form-select">
+                <option value="">Todos</option>
+                {% for p in pacientes %}
+                  <option value="{{ p.id }}" {% if filtros.paciente == p.id|stringformat:'s' %}selected{% endif %}>{{ p.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3 col-12">
+              <label for="filtro_clinica" class="form-label mb-1"><span class="bi bi-hospital me-1"></span>Clínica</label>
+              <select name="clinica" id="filtro_clinica" class="form-select">
+                <option value="">Todas</option>
+                {% for c in clinicas %}
+                  <option value="{{ c.id }}" {% if filtros.clinica == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2 col-6">
+              <label for="filtro_data" class="form-label mb-1"><span class="bi bi-calendar me-1"></span>Data</label>
+              <input type="date" name="data_transporte" id="filtro_data" class="form-control" value="{{ filtros.data_transporte }}">
+            </div>
+            <div class="col-md-2 col-6">
+              <label for="filtro_condutor" class="form-label mb-1"><span class="bi bi-person-badge me-1"></span>Condutor</label>
+              <select name="condutor" id="filtro_condutor" class="form-select">
+                <option value="">Todos</option>
+                {% for cond in condutores %}
+                  <option value="{{ cond.id }}" {% if filtros.condutor == cond.id|stringformat:'s' %}selected{% endif %}>{{ cond.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2 col-6">
+              <label for="filtro_veiculo" class="form-label mb-1"><span class="bi bi-truck-front me-1"></span>Veículo</label>
+              <select name="veiculo" id="filtro_veiculo" class="form-select">
+                <option value="">Todos</option>
+                {% for v in veiculos %}
+                  <option value="{{ v.id }}" {% if filtros.veiculo == v.id|stringformat:'s' %}selected{% endif %}>{{ v }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2 col-12 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100"><span class="bi bi-funnel me-1"></span>Filtrar</button>
+            </div>
+            <div class="col-md-2 col-12 d-flex align-items-end">
+              <a href="?" class="btn btn-outline-secondary w-100"><span class="bi bi-x-circle me-1"></span>Limpar</a>
+            </div>
+          </form>
           <div id="botoes-acoes" class="no-print" style="margin-bottom: 18px;">
 
             <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true">Imprimir</button>

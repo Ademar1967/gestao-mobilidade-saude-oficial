@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="bi bi-person-badge"></i> Estatística de Transportes por Motorista</h2>
+  <table class="table table-bordered table-striped mb-4">
+    <thead class="table-success">
+      <tr>
+        <th>Motorista</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in dados %}
+      <tr>
+        <td>{{ row.condutor }}</td>
+        <td>{{ row.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <canvas id="graficoCondutor" height="120"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('graficoCondutor').getContext('2d');
+    var labels = [{% for row in dados %}'{{ row.condutor|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    var data = [{% for row in dados %}{{ row.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Total de Transportes',
+          data: data,
+          backgroundColor: 'rgba(40, 167, 69, 0.6)',
+          borderColor: 'rgba(40, 167, 69, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

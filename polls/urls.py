@@ -55,4 +55,11 @@ urlpatterns = [
     path('mapa-pacientes/', views.mapa_pacientes, name='mapa_pacientes'),
     path('transporte/cadastrar-lote/', views.cadastrar_transporte_lote, name='cadastrar_transporte_lote'),
     path('api/pacientes/count/', views.pacientes_count_api, name='pacientes_count_api'),
+    path('api/retorno_sugestao/', views.retorno_sugestao_api, name='retorno_sugestao_api'),
+    path('estatisticas/', views.estatistica_transportes_tipo, name='estatisticas'),
+    path('estatisticas/tipo/', views.estatistica_transportes_tipo, name='estatistica_tipo'),
+    path('estatisticas/clinica/', views.estatistica_transportes_clinica, name='estatistica_clinica'),
+    path('estatisticas/periodo/', views.estatistica_transportes_periodo, name='estatistica_periodo'),
+    path('estatisticas/veiculo/', views.estatistica_transportes_veiculo, name='estatistica_veiculo'),
+    path('estatisticas/condutor/', views.estatistica_transportes_condutor, name='estatistica_condutor'),
 ]

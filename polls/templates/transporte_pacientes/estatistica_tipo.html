@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4"><i class="bi bi-bar-chart"></i> Estatística de Transportes por Tipo</h2>
+  <table class="table table-bordered table-striped">
+    <thead class="table-primary">
+      <tr>
+        <th>Tipo de Transporte</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in dados %}
+      <tr>
+        <td>{{ row.tipo }}</td>
+        <td>{{ row.total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
