@@ -146,6 +146,9 @@
           .then(async r => {
             let data;
             try { data = await r.json(); } catch (e) { data = {}; }
+            // LOG extra para depuração
+            console.log('[DEBUG] Status fetch paciente:', r.status);
+            console.log('[DEBUG] JSON retornado:', data);
             if (r.status === 403 && data.erro === 'nao_autenticado') {
               throw { type: 'auth', data, status: r.status };
             }

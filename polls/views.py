@@ -503,61 +503,54 @@ def buscar_enfermagem_sugestoes(request):
 @require_GET
 def buscar_pacientes_sugestoes(request):
 	"""Retorna pacientes para autocomplete e reaproveitamento de cadastro."""
+	import sys
 	from django.db.models import Q
 	from .models import Paciente
+	print("[DEBUG] buscar_pacientes_sugestoes chamada", file=sys.stderr)
+	try:
+		termo = (request.GET.get('q') or '').strip()
+		print(f"[DEBUG] termo recebido: '{termo}'", file=sys.stderr)
+		if len(termo) < 2:
+			print("[DEBUG] termo muito curto", file=sys.stderr)
+			return JsonResponse({'sucesso': True, 'resultados': []})
 
-	termo = (request.GET.get('q') or '').strip()
-	if len(termo) < 2:
-		return JsonResponse({'sucesso': True, 'resultados': []})
-
-	queryset = (
-		Paciente.objects.only(
-			'id', 'nome', 'ddd', 'telefone', 'cartao_sis', 'idade', 'peso',
-			'referencia', 'rua', 'numero', 'bairro', 'estado', 'cidade', 'cep',
-			'oxigenio', 'oxigenio_litros_min', 'maca', 'cadeirante', 'acompanhante',
-			'evolucao', 'observacoes'
+		queryset = (
+			Paciente.objects.only(
+				'id', 'nome', 'ddd', 'telefone', 'cartao_sis', 'idade', 'peso',
+				'referencia', 'rua', 'numero', 'bairro', 'estado', 'cidade', 'cep',
+				'oxigenio', 'oxigenio_litros_min', 'maca', 'cadeirante',
+				'evolucao', 'observacoes'
+			)
+			.annotate(
+				uso_count=models.Count('transportes'),
+				ultima_data=models.Max('transportes__data_transporte')
+			)
+			.filter(
+				Q(nome__icontains=termo) |
+				Q(telefone__icontains=termo) |
+				Q(cartao_sis__icontains=termo)
+			)
+			.order_by('-uso_count', '-ultima_data', '-id')[:10]
 		)
-		.annotate(
-			uso_count=models.Count('transportes'),
-			ultima_data=models.Max('transportes__data_transporte')
-		)
-		.filter(
-			Q(nome__icontains=termo) |
-			Q(telefone__icontains=termo) |
-			Q(cartao_sis__icontains=termo)
-		)
-		.order_by('-uso_count', '-ultima_data', '-id')[:10]
-	)
-
-	resultados = []
-	for p in queryset:
-		resultados.append({
-			'id': p.id,
-			'debug_id': str(p.id),  # Para debug visual no front
-			'nome': p.nome or '',
-			'ddd': p.ddd or '',
-			'telefone': p.telefone or '',
-			'cartao_sis': p.cartao_sis or '',
-			'idade': p.idade or '',
-			'peso': str(p.peso) if p.peso is not None else '',
-			'referencia': p.referencia or '',
-			'rua': p.rua or '',
-			'numero': p.numero or '',
-			'bairro': p.bairro or '',
-			'estado': p.estado or '',
-			'cidade': p.cidade or '',
-			'cep': p.cep or '',
-			'uso_count': p.uso_count or 0,
-			'oxigenio': bool(p.oxigenio),
-			'oxigenio_litros_min': str(p.oxigenio_litros_min) if p.oxigenio_litros_min is not None else '',
-			'maca': bool(p.maca),
-			'cadeirante': bool(p.cadeirante),
-			'acompanhante': bool(p.acompanhante),
-			'evolucao': p.evolucao or '',
-			'observacoes': p.observacoes or '',
-		})
-
-	return JsonResponse({'sucesso': True, 'resultados': resultados})
+		print(f"[DEBUG] queryset count: {queryset.count()}", file=sys.stderr)
+		resultados = []
+		for p in queryset:
+			resultados.append({
+				'id': p.id,
+				'debug_id': str(p.id),  # Para debug visual no front
+				'nome': p.nome or '',
+				'ddd': p.ddd or '',
+				'telefone': p.telefone or '',
+				'cartao_sis': p.cartao_sis or '',
+				# 'acompanhante' removido pois não existe no modelo em produção
+			})
+		print(f"[DEBUG] resultados gerados: {len(resultados)}", file=sys.stderr)
+		return JsonResponse({'sucesso': True, 'resultados': resultados})
+	except Exception as exc:
+		import traceback
+		print(f"[ERRO buscar_pacientes_sugestoes] {exc}", file=sys.stderr)
+		traceback.print_exc()
+		return JsonResponse({'sucesso': False, 'erro': str(exc), 'traceback': traceback.format_exc()}, status=500)
 
 
 def obter_dados_clinica(request, clinica_id):
@@ -793,7 +786,7 @@ def cadastrar_transporte_lote(request):
 		'condutores': condutores,
 		'enfermagens': enfermagens,
 		'today': __import__('datetime').date.today(),
-		'acompanhantes_count': sum(1 for p in pacientes_selecionados if getattr(p, 'acompanhante', False)),
+		'acompanhantes_count': sum(getattr(p, 'acompanhantes', 0) for p in pacientes_selecionados),
 		'breadcrumbs': breadcrumbs,
 	})
 
@@ -1612,7 +1605,7 @@ def cadastrar_paciente(request):
 			seen.add(key)
 	# Contador: total de pacientes + acompanhantes
 	total_pacientes = len(pacientes)
-	total_acompanhantes = sum(1 for p in pacientes if getattr(p, 'acompanhante', False))
+	total_acompanhantes = sum(getattr(p, 'acompanhantes', 0) for p in pacientes)
 	total_geral = total_pacientes + total_acompanhantes
 	return render(request, 'transporte_pacientes/cadastrar_paciente.html', {
 		'form': form,
