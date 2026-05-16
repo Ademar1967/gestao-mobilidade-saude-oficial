@@ -3,6 +3,56 @@
 {% load crispy_forms_tags %}
 {% block extra_scripts %}
 <script>
+  // --- Preenchimento automático de retorno ---
+  function preencherSugestaoRetorno(sugestao) {
+    // Origem: clínica
+    if (sugestao.origem_nome && document.getElementById('id_clinica_manual')) {
+      document.getElementById('id_clinica_manual').value = sugestao.origem_nome;
+    }
+    // Se houver endereço da clínica, exibe info
+    if (sugestao.origem_endereco && document.getElementById('info-endereco-clinica-texto')) {
+      document.getElementById('info-endereco-clinica-texto').textContent = sugestao.origem_endereco;
+      var infoBox = document.getElementById('info-endereco-clinica');
+      if (infoBox) infoBox.style.display = '';
+    }
+    // Destino: endereço do paciente
+    if (document.getElementById('id_rua')) document.getElementById('id_rua').value = sugestao.destino_rua || '';
+    if (document.getElementById('id_numero')) document.getElementById('id_numero').value = sugestao.destino_numero || '';
+    if (document.getElementById('id_bairro')) document.getElementById('id_bairro').value = sugestao.destino_bairro || '';
+    if (document.getElementById('id_cidade')) document.getElementById('id_cidade').value = sugestao.destino_cidade || '';
+    if (document.getElementById('id_estado')) document.getElementById('id_estado').value = sugestao.destino_estado || '';
+    if (document.getElementById('id_cep')) document.getElementById('id_cep').value = sugestao.destino_cep || '';
+    if (document.getElementById('id_referencia')) document.getElementById('id_referencia').value = sugestao.destino_referencia || '';
+  }
+
+  function tentarPreencherRetorno() {
+    var tipo = document.getElementById('id_tipo_transporte');
+    var paciente = document.getElementById('id_paciente');
+    if (!tipo || !paciente) return;
+    if (tipo.value === 'RETORNO' && paciente.value) {
+      fetch('/api/retorno_sugestao/?paciente_id=' + encodeURIComponent(paciente.value))
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+          if (!data.erro) {
+            preencherSugestaoRetorno(data);
+          }
+        });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var tipo = document.getElementById('id_tipo_transporte');
+    var paciente = document.getElementById('id_paciente');
+    if (tipo) {
+      tipo.addEventListener('change', tentarPreencherRetorno);
+    }
+    if (paciente) {
+      paciente.addEventListener('change', function() {
+        // Espera o preenchimento normal, depois tenta o de retorno
+        setTimeout(tentarPreencherRetorno, 200);
+      });
+    }
+  });
 // Overlay para travar a tela
 function showLoadingOverlay() {
   let overlay = document.createElement('div');
@@ -168,236 +218,167 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card-body p-4" style="background:#f8fafc;">
           {# Removido bloco de erros no topo. Os erros aparecerão ao lado de cada campo automaticamente pelo crispy-forms. #}
           <form method="post" autocomplete="on" id="form-cadastrar-transporte" data-autosave="true" data-autosave-label="do cadastro de transporte">
-            <!-- Bloco: Paciente -->
-            <div class="mb-4 pb-2 border-bottom border-2">
-              <h5 class="mb-3 text-primary"><i class="bi bi-person-badge me-2"></i>Dados do Paciente</h5>
-            {% csrf_token %}
-            {% if form.fields.paciente.queryset.count == 1 %}
-                <input type="hidden" name="paciente" value="{{ form.fields.paciente.queryset.first.id }}">
-                <div class="row mb-3 align-items-center">
-                  <div class="col-md-6 col-12" style="padding-bottom:0.5em;">
-                    <span class="fw-bold" style="color:#222; font-size:1.08em;">Paciente:</span>
-                    <span style="color:#222; font-size:1.08em; font-weight:500;">{{ form.fields.paciente.queryset.first }}</span>
-                  </div>
-                </div>
-            {% else %}
-                    {{ form.paciente|as_crispy_field }}
-                    <div class="form-text" style="color:#1976d2; font-weight:600; margin-top:-0.5em;">
-                      Ao selecionar um paciente já cadastrado, os dados serão preenchidos automaticamente para facilitar o cadastro de transporte.
-                    </div>
-            {% endif %}
+                                    <!-- Mensagem de orientação no topo do formulário -->
+                                    <div class="alert alert-info d-flex align-items-center mb-4" style="border-left: 7px solid #1976d2; background: linear-gradient(90deg,#e3f2fd 80%,#bbdefb 100%); font-size:1.13em; font-weight:600;">
+                                      <span class="bi bi-info-circle-fill me-2" style="font-size:1.5em;color:#1976d2;"></span>
+                                      <span>
+                                        <b>Importante:</b> Escolha corretamente o <b>Tipo de Transporte</b>.<br>
+                                        <span style="font-weight:400;">Ao selecionar <b>Retorno</b>, os endereços serão preenchidos automaticamente se o paciente já tiver uma consulta anterior cadastrada.</span>
+                                      </span>
+                                    </div>
+                        <!-- ALERTA: Campo tipo_transporte obrigatório -->
+                        <div id="alerta-tipo-transporte" class="alert alert-danger d-none" style="font-weight:bold;">ATENÇÃO: O campo <b>Tipo de Transporte</b> não pôde ser exibido. Verifique o cadastro do formulário!</div>
+                        <!-- Card: Tipo de Transporte (minimalista) -->
+                        <div class="card shadow-sm mb-3 border-0">
+                          <div class="card-header bg-warning bg-gradient text-dark py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                            <span class="bi bi-arrow-left-right me-2" style="font-size:1.2em;"></span>
+                            <span class="fw-semibold">Tipo de Transporte</span>
+                          </div>
+                          <div class="card-body bg-white py-2">
+                                            <script>
+                                            document.addEventListener('DOMContentLoaded', function() {
+                                              var form = document.getElementById('form-cadastrar-transporte');
+                                              var campos = [
+                                                document.getElementById('id_veiculo_livre'),
+                                                document.getElementById('id_condutor_manual'),
+                                                document.getElementById('id_clinica_manual'),
+                                                document.getElementById('id_enfermagem_manual')
+                                              ];
+                                              campos.forEach(function(campo) {
+                                                if (campo) {
+                                                  campo.addEventListener('keydown', function(e) {
+                                                    if (e.key === 'Enter') {
+                                                      e.preventDefault();
+                                                      if (form) form.requestSubmit();
+                                                    }
+                                                  });
+                                                }
+                                              });
+                                            });
+                                            </script>
+                            <div id="tipo-transporte-wrapper" class="p-0 border-0 bg-transparent">
+                              {{ form.tipo_transporte|as_crispy_field }}
+                            </div>
+                          </div>
+                        </div>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                          var tipoDiv = document.getElementById('tipo-transporte-wrapper');
+                          var alerta = document.getElementById('alerta-tipo-transporte');
+                          if (tipoDiv && tipoDiv.innerHTML.trim().length < 10 && alerta) {
+                            alerta.classList.remove('d-none');
+                          }
+                        });
+                        </script>
+            <!-- Card: Paciente (minimalista) -->
+            <div class="card shadow-sm mb-3 border-0">
+              <div class="card-header bg-primary bg-gradient text-white py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                <span class="bi bi-person-badge me-2" style="font-size:1.2em;"></span>
+                <span class="fw-semibold">Paciente</span>
+              </div>
+              <div class="card-body bg-white py-2">
+                {% csrf_token %}
+                {% if form.fields.paciente.queryset.count == 1 %}
+                  <input type="hidden" name="paciente" value="{{ form.fields.paciente.queryset.first.id }}">
+                  <span class="fw-semibold text-dark">{{ form.fields.paciente.queryset.first }}</span>
+                {% else %}
+                  {{ form.paciente|as_crispy_field }}
+                {% endif %}
+              </div>
             </div>
-            <!-- Bloco: Veículo -->
-            <div class="mb-4 pb-2 border-bottom border-2">
-              <h5 class="mb-3 text-primary"><i class="bi bi-truck-front me-2"></i>Veículo</h5>
-            <div class="row mb-2 align-items-end">
-              <div class="col-md-7 col-12 mb-2 mb-md-0">
-                <div class="d-flex align-items-center">
+            <!-- Card: Veículo (minimalista) -->
+            <div class="card shadow-sm mb-3 border-0">
+              <div class="card-header bg-info bg-gradient text-dark py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                <span class="bi bi-truck-front me-2" style="font-size:1.2em;"></span>
+                <span class="fw-semibold">Veículo</span>
+              </div>
+              <div class="card-body bg-white py-2">
+                <div id="veiculo-select-wrapper">
                   {{ form.veiculo|as_crispy_field }}
-                  <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione um veículo já cadastrado.">
-                    <i class="bi bi-question-circle text-primary"></i>
-                  </span>
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_veiculo" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
                 </div>
-              </div>
-              <div class="col-md-5 col-12">
                 {% if form.veiculo_livre %}
-                <div class="mb-3 condutor-manual-highlight" style="background:#e3f2fd; border:2px solid #1976d2; border-radius:10px; padding:10px 10px 6px 10px; box-shadow:0 2px 6px rgba(25,118,210,0.13);">
-                  <div style="font-weight:700; color:#1976d2; margin-bottom:4px;">
-                    <i class="bi bi-pencil-square me-1"></i> Digitação manual de veículo
-                  </div>
-                  <div class="d-flex align-items-center">
+                  <div class="mt-2">
                     {{ form.veiculo_livre|as_crispy_field }}
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite a placa ou patrimônio se o veículo não estiver na lista.">
-                      <i class="bi bi-question-circle text-primary"></i>
-                    </span>
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_veiculo_livre" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
                   </div>
-                  <div class="form-text" style="color:#0d47a1; font-weight:600; margin-top:-0.5em;">Preencha apenas se o veículo não estiver na lista. O veículo digitado será salvo automaticamente ao clicar em Salvar Transporte.</div>
-                </div>
                 {% endif %}
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                  var veiculoManual = document.getElementById('id_veiculo_livre');
+                  var veiculoSelectWrapper = document.getElementById('veiculo-select-wrapper');
+                  function toggleVeiculoSelect() {
+                    if (veiculoManual && veiculoManual.value.trim().length > 0) {
+                      if (veiculoSelectWrapper) veiculoSelectWrapper.style.display = 'none';
+                    } else {
+                      if (veiculoSelectWrapper) veiculoSelectWrapper.style.display = '';
+                    }
+                  }
+                  if (veiculoManual) {
+                    veiculoManual.addEventListener('input', toggleVeiculoSelect);
+                    // Inicializa ao carregar
+                    setTimeout(toggleVeiculoSelect, 100);
+                  }
+                });
+                </script>
               </div>
             </div>
-            </div>
-            <!-- Bloco: Condutor -->
-            <div class="mb-4 pb-2 border-bottom border-2">
-              <h5 class="mb-3 text-primary"><i class="bi bi-person-lines-fill me-2"></i>Condutor</h5>
-            <div id="van-editavel-container" style="display:none; margin-bottom:1em;">
-              <label for="id_van_editavel" class="form-label"><b>Identificador da van (editável)</b></label>
-              <input type="text" id="id_van_editavel" name="van_editavel" class="form-control" placeholder="Ex: VAN001 ou placa" autocomplete="off">
-              <div class="form-text">Você pode editar livremente este campo para vans terceirizadas.</div>
-            </div>
-            <div class="row mb-2 align-items-end">
-              <div class="col-md-7 col-12 mb-2 mb-md-0">
-                <div class="d-flex align-items-center">
-                  {{ form.condutor|as_crispy_field }}
-                  <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione um condutor já cadastrado.">
-                    <i class="bi bi-question-circle text-primary"></i>
-                  </span>
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_condutor" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
-                </div>
+            <!-- Card: Condutor (minimalista) -->
+            <div class="card shadow-sm mb-3 border-0">
+              <div class="card-header bg-success bg-gradient text-white py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                <span class="bi bi-person-lines-fill me-2" style="font-size:1.2em;"></span>
+                <span class="fw-semibold">Condutor</span>
               </div>
-              <div class="col-md-5 col-12">
+              <div class="card-body bg-white py-2">
+                {{ form.condutor|as_crispy_field }}
                 {% if form.condutor_manual %}
-                <div class="mb-3 condutor-manual-highlight" style="background:#e3f2fd; border:2px solid #1976d2; border-radius:10px; padding:10px 10px 6px 10px; box-shadow:0 2px 6px rgba(25,118,210,0.13);">
-                  <div style="font-weight:700; color:#1976d2; margin-bottom:4px;">
-                    <i class="bi bi-pencil-square me-1"></i> Digitação manual de condutor
-                  </div>
-                  <div class="d-flex align-items-center">
+                  <div class="mt-2">
                     {{ form.condutor_manual|as_crispy_field }}
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite o nome do condutor se não estiver na lista.">
-                      <i class="bi bi-question-circle text-primary"></i>
-                    </span>
-                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 editar-campo" data-campo="id_condutor_manual" title="Editar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-pencil"></i></button>
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_condutor_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
                   </div>
-                  <script>
-                  // Botão editar: foca no campo manual correspondente
-                  document.addEventListener('DOMContentLoaded', function() {
-                    document.querySelectorAll('.editar-campo').forEach(function(btn) {
-                      btn.addEventListener('click', function() {
-                        var campoId = btn.getAttribute('data-campo');
-                        var campo = document.getElementById(campoId);
-                        if (campo) {
-                          campo.removeAttribute('readonly');
-                          campo.focus();
-                        }
-                      });
-                    });
-                  });
-                  </script>
-                  <div class="form-text" style="color:#0d47a1; font-weight:600;">O condutor digitado será salvo automaticamente ao clicar em Salvar Transporte.</div>
-                </div>
                 {% endif %}
               </div>
             </div>
-            </div>
-            <!-- Bloco: Clinica -->
-            <div class="mb-4 pb-2 border-bottom border-2">
-              <h5 class="mb-3 text-primary"><i class="bi bi-hospital me-2"></i>Clinica</h5>
-              <div class="row mb-2 align-items-end">
-                <div class="col-md-7 col-12 mb-2 mb-md-0">
-                  <div class="d-flex align-items-center">
-                    {{ form.clinica|as_crispy_field }}
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione a clínica de destino.">
-                      <i class="bi bi-question-circle text-primary"></i>
-                    </span>
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
+            <!-- Card: Clínica (minimalista) -->
+            <div class="card shadow-sm mb-3 border-0">
+              <div class="card-header bg-secondary bg-gradient text-white py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                <span class="bi bi-hospital me-2" style="font-size:1.2em;"></span>
+                <span class="fw-semibold">Clínica</span>
+              </div>
+              <div class="card-body bg-white py-2">
+                {{ form.clinica|as_crispy_field }}
+                {% if form.clinica_manual %}
+                  <div class="mt-2">
+                    {{ form.clinica_manual|as_crispy_field }}
                   </div>
-                </div>
-                <div class="col-md-5 col-12">
-                  {% if form.clinica_manual %}
-                  <div class="mb-3 condutor-manual-highlight" style="background:#e3f2fd; border:2px solid #1976d2; border-radius:10px; padding:10px 10px 6px 10px; box-shadow:0 2px 6px rgba(25,118,210,0.13);">
-                    <div style="font-weight:700; color:#1976d2; margin-bottom:4px;">
-                      <i class="bi bi-pencil-square me-1"></i> Digitação manual de clínica
-                    </div>
-                    <div class="d-flex align-items-center">
-                      {{ form.clinica_manual|as_crispy_field }}
-                      <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite o nome da clínica se não estiver na lista.">
-                        <i class="bi bi-question-circle text-primary"></i>
-                      </span>
-                      <button type="button" class="btn btn-sm btn-outline-primary ms-2 editar-campo" data-campo="id_clinica_manual" title="Editar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-pencil"></i></button>
-                      <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_clinica_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
-                    </div>
-                    <div class="form-text" style="color:#0d47a1; font-weight:600;">A clínica digitada será salva automaticamente ao clicar em Salvar Transporte.</div>
-                    <div id="info-endereco-clinica" style="display:none; margin-top:6px; padding:6px 10px; background:#f1f8e9; border:1px solid #81c784; border-radius:6px; font-size:0.85rem; color:#2e7d32;">
-                      <i class="bi bi-geo-alt-fill me-1"></i><span id="info-endereco-clinica-texto"></span>
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
+                {% endif %}
               </div>
             </div>
 
-            <!-- Bloco: Enfermagem -->
-            <div class="mb-4 pb-2 border-bottom border-2">
-              <h5 class="mb-3 text-primary"><i class="bi bi-person-vcard me-2"></i>Enfermagem</h5>
-            <div class="row mb-2 align-items-end">
-              <div class="col-md-7 col-12 mb-2 mb-md-0">
-                <div class="d-flex align-items-center">
-                  {{ form.enfermagem|as_crispy_field }}
-                  <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione uma enfermagem já cadastrada.">
-                    <i class="bi bi-question-circle text-primary"></i>
-                  </span>
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_enfermagem" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
-                </div>
+            <!-- Card: Enfermagem (minimalista) -->
+            <div class="card shadow-sm mb-3 border-0">
+              <div class="card-header bg-warning bg-gradient text-dark py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                <span class="bi bi-person-vcard me-2" style="font-size:1.2em;"></span>
+                <span class="fw-semibold">Enfermagem</span>
               </div>
-              <div class="col-md-5 col-12">
+              <div class="card-body bg-white py-2">
+                {{ form.enfermagem|as_crispy_field }}
                 {% if form.enfermagem_manual %}
-                <div class="mb-3 condutor-manual-highlight" style="background:#e3f2fd; border:2px solid #1976d2; border-radius:10px; padding:10px 10px 6px 10px; box-shadow:0 2px 6px rgba(25,118,210,0.13);">
-                  <div style="font-weight:700; color:#1976d2; margin-bottom:4px;">
-                    <i class="bi bi-pencil-square me-1"></i> Digitação manual de enfermagem
-                  </div>
-                  <div class="d-flex align-items-center">
+                  <div class="mt-2">
                     {{ form.enfermagem_manual|as_crispy_field }}
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Digite o nome da enfermagem se não estiver na lista.">
-                      <i class="bi bi-question-circle text-primary"></i>
-                    </span>
-                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 editar-campo" data-campo="id_enfermagem_manual" title="Editar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-pencil"></i></button>
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_enfermagem_manual" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
                   </div>
-                  <div class="form-text" style="color:#0d47a1; font-weight:600;">A enfermagem digitada será salva automaticamente ao clicar em Salvar Transporte.</div>
-                </div>
                 {% endif %}
               </div>
             </div>
-            </div>
-            <!-- Bloco: Outros campos -->
-            <div class="mb-4 pb-2 border-bottom border-2">
-              <h5 class="mb-3 text-primary"><i class="bi bi-calendar-check me-2"></i>Dados da Consulta</h5>
-            <div class="row mb-2">
-              <div class="col-md-6 col-12">
-                <div class="d-flex align-items-center">
-                  {{ form.data_transporte|as_crispy_field }}
-                  <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Selecione a data do transporte.">
-                    <i class="bi bi-question-circle text-primary"></i>
-                  </span>
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_data_transporte" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
-                </div>
+            <!-- Card: Dados da Consulta (minimalista) -->
+            <div class="card shadow-sm mb-3 border-0">
+              <div class="card-header bg-primary bg-gradient text-white py-2 d-flex align-items-center" style="border-radius:.5rem .5rem 0 0;">
+                <span class="bi bi-calendar-check me-2" style="font-size:1.2em;"></span>
+                <span class="fw-semibold">Consulta</span>
               </div>
-              <div class="col-md-6 col-12">
-                <div class="d-flex align-items-center">
-                  {{ form.hora_saida|as_crispy_field }}
-                  <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Informe o horário da consulta.">
-                    <i class="bi bi-question-circle text-primary"></i>
-                  </span>
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_hora_saida" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
+              <div class="card-body bg-white py-2">
+                <div class="row g-2">
+                  <div class="col-md-6 col-12">{{ form.data_transporte|as_crispy_field }}</div>
+                  <div class="col-md-6 col-12">{{ form.hora_saida|as_crispy_field }}</div>
                 </div>
-              </div>
-            </div>
-            <div class="row mb-2">
-              <div class="col-12">
-                <div class="d-flex align-items-center">
-                  {{ form.observacoes|as_crispy_field }}
-                  <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top" title="Observações adicionais sobre o transporte.">
-                    <i class="bi bi-question-circle text-primary"></i>
-                  </span>
-                  <button type="button" class="btn btn-sm btn-outline-danger ms-2 limpar-campo" data-campo="id_observacoes" title="Apagar este campo" data-bs-toggle="tooltip" data-bs-placement="top" tabindex="-1"><i class="bi bi-x-circle"></i></button>
-                <script>
-                // Função para limpar campos individualmente
-                document.addEventListener('DOMContentLoaded', function() {
-                  document.querySelectorAll('.limpar-campo').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                      var campoId = btn.getAttribute('data-campo');
-                      var campo = document.getElementById(campoId);
-                      if (campo) {
-                        if (campo.tagName === 'SELECT') {
-                          campo.selectedIndex = 0;
-                        } else {
-                          campo.value = '';
-                        }
-                        campo.dispatchEvent(new Event('change'));
-                      }
-                        // Oculta endereço informativo se limpar campo de clínica manual
-                        if (campoId === 'id_clinica_manual') {
-                          var infoBox = document.getElementById('info-endereco-clinica');
-                          if (infoBox) infoBox.style.display = 'none';
-                        }
-                    });
-                  });
-                });
-                </script>
-                </div>
+                <div class="mt-2">{{ form.observacoes|as_crispy_field }}</div>
               </div>
             </div>
             <!-- Script para exibir campo editável apenas para vans terceirizadas (corrigido e robusto) -->

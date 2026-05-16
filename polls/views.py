@@ -1,4 +1,32 @@
-﻿from django.views.decorators.http import require_GET
+﻿from django.http import JsonResponse
+# Endpoint para sugerir dados de retorno invertidos
+def retorno_sugestao_api(request):
+	from .models import Transporte, Paciente
+	paciente_id = request.GET.get('paciente_id')
+	if not paciente_id:
+		return JsonResponse({'erro': 'Paciente não informado.'}, status=400)
+	try:
+		paciente = Paciente.objects.get(id=paciente_id)
+	except Paciente.DoesNotExist:
+		return JsonResponse({'erro': 'Paciente não encontrado.'}, status=404)
+	# Busca o último transporte de consulta desse paciente
+	consulta = Transporte.objects.filter(paciente=paciente, tipo_transporte='CONSULTA').order_by('-data_transporte', '-hora_saida').first()
+	if not consulta:
+		return JsonResponse({'erro': 'Nenhum transporte de consulta encontrado para este paciente.'}, status=404)
+	# Sugerir dados invertidos: origem = clinica, destino = endereço do paciente
+	sugestao = {
+		'origem_nome': consulta.clinica.nome if consulta.clinica else '',
+		'origem_endereco': consulta.clinica.endereco if consulta.clinica and hasattr(consulta.clinica, 'endereco') else '',
+		'destino_rua': paciente.rua,
+		'destino_numero': paciente.numero,
+		'destino_bairro': paciente.bairro,
+		'destino_cidade': paciente.cidade,
+		'destino_estado': paciente.estado,
+		'destino_cep': paciente.cep,
+		'destino_referencia': paciente.referencia,
+	}
+	return JsonResponse(sugestao)
+from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 from .models import Paciente, Transporte
 from django.contrib.auth.decorators import login_required
@@ -489,40 +517,63 @@ def cadastrar_transporte(request):
 	from .models import Veiculo
 	veiculos = Veiculo.objects.all().order_by('tipo_veiculo', 'patrimonio', 'placa')
 	if request.method == 'POST':
-		form = TransporteForm(request.POST)
-		if form.is_valid():
-			transporte = form.save()
-			audit_logger.info(
-				"Transporte cadastrado",
-				extra={
-					"transporte_id": transporte.id,
-					"paciente_id": transporte.paciente_id,
-					"clinica_id": transporte.clinica_id,
-					"veiculo_id": transporte.veiculo_id,
-					"usuario": getattr(request.user, "username", "anonimo") if hasattr(request, "user") and request.user.is_authenticated else "anonimo",
-				},
-			)
-			if hasattr(form, 'novo_veiculo_cadastrado') and form.novo_veiculo_cadastrado:
-				messages.success(request, 'Veículo cadastrado com sucesso!')
-			elif hasattr(form, 'veiculo_ja_existia') and form.veiculo_ja_existia:
-				messages.warning(request, 'Atenção: Este veículo já estava cadastrado e foi apenas selecionado. Não é possível cadastrar o mesmo veículo duas vezes.')
-			if hasattr(form, 'alerta_oxigenio_ambulancia') and form.alerta_oxigenio_ambulancia:
-				messages.warning(request, 'Atenção: paciente usuário de O2 deve ser alocado preferencialmente em ambulância. O transporte foi salvo mesmo assim.')
-			messages.success(request, 'Transporte cadastrado com sucesso!')
-			# Após salvar, exibe mensagem e mantém usuário na tela de cadastro
-			form = TransporteForm()  # Limpa o formulário
-			breadcrumbs = [
-				{'label': 'Início', 'url': '/'},
-				{'label': 'Transportes', 'url': '/transportes/'},
-				{'label': 'Cadastrar Transporte', 'url': ''},
-			]
-			return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos, 'breadcrumbs': breadcrumbs})
-		audit_logger.warning("Falha de validacao ao cadastrar transporte", extra={"erros": form.errors.as_json()})
-		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
-		if first_error:
-			messages.error(request, f'Nao foi possivel cadastrar transporte. {first_error}')
-		else:
-			messages.error(request, 'Nao foi possivel cadastrar transporte. Verifique os campos obrigatorios.')
+		   # Garante que campos manuais prevalecem sobre selects
+		   post_data = request.POST.copy()
+		   # Se preenchido, zera o select correspondente para forçar o uso do manual
+		   if post_data.get('veiculo_livre', '').strip():
+			   post_data['veiculo'] = ''
+		   if post_data.get('clinica_manual', '').strip():
+			   post_data['clinica'] = ''
+		   if post_data.get('condutor_manual', '').strip():
+			   post_data['condutor'] = ''
+		   if post_data.get('enfermagem_manual', '').strip():
+			   post_data['enfermagem'] = ''
+
+		   form = TransporteForm(post_data)
+		   if form.is_valid():
+			   transporte = form.save()
+			   audit_logger.info(
+				   "Transporte cadastrado",
+				   extra={
+					   "transporte_id": transporte.id,
+					   "paciente_id": transporte.paciente_id,
+					   "clinica_id": transporte.clinica_id,
+					   "veiculo_id": transporte.veiculo_id,
+					   "usuario": getattr(request.user, "username", "anonimo") if hasattr(request, "user") and request.user.is_authenticated else "anonimo",
+				   },
+			   )
+			   # Mensagem detalhada de sucesso
+			   msg_sucesso = 'Todos os dados foram salvos com sucesso!'
+			   detalhes = []
+			   if hasattr(form, 'novo_veiculo_cadastrado') and form.novo_veiculo_cadastrado:
+				   detalhes.append('Veículo cadastrado')
+			   elif hasattr(form, 'veiculo_ja_existia') and form.veiculo_ja_existia:
+				   detalhes.append('Veículo já existia e foi selecionado')
+			   if hasattr(form, 'alerta_oxigenio_ambulancia') and form.alerta_oxigenio_ambulancia:
+				   detalhes.append('Atenção: paciente usuário de O2 deve ser alocado preferencialmente em ambulância. O transporte foi salvo mesmo assim.')
+			   if form.cleaned_data.get('condutor_manual'):
+				   detalhes.append('Condutor salvo')
+			   if form.cleaned_data.get('clinica_manual'):
+				   detalhes.append('Clínica salva')
+			   if form.cleaned_data.get('enfermagem_manual'):
+				   detalhes.append('Enfermagem salva')
+			   if detalhes:
+				   msg_sucesso += ' [' + '; '.join(detalhes) + ']'
+			   messages.success(request, msg_sucesso)
+			   # Após salvar, exibe mensagem e mantém usuário na tela de cadastro
+			   form = TransporteForm()  # Limpa o formulário
+			   breadcrumbs = [
+				   {'label': 'Início', 'url': '/'},
+				   {'label': 'Transportes', 'url': '/transportes/'},
+				   {'label': 'Cadastrar Transporte', 'url': ''},
+			   ]
+			   return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos, 'breadcrumbs': breadcrumbs})
+		   audit_logger.warning("Falha de validacao ao cadastrar transporte", extra={"erros": form.errors.as_json()})
+		   first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+		   if first_error:
+			   messages.error(request, f'Nao foi possivel cadastrar transporte. {first_error}')
+		   else:
+			   messages.error(request, 'Nao foi possivel cadastrar transporte. Verifique os campos obrigatorios.')
 	else:
 		# GET: preencher paciente se vier na URL
 		if paciente_id:
