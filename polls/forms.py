@@ -210,10 +210,36 @@ class PacienteForm(forms.ModelForm):
     cartao_sis = forms.CharField(label='Cartão SIS', max_length=10, required=False, widget=forms.TextInput(attrs={'placeholder': 'Cartão SIS', 'style': 'max-width:110px;'}))
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        tabindexes = [
+            ('nome', 1),
+            ('cartao_sis', 2),
+            ('horario_consulta', 3),
+            ('idade', 4),
+            ('peso', 5),
+            ('ddd', 6),
+            ('telefone', 7),
+            ('referencia', 8),
+            ('rua', 9),
+            ('numero', 10),
+            ('bairro', 11),
+            ('estado', 12),
+            ('cidade', 13),
+            ('cep', 14),
+            ('oxigenio', 15),
+            ('oxigenio_litros_min', 16),
+            ('maca', 17),
+            ('cadeirante', 18),
+            ('acompanhantes', 19),
+            ('evolucao', 20),
+            ('observacoes', 21),
+            ('consentimento_lgpd', 22),
+        ]
+        for field, idx in tabindexes:
+            if field in self.fields:
+                self.fields[field].widget.attrs['tabindex'] = str(idx)
         if 'horario_consulta' in self.fields:
             self.fields['horario_consulta'].widget.attrs['placeholder'] = 'Ex: 14:30'
             self.fields['horario_consulta'].widget.attrs['aria-label'] = 'Horário da consulta (opcional)'
-            self.fields['horario_consulta'].widget.attrs['tabindex'] = 4
         if 'latitude' in self.fields:
             self.fields['latitude'].required = False
         if 'longitude' in self.fields:
@@ -227,15 +253,12 @@ class PacienteForm(forms.ModelForm):
         if 'nome' in self.fields:
             self.fields['nome'].widget.attrs['placeholder'] = 'Nome completo do paciente'
             self.fields['nome'].widget.attrs['aria-label'] = 'Nome completo do paciente'
-            self.fields['nome'].widget.attrs['tabindex'] = 1
         if 'telefone' in self.fields:
             self.fields['telefone'].widget.attrs['placeholder'] = 'Ex: 99999-9999'
             self.fields['telefone'].widget.attrs['aria-label'] = 'Telefone do paciente'
-            self.fields['telefone'].widget.attrs['tabindex'] = 2
         if 'referencia' in self.fields:
             self.fields['referencia'].widget.attrs['placeholder'] = 'Ponto de referência (opcional)'
             self.fields['referencia'].widget.attrs['aria-label'] = 'Ponto de referência do endereço'
-            self.fields['referencia'].widget.attrs['tabindex'] = 3
         # Esconde o campo cadeira_dobravel se não for cadeirante (feito no template)
 
     def _validar_texto_simples(self, valor, campo):
@@ -420,7 +443,7 @@ class PacienteForm(forms.ModelForm):
             'cep': forms.TextInput(attrs={'placeholder': 'CEP'}),
             'maca': forms.CheckboxInput(),
             'cadeirante': forms.CheckboxInput(),
-            'acompanhante': forms.CheckboxInput(),
+            'acompanhantes': forms.NumberInput(attrs={'placeholder': 'Qtd. acompanhantes', 'min': '0', 'max': '10', 'style': 'width: 90px;'}),
             'evolucao': forms.Textarea(attrs={'rows':2, 'class':'auto-expand'}),
             'observacoes': forms.Textarea(attrs={'rows':2, 'class':'auto-expand'}),
             'latitude': forms.HiddenInput(),

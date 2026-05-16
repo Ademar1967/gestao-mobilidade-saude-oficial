@@ -1,31 +1,12 @@
 ﻿from django.views.decorators.http import require_GET
-
-# ...existing code...
-
-@require_GET
-def pacientes_count_api(request):
-	from .models import Paciente
-	from django.utils import timezone
-	hoje = timezone.localdate()
-	pacientes = Paciente.objects.filter(data_cadastro__date=hoje)
-	total_pacientes = pacientes.count()
-	total_acompanhantes = pacientes.filter(acompanhante=True).count()
-	total_geral = total_pacientes + total_acompanhantes
-	return JsonResponse({
-		'pacientes': total_pacientes,
-		'acompanhantes': total_acompanhantes,
-		'geral': total_geral
-	})
-from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 from .models import Paciente, Transporte
-
-# --- API: Detalhes completos do paciente para busca global ---
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.utils import timezone
+import logging
 
-def politica_privacidade(request):
-	return render(request, 'politica_privacidade.html')
+# --- API: Detalhes completos do paciente para busca global ---
 @require_GET
 @login_required
 def paciente_detalhes_api(request, paciente_id):
@@ -87,6 +68,19 @@ def paciente_detalhes_api(request, paciente_id):
     }
     print(f"[DEBUG] JSON de resposta: {dados}")
     return JsonResponse(dados)
+
+@require_GET
+def pacientes_count_api(request):
+    """Retorna a contagem total de pacientes cadastrados."""
+    count = Paciente.objects.count()
+    return JsonResponse({'count': count})
+
+def get_context_with_now(context=None):
+    if context is None:
+        context = {}
+    context['now'] = timezone.localtime(timezone.now())
+    return context
+
 from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET

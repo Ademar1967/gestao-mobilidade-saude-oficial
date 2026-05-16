@@ -121,8 +121,9 @@
 
 
 <style>
+  /* Contraste aprimorado para acessibilidade */
   #contador-pacientes {
-    background: linear-gradient(90deg, #1976d2 70%, #f57c00 100%);
+    background: linear-gradient(90deg, #1a237e 70%, #f57c00 100%);
     color: #fff;
     border-left: 8px solid #f57c00;
     box-shadow: 0 2px 12px 0 rgba(25,118,210,0.08);
@@ -151,15 +152,59 @@
   }
   #contador-pacientes .detalhes {
     font-size: 0.95em;
-    color: #ffe0b2;
+    color: #ffe082;
     font-weight: 500;
     margin-left: 0.5em;
   }
   #contador-pacientes .detalhes strong {
     color: #fffde7;
     font-weight: 700;
+    text-shadow: 1px 1px 2px #000;
+  }
+
+  /* Contraste aprimorado para campos obrigatórios e botões */
+  .form-label, label {
+    color: #212121;
+    font-weight: 600;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 2px #1976d2cc;
+    outline: none;
+  }
+  .btn-success, .btn-warning, .btn-info {
+    color: #fff !important;
+    text-shadow: 1px 1px 2px #00000055;
+  }
+  .btn-success:focus, .btn-warning:focus, .btn-info:focus {
+    outline: 3px solid #ffd600;
+    outline-offset: 2px;
+  }
+  /* Aumenta área de foco para navegação por teclado */
+  button, .form-control, .form-select, .btn {
+    transition: outline 0.2s, box-shadow 0.2s;
+  }
+  button:focus, .btn:focus, input:focus, select:focus, textarea:focus {
+    outline: 3px solid #1976d2;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #1976d2cc;
+  }
+  /* Contraste para alertas */
+  .alert-success, .alert-danger, .alert-warning, .alert-info {
+    color: #212121;
+    background-color: #fffde7;
+    border-color: #ffd600;
   }
 </style>
+<script>
+// Permite navegação por Tab entre todos os campos e botões
+document.addEventListener('DOMContentLoaded', function() {
+  const allInputs = document.querySelectorAll('input, select, textarea, button, a');
+  allInputs.forEach(el => {
+    el.setAttribute('tabindex', el.tabIndex >= 0 ? el.tabIndex : 0);
+  });
+});
+</script>
 <div id="contador-pacientes">
   <i class="bi bi-people-fill icone"></i>
   <span>
@@ -342,7 +387,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 {{ form_web.cadeirante }} {{ form_web.cadeirante.label_tag }}
               </div>
               <div class="form-check col-md-2 mb-2">
-                {{ form_web.acompanhante }} {{ form_web.acompanhante.label_tag }}
+                <label for="id_acompanhantes" class="form-label">Qtd. acompanhantes</label>
+                {{ form_web.acompanhantes }}
+                {% if form_web.acompanhantes.errors %}
+                  <div class="text-danger small">{{ form_web.acompanhantes.errors }}</div>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -397,38 +446,36 @@ document.addEventListener('DOMContentLoaded', function() {
         <legend class="card-header" style="font-size:1.15em; font-weight:600; background:#e3f2fd; color:#0d47a1; border-radius:6px 6px 0 0;">Dados Pessoais</legend>
         <div class="card-body pb-2">
           <div class="row g-2">
-            <div class="col-md-7 mb-2">
-              <div class="col-md-5 mb-2">
-                {{ form.nome.label_tag }}<span class="text-danger">*</span> {{ form.nome }}
-                {% if form.nome.errors %}
-                  <div class="text-danger small">{{ form.nome.errors }}</div>
-                {% endif %}
-              </div>
-              <div class="col-md-2 mb-2">
-                {{ form.cartao_sis.label_tag }}
-                <span tabindex="0" data-bs-toggle="tooltip" title="Número do cartão do SUS/SIS de Mogi das Cruzes" style="cursor:help; color:#1976d2;">
-                  <i class="bi bi-info-circle"></i>
-                </span>
-                {{ form.cartao_sis }}
-                {% if form.cartao_sis.errors %}
-                  <div class="text-danger small">{{ form.cartao_sis.errors }}</div>
-                {% endif %}
-              </div>
-              <div class="col-md-3 mb-2">
-                {{ form.horario_consulta.label_tag }} {{ form.horario_consulta }}
-                <small class="form-text text-muted">{{ form.horario_consulta.help_text }}</small>
-                {% if form.horario_consulta.errors %}
-                  <div class="text-danger small">{{ form.horario_consulta.errors }}</div>
-                {% endif %}
-              </div>
+            <div class="col-md-5 mb-2">
+              {{ form.nome.label_tag }}<span class="text-danger">*</span> {{ form.nome }}
+              {% if form.nome.errors %}
+                <div class="text-danger small">{{ form.nome.errors }}</div>
+              {% endif %}
             </div>
             <div class="col-md-2 mb-2">
+              {{ form.cartao_sis.label_tag }}
+              <span tabindex="0" data-bs-toggle="tooltip" title="Número do cartão do SUS/SIS de Mogi das Cruzes" style="cursor:help; color:#1976d2;">
+                <i class="bi bi-info-circle"></i>
+              </span>
+              {{ form.cartao_sis }}
+              {% if form.cartao_sis.errors %}
+                <div class="text-danger small">{{ form.cartao_sis.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-2 mb-2">
+              {{ form.horario_consulta.label_tag }} {{ form.horario_consulta }}
+              <small class="form-text text-muted">{{ form.horario_consulta.help_text }}</small>
+              {% if form.horario_consulta.errors %}
+                <div class="text-danger small">{{ form.horario_consulta.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-1 mb-2">
               {{ form.idade.label_tag }}<span class="text-danger">*</span> {{ form.idade }}
               {% if form.idade.errors %}
                 <div class="text-danger small">{{ form.idade.errors }}</div>
               {% endif %}
             </div>
-            <div class="col-md-3 mb-2">
+            <div class="col-md-2 mb-2">
               {{ form.peso.label_tag }}<span class="text-danger">*</span>
               <div class="input-group">
                 {{ form.peso }}
@@ -560,9 +607,10 @@ document.addEventListener('DOMContentLoaded', function() {
               {% endif %}
             </div>
             <div class="form-check col-md-2 mb-2">
-              {{ form.acompanhante }} {{ form.acompanhante.label_tag }}
-              {% if form.acompanhante.errors %}
-                <div class="text-danger small">{{ form.acompanhante.errors }}</div>
+              <label for="id_acompanhantes" class="form-label">Qtd. acompanhantes</label>
+              {{ form.acompanhantes }}
+              {% if form.acompanhantes.errors %}
+                <div class="text-danger small">{{ form.acompanhantes.errors }}</div>
               {% endif %}
             </div>
           </div>
@@ -589,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
       {{ form.longitude }}
       <div class="mb-3 mt-3 p-2 border rounded bg-light">
         <div class="form-check">
-          {{ form.consentimento_lgpd|as_crispy_field }}
+          {{ form.consentimento_lgpd }}
         </div>
         <small class="text-muted">
           Ao marcar esta opção, você declara que o paciente ou responsável foi informado sobre o uso dos dados pessoais para fins de transporte e atendimento em saúde, conforme a <a href="/politica-privacidade/" target="_blank">Política de Privacidade</a> e a LGPD.

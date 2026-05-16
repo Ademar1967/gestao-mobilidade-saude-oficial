@@ -38,7 +38,7 @@ class Paciente(models.Model):
     status = models.CharField(max_length=30, blank=True)
     maca = models.BooleanField(default=False, help_text="Paciente usa maca?")
     cadeirante = models.BooleanField(default=False, help_text="Paciente é cadeirante?")
-    acompanhante = models.BooleanField(default=False, help_text="Paciente tem acompanhante?")
+    acompanhantes = models.PositiveIntegerField(default=0, help_text="Quantidade de acompanhantes (0 se nenhum)")
     data_cadastro = models.DateTimeField(auto_now_add=True, null=True, blank=True, help_text="Data/hora do cadastro do paciente")
     # Campos de geolocalização
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude do paciente")
@@ -90,7 +90,7 @@ class Paciente(models.Model):
             'oxigenio_litros_min': self.oxigenio_litros_min if self.oxigenio else None,
             'maca': self.maca,
             'cadeirante': self.cadeirante,
-            'acompanhante': self.acompanhante,
+            'acompanhantes': self.acompanhantes,
             'endereco': self.endereco_formatado(),
             'contato': self.contato_formatado(),
         }
