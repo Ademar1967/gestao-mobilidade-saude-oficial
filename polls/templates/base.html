@@ -192,7 +192,12 @@
             if (err && typeof err === 'object') {
               if (err.type === 'auth') { msg = 'Sua sessão expirou. Faça login novamente.'; tipo = 'warning'; }
               else if (err.type === 'notfound') { msg = 'Paciente não encontrado.'; tipo = 'warning'; }
-              if (err.data) { extra = '<br><pre style="font-size:12px;">'+JSON.stringify(err.data, null, 2)+'</pre>'; }
+              if (err.data) {
+                if (err.data.erro) {
+                  msg += '<br><b>Detalhe:</b> ' + err.data.erro;
+                }
+                extra = '<br><pre style="font-size:12px;">'+JSON.stringify(err.data, null, 2)+'</pre>';
+              }
             }
             modalBody.innerHTML = '<div class="alert alert-'+tipo+'">'+msg+extra+'</div>';
           });

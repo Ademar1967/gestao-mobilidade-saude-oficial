@@ -1,4 +1,4 @@
-﻿
+﻿    
 from django.db.models import Count
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -106,73 +106,75 @@ def retorno_sugestao_api(request):
 from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 from .models import Paciente, Transporte
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils import timezone
 import logging
 
 # --- API: Detalhes completos do paciente para busca global ---
 @require_GET
-@login_required
 def paciente_detalhes_api(request, paciente_id):
-    # print(f"[DEBUG] Requisição detalhes paciente id={paciente_id}")
-    try:
-        p = Paciente.objects.get(id=paciente_id)
-        print(f"[DEBUG] Paciente encontrado: {p.nome} (id={p.id})")
-    except Paciente.DoesNotExist:
-        print(f"[DEBUG] Paciente id={paciente_id} NÃO encontrado!")
-        return JsonResponse({'erro': 'Paciente não encontrado.'}, status=404)
-    except Exception as exc:
-        print(f"[DEBUG] Erro inesperado ao buscar paciente id={paciente_id}: {exc}")
-        return JsonResponse({'erro': f'Erro inesperado: {exc}'}, status=500)
+	# print(f"[DEBUG] Requisição detalhes paciente id={paciente_id}")
+	try:
+		p = Paciente.objects.get(id=paciente_id)
+		print(f"[DEBUG] Paciente encontrado: {p.nome} (id={p.id})")
+	except Paciente.DoesNotExist:
+		print(f"[DEBUG] Paciente id={paciente_id} NÃO encontrado!")
+		return JsonResponse({'erro': 'Paciente não encontrado.'}, status=404)
+	except Exception as exc:
+		print(f"[DEBUG] Erro inesperado ao buscar paciente id={paciente_id}: {exc}")
+		return JsonResponse({'erro': f'Erro inesperado: {exc}'}, status=500)
+	atualizacoes = []
+	try:
+		transportes = Transporte.objects.filter(paciente=p).order_by('-data_transporte')[:5]
+		print(f"[DEBUG] Transportes encontrados: {len(transportes)}")
+		for t in transportes:
+			if not t.data_transporte:
+				print(f"[DEBUG] Transporte id={t.id} ignorado (data_transporte nula)")
+				continue
+			clinica_nome = t.clinica.nome if t.clinica else ''
+			veiculo_nome = str(t.veiculo) if t.veiculo else ''
+			try:
+				data_str = t.data_transporte.strftime('%d/%m/%Y')
+				atualizacoes.append(f"{data_str} - {clinica_nome} - {veiculo_nome}")
+				print(f"[DEBUG] Atualização adicionada: {data_str} - {clinica_nome} - {veiculo_nome}")
+			except Exception as exc:
+				print(f"[DEBUG] Erro ao montar atualização transporte id={t.id}: {exc}")
+				continue
+	except Exception as exc:
+		print(f"[DEBUG] Erro ao buscar transportes: {exc}")
 
-    atualizacoes = []
-    try:
-        transportes = Transporte.objects.filter(paciente=p).order_by('-data_transporte')[:5]
-        print(f"[DEBUG] Transportes encontrados: {len(transportes)}")
-        for t in transportes:
-            if not t.data_transporte:
-                print(f"[DEBUG] Transporte id={t.id} ignorado (data_transporte nula)")
-                continue
-            clinica_nome = t.clinica.nome if t.clinica else ''
-            veiculo_nome = str(t.veiculo) if t.veiculo else ''
-            try:
-                data_str = t.data_transporte.strftime('%d/%m/%Y')
-                atualizacoes.append(f"{data_str} - {clinica_nome} - {veiculo_nome}")
-                print(f"[DEBUG] Atualização adicionada: {data_str} - {clinica_nome} - {veiculo_nome}")
-            except Exception as exc:
-                print(f"[DEBUG] Erro ao montar atualização transporte id={t.id}: {exc}")
-                continue
-    except Exception as exc:
-        print(f"[DEBUG] Erro ao buscar transportes: {exc}")
-
-    dados = {
-        'id': p.id,
-        'nome': p.nome or '',
-        'idade': p.idade or '',
-        'peso': str(p.peso) if p.peso is not None else '',
-        'cartao_sis': p.cartao_sis or '',
-        'ddd': p.ddd or '',
-        'telefone': p.telefone or '',
-        'rua': p.rua or '',
-        'numero': p.numero or '',
-        'bairro': p.bairro or '',
-        'cidade': p.cidade or '',
-        'estado': p.estado or '',
-        'cep': p.cep or '',
-        'referencia': p.referencia or '',
-        'observacoes': p.observacoes or '',
-        'status': p.status or '',
-        'oxigenio': bool(p.oxigenio),
-        'oxigenio_litros_min': str(p.oxigenio_litros_min) if p.oxigenio_litros_min is not None else '',
-        'maca': bool(p.maca),
-        'cadeirante': bool(p.cadeirante),
-        'acompanhante': bool(p.acompanhante),
-        'evolucao': p.evolucao or '',
-        'atualizacoes': atualizacoes,
-    }
-    print(f"[DEBUG] JSON de resposta: {dados}")
-    return JsonResponse(dados)
+	dados = {
+		'id': p.id,
+		'nome': p.nome or '',
+		'idade': p.idade or '',
+		'peso': str(p.peso) if p.peso is not None else '',
+		'cartao_sis': p.cartao_sis or '',
+		'ddd': p.ddd or '',
+		'telefone': p.telefone or '',
+		'rua': p.rua or '',
+		'numero': p.numero or '',
+		'bairro': p.bairro or '',
+		'cidade': p.cidade or '',
+		'estado': p.estado or '',
+		'cep': p.cep or '',
+		'referencia': p.referencia or '',
+		'observacoes': p.observacoes or '',
+		'status': p.status or '',
+		'oxigenio': bool(p.oxigenio),
+		'oxigenio_litros_min': str(p.oxigenio_litros_min) if p.oxigenio_litros_min is not None else '',
+		'maca': bool(p.maca),
+		'cadeirante': bool(p.cadeirante),
+		'acompanhantes': p.acompanhantes,
+		'acompanhante': bool(p.acompanhantes),  # compatibilidade: True se tem pelo menos 1 acompanhante
+		'evolucao': p.evolucao or '',
+		'atualizacoes': atualizacoes,
+	}
+	try:
+		print(f"[DEBUG] JSON de resposta: {dados}")
+		return JsonResponse(dados)
+	except Exception as exc:
+		print(f"[DEBUG] ERRO AO SERIALIZAR JSON: {exc}")
+		return JsonResponse({'erro': f'Erro ao serializar resposta: {exc}'}, status=500)
 
 @require_GET
 def pacientes_count_api(request):
@@ -499,7 +501,6 @@ def buscar_enfermagem_sugestoes(request):
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 
 
-@login_required
 @require_GET
 def buscar_pacientes_sugestoes(request):
 	"""Retorna pacientes para autocomplete e reaproveitamento de cadastro."""
