@@ -6,6 +6,7 @@ from .views import editar_paciente, login_view
 
 app_name = 'transporte_pacientes'
 urlpatterns = [
+        path('api/clinicas/<int:clinica_id>/dados/', views.obter_dados_clinica, name='obter_dados_clinica'),
     path('api/clinicas/sugestoes/', views.buscar_clinicas_sugestoes, name='buscar_clinicas_sugestoes'),
     path('api/veiculos/sugestoes/', views.buscar_veiculos_sugestoes, name='buscar_veiculos_sugestoes'),
     path('api/enfermagem/sugestoes/', views.buscar_enfermagem_sugestoes, name='buscar_enfermagem_sugestoes'),
@@ -62,4 +63,5 @@ urlpatterns = [
     path('estatisticas/periodo/', views.estatistica_transportes_periodo, name='estatistica_periodo'),
     path('estatisticas/veiculo/', views.estatistica_transportes_veiculo, name='estatistica_veiculo'),
     path('estatisticas/condutor/', views.estatistica_transportes_condutor, name='estatistica_condutor'),
+    path('transportes/excluir/<int:transporte_id>/', views.excluir_transporte, name='excluir_transporte'),
 ]

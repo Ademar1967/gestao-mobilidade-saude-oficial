@@ -144,9 +144,104 @@
                 <tr>
                   <td class="text-center fw-bold">{{ forloop.counter }}</td>
                   <td>
-                    <strong>{{ pac.nome }}</strong><br>
-                    <small class="text-muted">{{ pac.idade }} anos &bull; {{ pac.peso }} kg</small>
+                    <div class="d-flex align-items-center gap-2">
+                      <div>
+                        <strong>{{ pac.nome }}</strong><br>
+                        <small class="text-muted">{{ pac.idade }} anos &bull; {{ pac.peso }} kg</small>
+                      </div>
+                      <button type="button" class="btn btn-outline-primary btn-sm btn-preencher-paciente-lote" data-paciente-id="{{ pac.id }}" title="Reaproveitar dados do paciente" aria-label="Reaproveitar dados">
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                    </div>
                   </td>
+                  </tbody>
+                  </table>
+                  </div>
+
+                  <!-- Modal de confirmação para preenchimento automático do paciente (lote) -->
+                  <div class="modal fade" id="modalConfirmarPreencherPacienteLote" tabindex="-1" aria-labelledby="modalConfirmarPreencherPacienteLoteLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header bg-warning">
+                          <h5 class="modal-title" id="modalConfirmarPreencherPacienteLoteLabel">Paciente já cadastrado</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="alert alert-warning mb-2"><b>Este paciente já foi cadastrado ou já utilizou o serviço anteriormente.</b></div>
+                          <div id="modalConfirmarPreencherPacienteLoteBody" class="mb-2"></div>
+                          <div class="alert alert-info small">Deseja reutilizar os dados anteriores? Você poderá revisar e atualizar qualquer campo antes de salvar.</div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                          <button type="button" class="btn btn-success" id="btnConfirmarPreencherPacienteLote">Reutilizar dados e preencher</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    // Botão de preenchimento automático para cada paciente do lote
+                    document.querySelectorAll('.btn-preencher-paciente-lote').forEach(function(btn) {
+                      btn.addEventListener('click', function() {
+                        var pacienteId = btn.getAttribute('data-paciente-id');
+                        if (!pacienteId) return;
+                        fetch('/api/pacientes/' + pacienteId + '/detalhes/')
+                          .then(function(response) { return response.json(); })
+                          .then(function(data) {
+                            if (data && !data.erro) {
+                              exibirModalConfirmarPreencherPacienteLote(data, pacienteId);
+                            }
+                          });
+                      });
+                    });
+
+                    function preencherCamposPacienteLote(data, pacienteId) {
+                      // Preenche campos comuns do formulário de transporte em lote para o paciente selecionado
+                      // Exemplo: rua, numero, bairro, cidade, estado, cep, referencia, observacoes
+                      // O nome dos campos pode variar conforme o template, ajuste conforme necessário
+                      var prefix = '[name^="' + pacienteId + '_"]';
+                      // Exemplo: se os campos forem nomeados como rua_{{pac.id}}, numero_{{pac.id}}, etc.
+                      if (data.rua !== undefined) document.querySelector('input[name="rua_' + pacienteId + '"]') && (document.querySelector('input[name="rua_' + pacienteId + '"]').value = data.rua);
+                      if (data.numero !== undefined) document.querySelector('input[name="numero_' + pacienteId + '"]') && (document.querySelector('input[name="numero_' + pacienteId + '"]').value = data.numero);
+                      if (data.bairro !== undefined) document.querySelector('input[name="bairro_' + pacienteId + '"]') && (document.querySelector('input[name="bairro_' + pacienteId + '"]').value = data.bairro);
+                      if (data.cidade !== undefined) document.querySelector('input[name="cidade_' + pacienteId + '"]') && (document.querySelector('input[name="cidade_' + pacienteId + '"]').value = data.cidade);
+                      if (data.estado !== undefined) document.querySelector('input[name="estado_' + pacienteId + '"]') && (document.querySelector('input[name="estado_' + pacienteId + '"]').value = data.estado);
+                      if (data.cep !== undefined) document.querySelector('input[name="cep_' + pacienteId + '"]') && (document.querySelector('input[name="cep_' + pacienteId + '"]').value = data.cep);
+                      if (data.referencia !== undefined) document.querySelector('input[name="referencia_' + pacienteId + '"]') && (document.querySelector('input[name="referencia_' + pacienteId + '"]').value = data.referencia);
+                      if (data.observacoes !== undefined) document.querySelector('input[name="observacoes_' + pacienteId + '"]') && (document.querySelector('input[name="observacoes_' + pacienteId + '"]').value = data.observacoes);
+                      // Adicione outros campos conforme necessário
+                    }
+
+                    function exibirModalConfirmarPreencherPacienteLote(data, pacienteId) {
+                      var body = document.getElementById('modalConfirmarPreencherPacienteLoteBody');
+                      if (!body) return;
+                      var html = '';
+                      html += '<div class="mb-2"><strong>Nome:</strong> ' + (data.nome || '') + '</div>';
+                      html += '<div class="mb-2"><strong>Idade:</strong> ' + (data.idade || '') + '</div>';
+                      html += '<div class="mb-2"><strong>Peso:</strong> ' + (data.peso || '') + '</div>';
+                      html += '<div class="mb-2"><strong>Telefone:</strong> ' + (data.ddd ? '('+data.ddd+') ' : '') + (data.telefone || '') + '</div>';
+                      html += '<div class="mb-2"><strong>Endereço:</strong> ' + [data.rua, data.numero, data.bairro, data.cidade, data.estado, data.cep].filter(Boolean).join(', ') + '</div>';
+                      html += '<div class="mb-2"><strong>Referência:</strong> ' + (data.referencia || '') + '</div>';
+                      html += '<div class="mb-2"><strong>O2:</strong> ' + (data.oxigenio ? 'Sim' : 'Não') + (data.oxigenio_litros_min ? ' ('+data.oxigenio_litros_min+' L/min)' : '') + '</div>';
+                      html += '<div class="mb-2"><strong>Maca:</strong> ' + (data.maca ? 'Sim' : 'Não') + '</div>';
+                      html += '<div class="mb-2"><strong>Cadeirante:</strong> ' + (data.cadeirante ? 'Sim' : 'Não') + '</div>';
+                      html += '<div class="mb-2"><strong>Acompanhante:</strong> ' + (data.acompanhante ? 'Sim' : 'Não') + '</div>';
+                      html += '<div class="mb-2"><strong>Evolução:</strong> ' + (data.evolucao || '') + '</div>';
+                      html += '<div class="mb-2"><strong>Observações:</strong> ' + (data.observacoes || '') + '</div>';
+                      body.innerHTML = html;
+                      var modal = new bootstrap.Modal(document.getElementById('modalConfirmarPreencherPacienteLote'));
+                      modal.show();
+                      var btn = document.getElementById('btnConfirmarPreencherPacienteLote');
+                      if (btn) {
+                        btn.onclick = function() {
+                          preencherCamposPacienteLote(data, pacienteId);
+                          modal.hide();
+                        };
+                      }
+                    }
+                  });
+                  </script>
                   <td>
                     {% if pac.oxigenio %}<span class="badge bg-info">O2{% if pac.oxigenio_litros_min %} {{ pac.oxigenio_litros_min }}L/min{% endif %}</span> {% endif %}
                     {% if pac.maca %}<span class="badge bg-warning text-dark">Maca</span> {% endif %}

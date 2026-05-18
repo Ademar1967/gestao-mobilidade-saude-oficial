@@ -155,7 +155,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o navegador
 
 # --- Compatibilidade extra para sessão segura em produção ---
-SESSION_COOKIE_SECURE = True  # Garante que o cookie só é enviado via HTTPS
+SESSION_COOKIE_SECURE = False  # Permite cookie de sessão em HTTP para testes locais
 SESSION_COOKIE_SAMESITE = 'Lax'  # 'Lax' é seguro e compatível para maioria dos casos
 # Se usar subdomínios ou integração cross-site, troque para 'None' e ajuste CSRF_COOKIE_SAMESITE também
 

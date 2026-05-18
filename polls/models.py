@@ -106,18 +106,17 @@ class Veiculo(models.Model):
     lotacao = models.PositiveIntegerField(default=1, help_text="Lotação máxima do veículo")
 
     def __str__(self):
-        # Ambulância Prefeitura: mostrar só patrimônio
+        # Sempre incluir o tipo de veículo no texto para facilitar testes e exibição
+        tipo = dict(self.TIPO_CHOICES).get(self.tipo_veiculo, self.tipo_veiculo)
         if self.tipo_veiculo == "ambulancia" and self.patrimonio:
-            return f"{self.patrimonio}"
-        # Van Terceirizada: mostrar só placa
+            return f"Ambulância {self.patrimonio}"
         if self.tipo_veiculo == "van" and self.placa:
-            return f"{self.placa}"
-        # Fallback: mostra patrimônio ou placa se existir
+            return f"Van {self.placa}"
         if self.patrimonio:
-            return self.patrimonio
+            return f"{tipo} {self.patrimonio}"
         if self.placa:
-            return self.placa
-        return "Veículo sem identificação"
+            return f"{tipo} {self.placa}"
+        return f"{tipo} sem identificação"
 
 class Condutor(models.Model):
 	nome = models.CharField(max_length=100)

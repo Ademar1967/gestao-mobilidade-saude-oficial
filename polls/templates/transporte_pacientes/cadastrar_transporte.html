@@ -2,6 +2,28 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 {% block extra_scripts %}
+
+<!-- Modal de confirmação para preenchimento automático do paciente -->
+<div class="modal fade" id="modalConfirmarPreencherPaciente" tabindex="-1" aria-labelledby="modalConfirmarPreencherPacienteLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title" id="modalConfirmarPreencherPacienteLabel">Paciente já cadastrado</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning mb-2"><b>Este paciente já foi cadastrado ou já utilizou o serviço anteriormente.</b></div>
+        <div id="modalConfirmarPreencherPacienteBody" class="mb-2"></div>
+        <div class="alert alert-info small">Deseja reutilizar os dados anteriores? Você poderá revisar e atualizar qualquer campo antes de salvar.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnConfirmarPreencherPaciente">Reutilizar dados e preencher</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // --- Preenchimento automático de retorno ---
   function preencherSugestaoRetorno(sugestao) {
@@ -85,7 +107,56 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // --- Preenchimento automático dos dados do paciente selecionado ---
+  // --- Preenchimento automático dos dados do paciente selecionado, com confirmação ---
+  function preencherCamposPacienteTransporte(data) {
+    if (data.rua !== undefined) document.getElementById('id_rua') && (document.getElementById('id_rua').value = data.rua);
+    if (data.numero !== undefined) document.getElementById('id_numero') && (document.getElementById('id_numero').value = data.numero);
+    if (data.bairro !== undefined) document.getElementById('id_bairro') && (document.getElementById('id_bairro').value = data.bairro);
+    if (data.cidade !== undefined) document.getElementById('id_cidade') && (document.getElementById('id_cidade').value = data.cidade);
+    if (data.estado !== undefined) document.getElementById('id_estado') && (document.getElementById('id_estado').value = data.estado);
+    if (data.cep !== undefined) document.getElementById('id_cep') && (document.getElementById('id_cep').value = data.cep);
+    if (data.referencia !== undefined) document.getElementById('id_referencia') && (document.getElementById('id_referencia').value = data.referencia);
+    if (data.observacoes !== undefined) document.getElementById('id_observacoes') && (document.getElementById('id_observacoes').value = data.observacoes);
+    if (data.ddd !== undefined) document.getElementById('id_ddd') && (document.getElementById('id_ddd').value = data.ddd);
+    if (data.telefone !== undefined) document.getElementById('id_telefone') && (document.getElementById('id_telefone').value = data.telefone);
+    if (data.peso !== undefined) document.getElementById('id_peso') && (document.getElementById('id_peso').value = data.peso);
+    if (data.oxigenio !== undefined) document.getElementById('id_oxigenio') && (document.getElementById('id_oxigenio').checked = data.oxigenio);
+    if (data.oxigenio_litros_min !== undefined) document.getElementById('id_oxigenio_litros_min') && (document.getElementById('id_oxigenio_litros_min').value = data.oxigenio_litros_min);
+    if (data.maca !== undefined) document.getElementById('id_maca') && (document.getElementById('id_maca').checked = data.maca);
+    if (data.cadeirante !== undefined) document.getElementById('id_cadeirante') && (document.getElementById('id_cadeirante').checked = data.cadeirante);
+    if (data.acompanhante !== undefined) document.getElementById('id_acompanhante') && (document.getElementById('id_acompanhante').checked = data.acompanhante);
+    if (data.evolucao !== undefined) document.getElementById('id_evolucao') && (document.getElementById('id_evolucao').value = data.evolucao);
+    // Adicione outros campos conforme necessário
+  }
+
+  function exibirModalConfirmarPreencherPaciente(data) {
+    var body = document.getElementById('modalConfirmarPreencherPacienteBody');
+    if (!body) return;
+    var html = '';
+    html += '<div class="mb-2"><strong>Nome:</strong> ' + (data.nome || '') + '</div>';
+    html += '<div class="mb-2"><strong>Idade:</strong> ' + (data.idade || '') + '</div>';
+    html += '<div class="mb-2"><strong>Peso:</strong> ' + (data.peso || '') + '</div>';
+    html += '<div class="mb-2"><strong>Telefone:</strong> ' + (data.ddd ? '('+data.ddd+') ' : '') + (data.telefone || '') + '</div>';
+    html += '<div class="mb-2"><strong>Endereço:</strong> ' + [data.rua, data.numero, data.bairro, data.cidade, data.estado, data.cep].filter(Boolean).join(', ') + '</div>';
+    html += '<div class="mb-2"><strong>Referência:</strong> ' + (data.referencia || '') + '</div>';
+    html += '<div class="mb-2"><strong>O2:</strong> ' + (data.oxigenio ? 'Sim' : 'Não') + (data.oxigenio_litros_min ? ' ('+data.oxigenio_litros_min+' L/min)' : '') + '</div>';
+    html += '<div class="mb-2"><strong>Maca:</strong> ' + (data.maca ? 'Sim' : 'Não') + '</div>';
+    html += '<div class="mb-2"><strong>Cadeirante:</strong> ' + (data.cadeirante ? 'Sim' : 'Não') + '</div>';
+    html += '<div class="mb-2"><strong>Acompanhante:</strong> ' + (data.acompanhante ? 'Sim' : 'Não') + '</div>';
+    html += '<div class="mb-2"><strong>Evolução:</strong> ' + (data.evolucao || '') + '</div>';
+    html += '<div class="mb-2"><strong>Observações:</strong> ' + (data.observacoes || '') + '</div>';
+    body.innerHTML = html;
+    var modal = new bootstrap.Modal(document.getElementById('modalConfirmarPreencherPaciente'));
+    modal.show();
+    var btn = document.getElementById('btnConfirmarPreencherPaciente');
+    if (btn) {
+      btn.onclick = function() {
+        preencherCamposPacienteTransporte(data);
+        modal.hide();
+      };
+    }
+  }
+
   var pacienteSelect = document.getElementById('id_paciente');
   if (pacienteSelect) {
     pacienteSelect.addEventListener('change', function() {
@@ -94,26 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch('/api/pacientes/' + pacienteId + '/detalhes/')
         .then(function(response) { return response.json(); })
         .then(function(data) {
-          // Preencher campos do formulário com os dados recebidos
           if (data && !data.erro) {
-            if (data.rua !== undefined) document.getElementById('id_rua') && (document.getElementById('id_rua').value = data.rua);
-            if (data.numero !== undefined) document.getElementById('id_numero') && (document.getElementById('id_numero').value = data.numero);
-            if (data.bairro !== undefined) document.getElementById('id_bairro') && (document.getElementById('id_bairro').value = data.bairro);
-            if (data.cidade !== undefined) document.getElementById('id_cidade') && (document.getElementById('id_cidade').value = data.cidade);
-            if (data.estado !== undefined) document.getElementById('id_estado') && (document.getElementById('id_estado').value = data.estado);
-            if (data.cep !== undefined) document.getElementById('id_cep') && (document.getElementById('id_cep').value = data.cep);
-            if (data.referencia !== undefined) document.getElementById('id_referencia') && (document.getElementById('id_referencia').value = data.referencia);
-            if (data.observacoes !== undefined) document.getElementById('id_observacoes') && (document.getElementById('id_observacoes').value = data.observacoes);
-            if (data.ddd !== undefined) document.getElementById('id_ddd') && (document.getElementById('id_ddd').value = data.ddd);
-            if (data.telefone !== undefined) document.getElementById('id_telefone') && (document.getElementById('id_telefone').value = data.telefone);
-            if (data.peso !== undefined) document.getElementById('id_peso') && (document.getElementById('id_peso').value = data.peso);
-            if (data.oxigenio !== undefined) document.getElementById('id_oxigenio') && (document.getElementById('id_oxigenio').checked = data.oxigenio);
-            if (data.oxigenio_litros_min !== undefined) document.getElementById('id_oxigenio_litros_min') && (document.getElementById('id_oxigenio_litros_min').value = data.oxigenio_litros_min);
-            if (data.maca !== undefined) document.getElementById('id_maca') && (document.getElementById('id_maca').checked = data.maca);
-            if (data.cadeirante !== undefined) document.getElementById('id_cadeirante') && (document.getElementById('id_cadeirante').checked = data.cadeirante);
-            if (data.acompanhante !== undefined) document.getElementById('id_acompanhante') && (document.getElementById('id_acompanhante').checked = data.acompanhante);
-            if (data.evolucao !== undefined) document.getElementById('id_evolucao') && (document.getElementById('id_evolucao').value = data.evolucao);
-            // Adicione outros campos conforme necessário
+            exibirModalConfirmarPreencherPaciente(data);
           }
         });
     });
@@ -218,6 +271,19 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card-body p-4" style="background:#f8fafc;">
           {# Removido bloco de erros no topo. Os erros aparecerão ao lado de cada campo automaticamente pelo crispy-forms. #}
           <form method="post" autocomplete="on" id="form-cadastrar-transporte" data-autosave="true" data-autosave-label="do cadastro de transporte">
+            {% if form.errors.paciente and 'já possui transporte cadastrado para esta data' in form.errors.paciente.0 %}
+              <div class="alert alert-warning d-flex align-items-center mb-3" style="font-size:1.13em; border-left:6px solid #ff9800;">
+                <span class="bi bi-exclamation-triangle-fill me-2" style="font-size:1.5em;color:#ff9800;"></span>
+                <span>
+                  <b>Atenção:</b> {{ form.errors.paciente.0 }}<br>
+                  <span style="font-weight:400;">Se deseja cadastrar mesmo assim, clique em <b>"Cadastrar mesmo assim"</b> abaixo.</span>
+                </span>
+              </div>
+              <input type="hidden" name="forcar_duplicado" value="1">
+              <button type="submit" class="btn btn-danger btn-lg mb-3">
+                <i class="bi bi-exclamation-diamond me-1"></i> Cadastrar mesmo assim
+              </button>
+            {% endif %}
                                     <!-- Mensagem de orientação no topo do formulário -->
                                     <div class="alert alert-info d-flex align-items-center mb-4" style="border-left: 7px solid #1976d2; background: linear-gradient(90deg,#e3f2fd 80%,#bbdefb 100%); font-size:1.13em; font-weight:600;">
                                       <span class="bi bi-info-circle-fill me-2" style="font-size:1.5em;color:#1976d2;"></span>
@@ -424,16 +490,28 @@ document.addEventListener('DOMContentLoaded', function() {
               </button>
               <button type="reset" class="btn btn-outline-warning btn-lg" id="btnLimparForm" data-bs-toggle="tooltip" data-bs-placement="top" title="Atenção: limpa todos os campos do formulário!"><i class="bi bi-eraser me-1"></i> Limpar</button>
               <script>
-              // Confirmação ao clicar em Limpar (reset)
+              // Confirmação ao clicar em Limpar (reset) e limpeza forçada de todos os campos
               document.addEventListener('DOMContentLoaded', function() {
                 var btnLimpar = document.getElementById('btnLimparForm');
-                if (btnLimpar) {
+                var form = document.getElementById('form-cadastrar-transporte');
+                if (btnLimpar && form) {
                   btnLimpar.addEventListener('click', function(e) {
                     if (!confirm('Tem certeza que deseja limpar TODOS os campos do formulário?')) {
                       e.preventDefault();
                       e.stopPropagation();
                       return false;
                     }
+                    // Após o reset padrão, força a limpeza de todos os campos customizados
+                    setTimeout(function() {
+                      // Limpa todos os campos de input, select e textarea
+                      form.querySelectorAll('input, select, textarea').forEach(function(el) {
+                        if (el.type === 'checkbox' || el.type === 'radio') {
+                          el.checked = false;
+                        } else if (el.type !== 'button' && el.type !== 'submit' && el.type !== 'reset' && el.type !== 'hidden') {
+                          el.value = '';
+                        }
+                      });
+                    }, 50);
                   });
                 }
               });

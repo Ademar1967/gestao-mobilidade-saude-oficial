@@ -19,13 +19,13 @@ class ChecklistTestCase(TestCase):
 
     def test_home_page(self):
         self.client.login(username=self.username, password=self.password)
-        response = self.client.get(reverse('home'))
+        response = self.client.get(reverse('transporte_pacientes:home'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Transporte de Pacientes')
 
     def test_cadastrar_paciente_page(self):
         self.client.login(username=self.username, password=self.password)
-        url = reverse('cadastrar_paciente')
+        url = reverse('transporte_pacientes:cadastrar_paciente')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Instruções em Português')
@@ -33,6 +33,6 @@ class ChecklistTestCase(TestCase):
 
     def test_busca_paciente_autocomplete_url(self):
         self.client.login(username=self.username, password=self.password)
-        url = reverse('buscar_pacientes_sugestoes')
+        url = reverse('transporte_pacientes:buscar_pacientes_sugestoes')
         response = self.client.get(url, {'term': 'Maria'})
         self.assertIn(response.status_code, [200, 204, 302])  # Pode retornar vazio, mas não deve dar erro

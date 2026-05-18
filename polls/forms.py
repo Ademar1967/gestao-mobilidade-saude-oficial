@@ -171,7 +171,7 @@ class TransporteForm(forms.ModelForm):
             if not veiculo_selecionado or getattr(veiculo_selecionado, 'tipo_veiculo', '') != 'ambulancia':
                 self.alerta_oxigenio_ambulancia = True
 
-        # Evita duplicidade operacional: mesmo paciente no mesmo dia.
+        # Evita duplicidade operacional: mesmo paciente no mesmo dia, mas permite forçar se usuário quiser
         if paciente and data_transporte:
             qs_duplicado = Transporte.objects.filter(
                 paciente=paciente,
@@ -179,8 +179,10 @@ class TransporteForm(forms.ModelForm):
             )
             if self.instance and self.instance.pk:
                 qs_duplicado = qs_duplicado.exclude(pk=self.instance.pk)
-            if qs_duplicado.exists():
-                self.add_error('paciente', 'Este paciente ja possui transporte cadastrado para esta data.')
+            # Só bloqueia se não houver forcar_duplicado no POST
+            forcar_duplicado = self.data.get('forcar_duplicado')
+            if qs_duplicado.exists() and not forcar_duplicado:
+                self.add_error('paciente', 'Este paciente já possui transporte cadastrado para esta data. Se desejar cadastrar mesmo assim, clique em "Cadastrar mesmo assim".')
 
         return cleaned_data
     class Meta:

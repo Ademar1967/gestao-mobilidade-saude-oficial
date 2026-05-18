@@ -1,3 +1,132 @@
+<!-- Modal de confirmação para preenchimento automático -->
+<div class="modal fade" id="modalConfirmarPreencher" tabindex="-1" aria-labelledby="modalConfirmarPreencherLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title" id="modalConfirmarPreencherLabel">Paciente já cadastrado</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning mb-2"><b>Este paciente já foi cadastrado ou já utilizou o serviço anteriormente.</b></div>
+        <div id="modalConfirmarPreencherBody" class="mb-2"></div>
+        <div class="alert alert-info small">Deseja reutilizar os dados anteriores? Você poderá revisar e atualizar qualquer campo antes de salvar.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnConfirmarPreencher">Reutilizar dados e preencher</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Função para preencher o formulário com os dados do paciente
+function preencherPacienteForm(paciente) {
+  var mapeamento = {
+    nome: 'id_nome',
+    idade: 'id_idade',
+    peso: 'id_peso',
+    cartao_sis: 'id_cartao_sis',
+    ddd: 'id_ddd',
+    telefone: 'id_telefone',
+    rua: 'id_rua',
+    numero: 'id_numero',
+    bairro: 'id_bairro',
+    cidade: 'id_cidade',
+    estado: 'id_estado',
+    cep: 'id_cep',
+    referencia: 'id_referencia',
+    observacoes: 'id_observacoes',
+    status: 'id_status',
+    oxigenio: 'id_oxigenio',
+    oxigenio_litros_min: 'id_oxigenio_litros_min',
+    maca: 'id_maca',
+    cadeirante: 'id_cadeirante',
+    acompanhantes: 'id_acompanhantes',
+    evolucao: 'id_evolucao',
+  };
+  for (var campo in mapeamento) {
+    var el = document.getElementById(mapeamento[campo]);
+    if (!el) continue;
+    if (el.type === 'checkbox') {
+      el.checked = !!paciente[campo];
+    } else if (el.tagName === 'SELECT') {
+      el.value = paciente[campo] || '';
+    } else {
+      el.value = paciente[campo] != null ? paciente[campo] : '';
+    }
+  }
+  // Gatilho para mostrar/ocultar campo O2 litros
+  var evt = document.createEvent('HTMLEvents');
+  evt.initEvent('change', true, false);
+  var oxigenioCheckbox = document.getElementById('id_oxigenio');
+  if (oxigenioCheckbox) oxigenioCheckbox.dispatchEvent(evt);
+}
+
+// Intercepta seleção de paciente já cadastrado
+function aplicarPaciente(item) {
+  if (item && item.id) {
+    fetch('/api/pacientes/' + item.id + '/detalhes/')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.erro) {
+          alert('Erro ao buscar dados do paciente: ' + data.erro);
+          return;
+        }
+        exibirModalConfirmarPreencher(data);
+      })
+      .catch(function() {
+        alert('Erro ao buscar dados completos do paciente.');
+      });
+  } else if (item && item.nome) {
+    // Se o item tem nome mas não tem id, pode ser um paciente novo, mas forçamos o modal para revisão
+    exibirModalConfirmarPreencher(item);
+  } else {
+    // Nenhum paciente encontrado ou selecionado
+    exibirMensagemNenhumPaciente();
+  }
+}
+
+// Exibe mensagem amigável se não houver pacientes cadastrados ou nenhuma sugestão
+function exibirMensagemNenhumPaciente() {
+  var body = document.getElementById('modalConfirmarPreencherBody');
+  if (body) {
+    body.innerHTML = '<div class="alert alert-warning">Nenhum paciente encontrado. Cadastre um novo paciente preenchendo os campos abaixo.</div>';
+  }
+  var modal = new bootstrap.Modal(document.getElementById('modalConfirmarPreencher'));
+  modal.show();
+  var btn = document.getElementById('btnConfirmarPreencher');
+  if (btn) btn.onclick = function() { modal.hide(); };
+}
+// Exemplo de integração: se o autocomplete não retornar sugestões, mostrar mensagem amigável
+
+
+function exibirModalConfirmarPreencher(paciente) {
+  var body = document.getElementById('modalConfirmarPreencherBody');
+  if (!body) return;
+  var html = '';
+  html += '<div class="mb-2"><strong>Nome:</strong> ' + (paciente.nome || '') + '</div>';
+  html += '<div class="mb-2"><strong>Idade:</strong> ' + (paciente.idade || '') + '</div>';
+  html += '<div class="mb-2"><strong>Peso:</strong> ' + (paciente.peso || '') + '</div>';
+  html += '<div class="mb-2"><strong>Telefone:</strong> ' + (paciente.ddd ? '('+paciente.ddd+') ' : '') + (paciente.telefone || '') + '</div>';
+  html += '<div class="mb-2"><strong>Cartão SUS:</strong> ' + (paciente.cartao_sis || '') + '</div>';
+  html += '<div class="mb-2"><strong>Endereço:</strong> ' + [paciente.rua, paciente.numero, paciente.bairro, paciente.cidade, paciente.estado, paciente.cep].filter(Boolean).join(', ') + '</div>';
+  html += '<div class="mb-2"><strong>Referência:</strong> ' + (paciente.referencia || '') + '</div>';
+  html += '<div class="mb-2"><strong>O2:</strong> ' + (paciente.oxigenio ? 'Sim' : 'Não') + (paciente.oxigenio_litros_min ? ' ('+paciente.oxigenio_litros_min+' L/min)' : '') + '</div>';
+  html += '<div class="mb-2"><strong>Maca:</strong> ' + (paciente.maca ? 'Sim' : 'Não') + '</div>';
+  html += '<div class="mb-2"><strong>Cadeirante:</strong> ' + (paciente.cadeirante ? 'Sim' : 'Não') + '</div>';
+  html += '<div class="mb-2"><strong>Acompanhante:</strong> ' + (paciente.acompanhante ? 'Sim' : 'Não') + '</div>';
+  html += '<div class="mb-2"><strong>Evolução:</strong> ' + (paciente.evolucao || '') + '</div>';
+  html += '<div class="mb-2"><strong>Observações:</strong> ' + (paciente.observacoes || '') + '</div>';
+  body.innerHTML = html;
+  var modal = new bootstrap.Modal(document.getElementById('modalConfirmarPreencher'));
+  modal.show();
+  var btn = document.getElementById('btnConfirmarPreencher');
+  btn.onclick = function() {
+    preencherPacienteForm(paciente);
+    modal.hide();
+  };
+}
+</script>
 {% extends 'base.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
@@ -845,11 +974,13 @@ function fecharDropdownNome() {
   }
 }
 if (inputNome) {
+  var idxSelecionado = -1;
   inputNome.addEventListener('input', function() {
     clearTimeout(_debounceNome);
     var termo = inputNome.value.trim();
     if (termo.length < 2) {
       fecharDropdownNome();
+      idxSelecionado = -1;
       return;
     }
     _debounceNome = setTimeout(function() {
@@ -861,6 +992,7 @@ if (inputNome) {
           if (lista.length === 0) {
             dd.innerHTML = '<div class="p-2 text-muted">Nenhum paciente encontrado</div>';
             dd.style.display = 'block';
+            idxSelecionado = -1;
             return;
           }
           var html = '';
@@ -875,7 +1007,9 @@ if (inputNome) {
           dd.innerHTML = html;
           dd.style.display = 'block';
           window._sugestoesNome = lista;
-          dd.querySelectorAll('.autocomplete-nome-item').forEach(function(el) {
+          idxSelecionado = -1;
+          var items = dd.querySelectorAll('.autocomplete-nome-item');
+          items.forEach(function(el) {
             el.addEventListener('mouseenter', function() { el.style.background = '#e3f2fd'; });
             el.addEventListener('mouseleave', function() { el.style.background = ''; });
             el.addEventListener('mousedown', function(e) {
@@ -887,11 +1021,54 @@ if (inputNome) {
               }
             });
           });
+          // Corrige: ao clicar ou pressionar Enter, sempre chama aplicarPaciente
+          dd.querySelectorAll('.autocomplete-nome-item').forEach(function(el, i) {
+            el.addEventListener('click', function(e) {
+              e.preventDefault();
+              var item = window._sugestoesNome[i];
+              if (item) {
+                aplicarPaciente(item);
+                fecharDropdownNome();
+              }
+            });
+          });
         })
         .catch(function() { fecharDropdownNome(); });
     }, 350);
   });
-  inputNome.addEventListener('keydown', function(e) { if (e.key === 'Escape') fecharDropdownNome(); });
+  inputNome.addEventListener('keydown', function(e) {
+    var dd = _dropdownNome;
+    var items = dd ? dd.querySelectorAll('.autocomplete-nome-item') : [];
+    if (!items.length || dd.style.display === 'none') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      idxSelecionado = (idxSelecionado + 1) % items.length;
+      items.forEach(function(el, i) { el.style.background = (i === idxSelecionado) ? '#bbdefb' : ''; });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      idxSelecionado = (idxSelecionado - 1 + items.length) % items.length;
+      items.forEach(function(el, i) { el.style.background = (i === idxSelecionado) ? '#bbdefb' : ''; });
+    } else if (e.key === 'Enter') {
+      if (idxSelecionado >= 0 && idxSelecionado < items.length) {
+        e.preventDefault();
+        var item = window._sugestoesNome[idxSelecionado];
+        if (item) {
+          aplicarPaciente(item);
+          fecharDropdownNome();
+        }
+      } else if (items.length === 1) {
+        // Se só há uma sugestão, Enter seleciona direto
+        e.preventDefault();
+        var item = window._sugestoesNome[0];
+        if (item) {
+          aplicarPaciente(item);
+          fecharDropdownNome();
+        }
+      }
+    } else if (e.key === 'Escape') {
+      fecharDropdownNome();
+    }
+  });
   document.addEventListener('mousedown', function(e) { if (_dropdownNome && !inputNome.contains(e.target) && !_dropdownNome.contains(e.target)) fecharDropdownNome(); });
 }
 </script>

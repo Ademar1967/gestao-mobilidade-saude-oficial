@@ -74,6 +74,17 @@ def estatistica_transportes_tipo(request):
 		{'tipo': tipos.get(row['tipo_transporte'], row['tipo_transporte']), 'total': row['total']}
 		for row in qs
 	]
+
+	# Novas categorias: Transferências classificadas
+	# Considera que a classificação está em observacoes (ajuste se houver campo dedicado)
+	cores = ["amarelo", "verde", "vermelho"]
+	for cor in cores:
+		total = Transporte.objects.filter(tipo_transporte__icontains="TRANSFER", observacoes__icontains=cor).count()
+		dados.append({
+			"tipo": f"Transferência Classificada {cor.capitalize()}",
+			"total": total
+		})
+
 	return render(request, 'transporte_pacientes/estatistica_tipo.html', {'dados': dados})
 from django.http import JsonResponse
 # Endpoint para sugerir dados de retorno invertidos
@@ -1754,7 +1765,7 @@ def pacientes_json(request):
 	from django.db.models import Exists, OuterRef
 	from .models import Transporte
 	pacientes = Paciente.objects.annotate(
-		ja_alocado=Exists(
+		ja_alocado_db=Exists(
 			Transporte.objects.filter(paciente=OuterRef('pk'))
 		)
 	)
@@ -1764,6 +1775,7 @@ def pacientes_json(request):
 			'endereco': p.endereco,
 			'latitude': float(p.latitude) if p.latitude else None,
 			'longitude': float(p.longitude) if p.longitude else None,
+			'ja_alocado': getattr(p, 'ja_alocado_db', False),
 		}
 		for p in pacientes
 	]
