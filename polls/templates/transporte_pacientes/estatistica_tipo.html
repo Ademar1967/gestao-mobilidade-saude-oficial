@@ -18,5 +18,97 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <!-- Gráfico geral de todos os tipos de transporte -->
+  <div class="mt-5">
+    <h4 class="mb-3"><i class="bi bi-bar-chart"></i> Gráfico de Todos os Tipos de Transporte</h4>
+    <canvas id="graficoTiposTransporte" height="120"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Dados para o gráfico geral (todos os tipos)
+    const tiposTransporte = [
+      {% for row in dados %}
+        {% if not 'Transferência Classificada' in row.tipo %}
+          { label: '{{ row.tipo }}', total: {{ row.total }} },
+        {% endif %}
+      {% endfor %}
+    ];
+    if (tiposTransporte.length > 0) {
+      const ctxTipos = document.getElementById('graficoTiposTransporte').getContext('2d');
+      new Chart(ctxTipos, {
+        type: 'bar',
+        data: {
+          labels: tiposTransporte.map(t => t.label),
+          datasets: [{
+            label: 'Total',
+            data: tiposTransporte.map(t => t.total),
+            backgroundColor: '#74c0fc',
+            borderColor: '#333',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, precision: 0 }
+          }
+        }
+      });
+    }
+  </script>
+
+  <!-- Gráfico de Transferências Classificadas -->
+  <div class="mt-5">
+    <h4 class="mb-3"><i class="bi bi-bar-chart"></i> Gráfico Transferências Classificadas</h4>
+    <canvas id="graficoTransferencias" height="120"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Filtra apenas as linhas das transferências classificadas
+    const transferencias = [
+      {% for row in dados %}
+        {% if 'Transferência Classificada' in row.tipo %}
+          { label: '{{ row.tipo }}', total: {{ row.total }} },
+        {% endif %}
+      {% endfor %}
+    ];
+    if (transferencias.length > 0) {
+      const ctx = document.getElementById('graficoTransferencias').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: transferencias.map(t => t.label),
+          datasets: [{
+            label: 'Total',
+            data: transferencias.map(t => t.total),
+            backgroundColor: [
+              '#ffe066', // Amarelo
+              '#8ce99a', // Verde
+              '#ff8787'  // Vermelho
+            ],
+            borderColor: '#333',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true, precision: 0 }
+          }
+        }
+      });
+    }
+  </script>
 </div>
 {% endblock %}
