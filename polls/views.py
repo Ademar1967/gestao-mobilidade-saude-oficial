@@ -1,6 +1,23 @@
-﻿    
-from django.db.models import Count
+﻿# --- LISTAGEM DE CLÍNICAS (ID + nome) ---
+from django.http import JsonResponse
+from django.http import HttpResponse
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Count
+
+@staff_member_required
+def listar_clinicas(request):
+	from .models import Clinica
+	clinicas = list(Clinica.objects.all().values('id', 'nome'))
+	for c in clinicas:
+		c['nome'] = c['nome'].upper() if c['nome'] else ''
+	return JsonResponse({'clinicas': clinicas})
+
+# --- CONTAGEM DE AMBULÂNCIAS ---
+@staff_member_required
+def contar_ambulancias(request):
+	from .models import Veiculo
+	total = Veiculo.objects.filter(tipo_veiculo='ambulancia').count()
+	return HttpResponse(f"Total de ambulâncias cadastradas: {total}")
 
 # --- ESTATÍSTICA: Transportes por veículo ---
 @staff_member_required
@@ -54,12 +71,14 @@ def estatistica_transportes_periodo(request):
 def estatistica_transportes_clinica(request):
 	from .models import Transporte, Clinica
 	qs = (
-		Transporte.objects.values('clinica__nome')
+		Transporte.objects.values('clinica__id')
 		.annotate(total=Count('id'))
 		.order_by('-total')
 	)
+	# Buscar só o nome da clínica, sem endereço
+	clinicas_map = {c.id: c.nome for c in Clinica.objects.filter(id__in=[row['clinica__id'] for row in qs])}
 	dados = [
-		{'clinica': row['clinica__nome'] or 'Não informado', 'total': row['total']}
+		{'clinica': (clinicas_map.get(row['clinica__id'], 'Não informado').upper() if clinicas_map.get(row['clinica__id']) else 'Não informado'), 'total': row['total']}
 		for row in qs
 	]
 	return render(request, 'transporte_pacientes/estatistica_clinica.html', {'dados': dados})
@@ -593,69 +612,68 @@ def obter_dados_clinica(request, clinica_id):
 def cadastrar_transporte(request):
 	"""Cadastra um novo transporte; aceita paciente_id via GET para pre-preencher o formulario."""
 	from django.contrib import messages
-	from .models import Paciente
+	from .models import Paciente, Veiculo
 	paciente_id = request.GET.get('paciente_id')
-	from .models import Paciente
-	from .models import Veiculo
 	veiculos = Veiculo.objects.all().order_by('tipo_veiculo', 'patrimonio', 'placa')
-	if request.method == 'POST':
-		   # Garante que campos manuais prevalecem sobre selects
-		   post_data = request.POST.copy()
-		   # Se preenchido, zera o select correspondente para forçar o uso do manual
-		   if post_data.get('veiculo_livre', '').strip():
-			   post_data['veiculo'] = ''
-		   if post_data.get('clinica_manual', '').strip():
-			   post_data['clinica'] = ''
-		   if post_data.get('condutor_manual', '').strip():
-			   post_data['condutor'] = ''
-		   if post_data.get('enfermagem_manual', '').strip():
-			   post_data['enfermagem'] = ''
 
-		   form = TransporteForm(post_data)
-		   if form.is_valid():
-			   transporte = form.save()
-			   audit_logger.info(
-				   "Transporte cadastrado",
-				   extra={
-					   "transporte_id": transporte.id,
-					   "paciente_id": transporte.paciente_id,
-					   "clinica_id": transporte.clinica_id,
-					   "veiculo_id": transporte.veiculo_id,
-					   "usuario": getattr(request.user, "username", "anonimo") if hasattr(request, "user") and request.user.is_authenticated else "anonimo",
-				   },
-			   )
-			   # Mensagem detalhada de sucesso
-			   msg_sucesso = 'Todos os dados foram salvos com sucesso!'
-			   detalhes = []
-			   if hasattr(form, 'novo_veiculo_cadastrado') and form.novo_veiculo_cadastrado:
-				   detalhes.append('Veículo cadastrado')
-			   elif hasattr(form, 'veiculo_ja_existia') and form.veiculo_ja_existia:
-				   detalhes.append('Veículo já existia e foi selecionado')
-			   if hasattr(form, 'alerta_oxigenio_ambulancia') and form.alerta_oxigenio_ambulancia:
-				   detalhes.append('Atenção: paciente usuário de O2 deve ser alocado preferencialmente em ambulância. O transporte foi salvo mesmo assim.')
-			   if form.cleaned_data.get('condutor_manual'):
-				   detalhes.append('Condutor salvo')
-			   if form.cleaned_data.get('clinica_manual'):
-				   detalhes.append('Clínica salva')
-			   if form.cleaned_data.get('enfermagem_manual'):
-				   detalhes.append('Enfermagem salva')
-			   if detalhes:
-				   msg_sucesso += ' [' + '; '.join(detalhes) + ']'
-			   messages.success(request, msg_sucesso)
-			   # Após salvar, exibe mensagem e mantém usuário na tela de cadastro
-			   form = TransporteForm()  # Limpa o formulário
-			   breadcrumbs = [
-				   {'label': 'Início', 'url': '/'},
-				   {'label': 'Transportes', 'url': '/transportes/'},
-				   {'label': 'Cadastrar Transporte', 'url': ''},
-			   ]
-			   return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos, 'breadcrumbs': breadcrumbs})
-		   audit_logger.warning("Falha de validacao ao cadastrar transporte", extra={"erros": form.errors.as_json()})
-		   first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
-		   if first_error:
-			   messages.error(request, f'Nao foi possivel cadastrar transporte. {first_error}')
-		   else:
-			   messages.error(request, 'Nao foi possivel cadastrar transporte. Verifique os campos obrigatorios.')
+	if request.method == 'POST':
+		# Garante que campos manuais prevalecem sobre selects
+		post_data = request.POST.copy()
+		# Se preenchido, zera o select correspondente para forçar o uso do manual
+		if post_data.get('veiculo_livre', '').strip():
+			post_data['veiculo'] = ''
+		if post_data.get('clinica_manual', '').strip():
+			post_data['clinica'] = ''
+		if post_data.get('condutor_manual', '').strip():
+			post_data['condutor'] = ''
+		if post_data.get('enfermagem_manual', '').strip():
+			post_data['enfermagem'] = ''
+
+		form = TransporteForm(post_data)
+		if form.is_valid():
+			transporte = form.save()
+			audit_logger.info(
+				"Transporte cadastrado",
+				extra={
+					"transporte_id": transporte.id,
+					"paciente_id": transporte.paciente_id,
+					"clinica_id": transporte.clinica_id,
+					"veiculo_id": transporte.veiculo_id,
+					"usuario": getattr(request.user, "username", "anonimo") if hasattr(request, "user") and request.user.is_authenticated else "anonimo",
+				},
+			)
+			# Mensagem detalhada de sucesso
+			msg_sucesso = 'Todos os dados foram salvos com sucesso!'
+			detalhes = []
+			if hasattr(form, 'novo_veiculo_cadastrado') and form.novo_veiculo_cadastrado:
+				detalhes.append('Veículo cadastrado')
+			elif hasattr(form, 'veiculo_ja_existia') and form.veiculo_ja_existia:
+				detalhes.append('Veículo já existia e foi selecionado')
+			if hasattr(form, 'alerta_oxigenio_ambulancia') and form.alerta_oxigenio_ambulancia:
+				detalhes.append('Atenção: paciente usuário de O2 deve ser alocado preferencialmente em ambulância. O transporte foi salvo mesmo assim.')
+			if form.cleaned_data.get('condutor_manual'):
+				detalhes.append('Condutor salvo')
+			if form.cleaned_data.get('clinica_manual'):
+				detalhes.append('Clínica salva')
+			if form.cleaned_data.get('enfermagem_manual'):
+				detalhes.append('Enfermagem salva')
+			if detalhes:
+				msg_sucesso += ' [' + '; '.join(detalhes) + ']'
+			messages.success(request, msg_sucesso)
+			# Após salvar, exibe mensagem e mantém usuário na tela de cadastro
+			form = TransporteForm()  # Limpa o formulário
+			breadcrumbs = [
+				{'label': 'Início', 'url': '/'},
+				{'label': 'Transportes', 'url': '/transportes/'},
+				{'label': 'Cadastrar Transporte', 'url': ''},
+			]
+			return render(request, 'transporte_pacientes/cadastrar_transporte.html', {'form': form, 'veiculos': veiculos, 'breadcrumbs': breadcrumbs})
+		audit_logger.warning("Falha de validacao ao cadastrar transporte", extra={"erros": form.errors.as_json()})
+		first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
+		if first_error:
+			messages.error(request, f'Nao foi possivel cadastrar transporte. {first_error}')
+		else:
+			messages.error(request, 'Nao foi possivel cadastrar transporte. Verifique os campos obrigatorios.')
 	else:
 		# GET: preencher paciente se vier na URL
 		if paciente_id:
@@ -750,32 +768,32 @@ def cadastrar_transporte_lote(request):
 				erros.append(f"{pac.nome}: data do transporte obrigatória.")
 				continue
 
-			try:
-				from .models import Transporte
-				t = Transporte(
-					paciente=pac,
-					veiculo=veiculo_obj,
-					condutor=condutor_obj,
-					enfermagem=enfermagem_obj,
-					clinica=clinica_obj,
-					data_transporte=data_transporte,
-					hora_saida=hora_saida or None,
-					hora_chegada=hora_chegada or None,
-					observacoes=observacoes,
-				)
-				t.full_clean(exclude=['hora_saida', 'hora_chegada'])
-				t.save()
-				salvos += 1
-				audit_logger.info("Transporte lote cadastrado", extra={"transporte_id": t.id, "paciente_id": pac.id})
-			except Exception as e:
-				   print(f"[ERRO TRANSPORTE LOTE] Paciente: {pac.nome} | Erro: {e}")
-				   erros.append(f"{pac.nome}: {e}")
+		try:
+			from .models import Transporte
+			t = Transporte(
+				paciente=pac,
+				veiculo=veiculo_obj,
+				condutor=condutor_obj,
+				enfermagem=enfermagem_obj,
+				clinica=clinica_obj,
+				data_transporte=data_transporte,
+				hora_saida=hora_saida or None,
+				hora_chegada=hora_chegada or None,
+				observacoes=observacoes,
+			)
+			t.full_clean(exclude=['hora_saida', 'hora_chegada'])
+			t.save()
+			salvos += 1
+			audit_logger.info("Transporte lote cadastrado", extra={"transporte_id": t.id, "paciente_id": pac.id})
+		except Exception as e:
+			print(f"[ERRO TRANSPORTE LOTE] Paciente: {pac.nome} | Erro: {e}")
+			erros.append(f"{pac.nome}: {e}")
 
-		if salvos:
-			messages.success(request, f'{salvos} transporte(s) cadastrado(s) com sucesso!')
-		for e in erros:
-			messages.error(request, f'Erro: {e}')
-		return redirect('transporte_pacientes:listar_transportes')
+	if salvos:
+		messages.success(request, f'{salvos} transporte(s) cadastrado(s) com sucesso!')
+	for e in erros:
+		messages.error(request, f'Erro: {e}')
+	return redirect('transporte_pacientes:listar_transportes')
 
 	# GET
 	ids_param = request.GET.get('paciente_ids', '')

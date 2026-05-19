@@ -6,13 +6,15 @@ from .views import editar_paciente, login_view
 
 app_name = 'transporte_pacientes'
 urlpatterns = [
-        path('api/clinicas/<int:clinica_id>/dados/', views.obter_dados_clinica, name='obter_dados_clinica'),
+    path('veiculos/contar_ambulancias/', views.contar_ambulancias, name='contar_ambulancias'),
+    path('clinicas/listar_todas/', views.listar_clinicas, name='listar_clinicas'),
+    path('api/clinicas/<int:clinica_id>/dados/', views.obter_dados_clinica, name='obter_dados_clinica'),
     path('api/clinicas/sugestoes/', views.buscar_clinicas_sugestoes, name='buscar_clinicas_sugestoes'),
     path('api/veiculos/sugestoes/', views.buscar_veiculos_sugestoes, name='buscar_veiculos_sugestoes'),
     path('api/enfermagem/sugestoes/', views.buscar_enfermagem_sugestoes, name='buscar_enfermagem_sugestoes'),
     path('api/condutores/sugestoes/', views.buscar_condutores_sugestoes, name='buscar_condutores_sugestoes'),
-            path('transportes/', views.listar_transportes, name='listar_transportes'),
-        path('api/pacientes/sugestoes/', views.buscar_pacientes_sugestoes, name='buscar_pacientes_sugestoes'),
+    path('transportes/', views.listar_transportes, name='listar_transportes'),
+    path('api/pacientes/sugestoes/', views.buscar_pacientes_sugestoes, name='buscar_pacientes_sugestoes'),
     path('whatsapp/webhook/', views.whatsapp_webhook, name='whatsapp_webhook'),
     path('whatsapp/mensagens/', views.mensagens_whatsapp, name='mensagens_whatsapp'),
     path('enfermagem/editar/<int:enfermagem_id>/', views.editar_enfermagem, name='editar_enfermagem'),
