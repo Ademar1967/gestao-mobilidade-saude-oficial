@@ -276,13 +276,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="bi bi-exclamation-triangle-fill me-2" style="font-size:1.5em;color:#ff9800;"></span>
                 <span>
                   <b>Atenção:</b> {{ form.errors.paciente.0 }}<br>
-                  <span style="font-weight:400;">Se deseja cadastrar mesmo assim, clique em <b>"Cadastrar mesmo assim"</b> abaixo.</span>
+                  <span style="font-weight:400;">Deseja realmente duplicar este transporte? Você poderá editar qualquer campo antes de salvar.</span>
                 </span>
               </div>
-              <input type="hidden" name="forcar_duplicado" value="1">
-              <button type="submit" class="btn btn-danger btn-lg mb-3">
-                <i class="bi bi-exclamation-diamond me-1"></i> Cadastrar mesmo assim
+              <input type="hidden" name="forcar_duplicado" id="input-forcar-duplicado" value="">
+              <button type="button" class="btn btn-danger btn-lg mb-3" id="btn-confirmar-duplicado">
+                <i class="bi bi-exclamation-diamond me-1"></i> Confirmar e editar transporte duplicado
               </button>
+              <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                  var btn = document.getElementById('btn-confirmar-duplicado');
+                  var form = document.getElementById('form-cadastrar-transporte');
+                  var input = document.getElementById('input-forcar-duplicado');
+                  if (btn && form && input) {
+                    btn.addEventListener('click', function() {
+                      input.value = '1';
+                      form.submit();
+                    });
+                  }
+                });
+              </script>
             {% endif %}
                                     <!-- Mensagem de orientação no topo do formulário -->
                                     <div class="alert alert-info d-flex align-items-center mb-4" style="border-left: 7px solid #1976d2; background: linear-gradient(90deg,#e3f2fd 80%,#bbdefb 100%); font-size:1.13em; font-weight:600;">

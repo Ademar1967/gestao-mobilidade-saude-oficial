@@ -80,9 +80,24 @@ class TransporteForm(forms.ModelForm):
             self.fields['patrimonio'].widget = forms.HiddenInput()
         if 'clinica' in self.fields:
             self.fields['clinica'].label_from_instance = self._formatar_opcao_clinica
+        if 'veiculo' in self.fields:
+            self.fields['veiculo'].label_from_instance = self._formatar_opcao_veiculo
         # Corrige o label do campo hora_saida
         if 'hora_saida' in self.fields:
             self.fields['hora_saida'].label = 'Horário da Consulta'
+
+    @staticmethod
+    def _formatar_opcao_veiculo(veiculo):
+        # Exibe primeiro o patrimônio (ou placa, se van), depois o tipo
+        if veiculo.tipo_veiculo == 'ambulancia' and veiculo.patrimonio:
+            return f"{veiculo.patrimonio} - Ambulância"
+        if veiculo.tipo_veiculo == 'van' and veiculo.placa:
+            return f"{veiculo.placa} - Van"
+        if veiculo.patrimonio:
+            return f"{veiculo.patrimonio} - {veiculo.get_tipo_veiculo_display()}"
+        if veiculo.placa:
+            return f"{veiculo.placa} - {veiculo.get_tipo_veiculo_display()}"
+        return f"{veiculo.get_tipo_veiculo_display()} sem identificação"
 
     @staticmethod
     def _formatar_opcao_clinica(clinica):

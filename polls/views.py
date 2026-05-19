@@ -699,6 +699,9 @@ def cadastrar_transporte_lote(request):
 	condutores = Condutor.objects.all().order_by('nome')
 	enfermagens = Enfermagem.objects.all().order_by('nome')
 
+	salvos = 0
+	erros = []
+
 	if request.method == 'POST':
 		ids_raw = request.POST.get('paciente_ids_lote', '')
 		ids_list = [int(x.strip()) for x in ids_raw.split(',') if x.strip().isdigit()]
