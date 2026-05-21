@@ -1,6 +1,6 @@
+...existing code...
 {% extends 'base.html' %}
 
-{% include 'partials/breadcrumbs_dynamic.html' %}
 {% block content %}
 <style>
 /* Centralização absoluta do título */
@@ -59,18 +59,6 @@
   min-width: 180px !important;
   min-height: 48px !important;
 }
-
-/* Mantem o layout original na tela; aparece apenas na impressao */
-.coluna-condicoes-print {
-  display: none !important;
-}
-
-/* Na prévia do modal, exibe a coluna de condições para conferência antes de imprimir */
-#modalPrevia .coluna-condicoes-print,
-#tabelaPreviaContainer .coluna-condicoes-print {
-  display: table-cell !important;
-  visibility: visible !important;
-}
 .btn-novo:active {
   box-shadow: 0 1px 2px rgba(56, 142, 60, 0.18) !important;
   transform: translateY(2px) scale(0.98) !important;
@@ -79,17 +67,7 @@
   transform: translateY(2px) scale(0.98) !important;
 }
 @media print {
-  .btn-print, .btn-novo, .no-print, .no-print *, button[aria-hidden="true"], a.btn-novo, button.btn-print {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    position: absolute !important;
-    left: -9999px !important;
-    top: -9999px !important;
-    overflow: hidden !important;
-    opacity: 0 !important;
-  }
+  .btn-print { display: none !important; }
   body, html {
     background: #fff !important;
     color: #222 !important;
@@ -155,91 +133,104 @@
   .table-responsive {
     overflow: visible !important;
     margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
   }
-  th, td.acao-coluna {
-    display: table-cell !important;
-    visibility: visible !important;
+  table {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+    font-size: 15px !important;
+    background: #fff !important;
   }
-  th.coluna-condicoes-print,
-  td.coluna-condicoes-print {
-    display: table-cell !important;
-    visibility: visible !important;
+  th, td {
+    border: 0.7px solid #222 !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    line-height: 1.6 !important;
+    white-space: normal !important;
+    min-height: 22px !important;
+    height: 22px !important;
   }
-  /* Cabeçalho fixo na tabela de transportes */
-  .table-responsive {
-    max-height: 420px;
-    overflow-y: auto;
+  th {
+    background: #1976d2 !important;
+    color: #fff !important;
+    font-weight: bold !important;
+    font-size: 18px !important;
+    border-bottom: 2px solid #0d47a1 !important;
+    letter-spacing: 0.5px;
   }
-  .table-responsive thead th {
-    position: sticky;
-    top: 0;
-    background: #f8f9fa;
-    z-index: 2;
-    box-shadow: 0 2px 2px -1px rgba(0,0,0,0.07);
+  tr:nth-child(even) td {
+    background: #eaf1fb !important;
   }
+  tr:nth-child(odd) td {
+    background: #fff !important;
+  }
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+}
+@media screen {
+  .footer-print { display: none; }
+}
 </style>
-<script>
-// Remove os botões do DOM imediatamente antes da impressão
-function removePrintButtons() {
-  var botoes = document.getElementById('botoes-acoes');
-  if (botoes) {
-    botoes.parentNode.removeChild(botoes);
-  }
-}
-if (window.matchMedia) {
-  window.matchMedia('print').addEventListener('change', function(e) {
-    if (e.matches) { removePrintButtons(); }
-  });
-}
-window.onbeforeprint = function() { removePrintButtons(); };
-</script>
 <!-- Listagem de transportes realizados -->
-<!-- TEMPLATE ATIVO: listar_transportes.html - ÚLTIMA VERSÃO 2026-04-05 -->
-
 <div class="container mt-4">
   <div class="row justify-content-center">
-    <div class="col-lg-11 col-md-12 col-12">
-      <div class="card mb-4 shadow-sm" style="border-radius:18px;">
-        <div class="card-header bg-white d-flex flex-column flex-md-row align-items-center justify-content-between" style="border-bottom:2.5px solid #1976d2; border-radius:18px 18px 0 0; padding:1.2em 1.5em;">
-          <h4 class="mb-0 titulo-impressao" style="color:#1976d2; font-size:2.1em; font-weight:800; letter-spacing:1px; display:flex; align-items:center;"><span class="bi bi-truck me-2" style="font-size:1.3em;"></span>Lista de Transportes Agendados</h4>
-          <div class="d-flex flex-wrap gap-2 mt-3 mt-md-0">
-            <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true"><span class="bi bi-printer me-1"></span>Imprimir</button>
-            <button type="button" class="btn-novo" style="background:#1976d2; color:#fff;" onclick="abrirModalPrevia()"><span class="bi bi-file-earmark-spreadsheet me-1"></span>Prévia Excel/Imprimir</button>
-            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="background: #43a047; color: #fff; border: 2px solid #388e3c; font-size: 20px; font-weight: bold;"><span class="bi bi-plus-circle me-1"></span>Novo Transporte</a>
-          </div>
+    <div class="col-lg-10 col-md-12 col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
         </div>
-        <div class="card-body" style="background:#f8fafc; border-radius:0 0 18px 18px;">
-          <!-- Filtros avançados -->
-          <form method="get" class="row g-3 align-items-end mb-4 p-3" style="background:#f5f7fa; border-radius:12px; box-shadow:0 1px 6px #0001; border:1.5px solid #e3eaf2;">
-            <div class="col-md-3 col-12">
-              <label for="filtro_paciente" class="form-label mb-1"><span class="bi bi-person me-1"></span>Paciente</label>
-              <select name="paciente" id="filtro_paciente" class="form-select">
-                <option value="">Todos</option>
-                {% for p in pacientes %}
-                  <option value="{{ p.id }}" {% if filtros.paciente == p.id|stringformat:'s' %}selected{% endif %}>{{ p.nome }}</option>
-                {% endfor %}
-              </select>
+        <div class="card-body">
+          <button type="button" class="btn-print no-print" onclick="window.print()">Imprimir</button>
+          <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo no-print">Novo Transporte</a>
+          {% if transportes %}
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Data</th>
+                    <th>Paciente</th>
+                    <th>Clínica</th>
+                    <th>Veículo</th>
+                    <th>Condutor</th>
+                    <th>Enfermagem</th>
+                    <th>Saída</th>
+                    <th>Chegada</th>
+                    <th>Observações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for t in transportes %}
+                  <tr>
+                    <td>{{ t.data_transporte|date:'d/m/Y' }}</td>
+                    <td>{{ t.paciente }}</td>
+                    <td>{{ t.clinica }}</td>
+                    <td>{{ t.veiculo }}</td>
+                    <td>{{ t.condutor }}</td>
+                    <td>{{ t.enfermagem }}</td>
+                    <td>{{ t.hora_saida|default:'-' }}</td>
+                    <td>{{ t.hora_chegada|default:'-' }}</td>
+                    <td>{{ t.observacoes|default:'-' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
-            <div class="col-md-3 col-12">
-              <label for="filtro_clinica" class="form-label mb-1"><span class="bi bi-hospital me-1"></span>Clínica</label>
-              <select name="clinica" id="filtro_clinica" class="form-select">
-                <option value="">Todas</option>
-                {% for c in clinicas %}
-                  <option value="{{ c.id }}" {% if filtros.clinica == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-2 col-6">
-              <label for="filtro_data" class="form-label mb-1"><span class="bi bi-calendar me-1"></span>Data</label>
-              <input type="date" name="data_transporte" id="filtro_data" class="form-control" value="{{ filtros.data_transporte }}">
-            </div>
-            <div class="col-md-2 col-6">
-              <label for="filtro_condutor" class="form-label mb-1"><span class="bi bi-person-badge me-1"></span>Condutor</label>
-              <select name="condutor" id="filtro_condutor" class="form-select">
-                <option value="">Todos</option>
-                {% for cond in condutores %}
-                  <option value="{{ cond.id }}" {% if filtros.condutor == cond.id|stringformat:'s' %}selected{% endif %}>{{ cond.nome }}</option>
-                {% endfor %}
+          {% else %}
+            <div class="alert alert-warning">Nenhum transporte cadastrado ainda.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
               </select>
             </div>
             <div class="col-md-2 col-6">
@@ -258,12 +249,7 @@ window.onbeforeprint = function() { removePrintButtons(); };
               <a href="?" class="btn btn-outline-secondary w-100"><span class="bi bi-x-circle me-1"></span>Limpar</a>
             </div>
           </form>
-          <div id="botoes-acoes" class="no-print" style="margin-bottom: 18px;">
 
-            <button type="button" class="btn-print" onclick="window.print()" aria-hidden="true">Imprimir</button>
-            <button type="button" class="btn-novo" style="margin-left: 10px;" onclick="window.print()">Impressão Direta</button>
-            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo" style="margin-left: 10px; background: #ffc107; color: #222; border: 2px solid #ff9800; box-shadow: 0 0 12px #ff9800, 0 2px 8px rgba(56,142,60,0.13); font-size: 20px; font-weight: bold; text-shadow: 0 1px 0 #fff;">➕ Novo Transporte</a>
-            <button type="button" class="btn-novo" style="margin-left: 10px; background: #1976d2; color: #fff;" onclick="abrirModalPrevia()">Prévia Excel/Imprimir</button>
 
           <!-- Modal de pré-visualização -->
           <div id="modalPrevia" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center;" onclick="fecharModalPreviaFora(event)">
@@ -515,4 +501,3 @@ window.onbeforeprint = function() { removePrintButtons(); };
     </div>
   </div>
 </div>
-{% endblock %}

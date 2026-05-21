@@ -800,8 +800,11 @@ def cadastrar_transporte_lote(request):
 
 	# GET
 	ids_param = request.GET.get('paciente_ids', '')
+	print('DEBUG TRANSPORTE LOTE - ids_param:', ids_param)
 	ids_list = [int(x.strip()) for x in ids_param.split(',') if x.strip().isdigit()]
+	print('DEBUG TRANSPORTE LOTE - ids_list:', ids_list)
 	pacientes_selecionados = list(Paciente.objects.filter(id__in=ids_list))
+	print('DEBUG TRANSPORTE LOTE - pacientes_selecionados:', [p.id for p in pacientes_selecionados])
 	if not pacientes_selecionados:
 		messages.warning(request, 'Nenhum paciente selecionado.')
 		return redirect('transporte_pacientes:home')
@@ -1613,9 +1616,9 @@ def cadastrar_paciente(request):
 		# Cadastro manual
 		form = PacienteForm(request.POST)
 		if form.is_valid():
-			form.save()
-			messages.success(request, 'Paciente cadastrado com sucesso!')
-			return redirect('transporte_pacientes:cadastrar_paciente')
+			novo_paciente = form.save()
+			# Passa o ID do novo paciente via GET para exibir botão de transporte
+			return redirect(f"{request.path}?novo_paciente_id={novo_paciente.id}")
 		else:
 			first_error = '; '.join([f"{k}: {', '.join(v)}" for k, v in form.errors.items()])
 			if first_error:
@@ -1624,33 +1627,36 @@ def cadastrar_paciente(request):
 				messages.error(request, 'Não foi possível cadastrar o paciente. Verifique os campos obrigatórios.')
 			logger.warning("Falha de validação ao cadastrar paciente", extra={"erros": form.errors.as_json()})
 	else:
-		form = PacienteForm()
-	from django.db.models import Exists, OuterRef, BooleanField, Value, Case, When
-	from .models import Transporte
-	# Evita pacientes duplicados na listagem por nome, idade e telefone (em Python, para compatibilidade com todos os bancos)
-	pacientes_qs = Paciente.objects.all().order_by('nome', 'idade', 'telefone')
-	pacientes = []
-	seen = set()
-	for p in pacientes_qs:
-		key = (p.nome, p.idade, p.telefone)
-		if key not in seen:
-			pacientes.append(p)
-			seen.add(key)
-	# Contador: total de pacientes + acompanhantes
-	total_pacientes = len(pacientes)
-	total_acompanhantes = sum(getattr(p, 'acompanhantes', 0) for p in pacientes)
-	total_geral = total_pacientes + total_acompanhantes
-	return render(request, 'transporte_pacientes/cadastrar_paciente.html', {
-		'form': form,
-		'form_web': form_web,
-		'importado_via_web': importado_via_web,
-		'pacientes': pacientes,
-		'arquivo_origem_nome': arquivo_origem_nome,
-		'arquivo_origem_tipo': arquivo_origem_tipo,
-		'total_pacientes': total_pacientes,
-		'total_acompanhantes': total_acompanhantes,
-		'total_geral': total_geral,
-	})
+			form = PacienteForm()
+			from django.db.models import Exists, OuterRef, BooleanField, Value, Case, When
+			from .models import Transporte
+			# Evita pacientes duplicados na listagem por nome, idade e telefone (em Python, para compatibilidade com todos os bancos)
+			pacientes_qs = Paciente.objects.all().order_by('-data_cadastro', 'nome')
+			pacientes = list(pacientes_qs)
+			# Contador: total de pacientes + acompanhantes
+			total_pacientes = len(pacientes)
+			total_acompanhantes = sum(getattr(p, 'acompanhantes', 0) for p in pacientes)
+			total_geral = total_pacientes + total_acompanhantes
+			# Novo paciente cadastrado (para exibir botão de transporte)
+			novo_paciente_id = request.GET.get('novo_paciente_id')
+			novo_paciente = None
+			if novo_paciente_id and novo_paciente_id.isdigit():
+				try:
+					novo_paciente = Paciente.objects.get(id=int(novo_paciente_id))
+				except Paciente.DoesNotExist:
+					novo_paciente = None
+			return render(request, 'transporte_pacientes/cadastrar_paciente.html', {
+				'form': form,
+				'form_web': form_web,
+				'importado_via_web': importado_via_web,
+				'pacientes': pacientes,
+				'arquivo_origem_nome': arquivo_origem_nome,
+				'arquivo_origem_tipo': arquivo_origem_tipo,
+				'total_pacientes': total_pacientes,
+				'total_acompanhantes': total_acompanhantes,
+				'total_geral': total_geral,
+				'novo_paciente': novo_paciente,
+			})
 
 def cadastrar_veiculo(request):
 	from django.contrib import messages

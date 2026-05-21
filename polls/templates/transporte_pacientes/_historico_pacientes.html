@@ -163,14 +163,15 @@
       }
 
       function transportarSelecionados() {
-        var checkboxes = document.querySelectorAll('.paciente-checkbox:checked');
-        if (checkboxes.length === 0) {
-          alert('Selecione pelo menos um paciente para transportar.');
-          return;
-        }
-        var ids = Array.from(checkboxes).map(cb => cb.value);
-        var url = "{% url 'transporte_pacientes:cadastrar_transporte_lote' %}?paciente_ids=" + ids.join(',');
-        window.location.href = url;
+          var checkboxes = document.querySelectorAll('.paciente-checkbox:checked');
+          if (checkboxes.length === 0) {
+            alert('Selecione pelo menos um paciente para transportar.');
+            return;
+          }
+          var ids = Array.from(checkboxes).map(cb => cb.value);
+          alert('IDs capturados para transporte: ' + ids.join(',')); // Diagnóstico
+          var url = "{% url 'transporte_pacientes:cadastrar_transporte_lote' %}?paciente_ids=" + ids.join(',');
+          window.location.href = url;
       }
       </script>
       </div>

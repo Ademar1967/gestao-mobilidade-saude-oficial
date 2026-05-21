@@ -1,4 +1,3 @@
-
 # Consolidado para rodar sempre, independente do ambiente
 import os
 import sys
@@ -36,6 +35,12 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 options = Options()
 options.add_argument('--headless')
 options.add_argument('--window-size=1200,800')
+
+# --- Permissões automáticas para notificações e localização ---
+options.add_experimental_option("prefs", {
+    "profile.default_content_setting_values.notifications": 1,  # Permite notificações
+    "profile.default_content_setting_values.geolocation": 1,    # Permite localização
+})
 
 driver = webdriver.Chrome(options=options)
 

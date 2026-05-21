@@ -26,8 +26,12 @@
 
 <div class="container mt-4">
   <div class="card shadow-sm">
-    <div class="card-header bg-primary text-white">
+    <div class="card-header bg-primary text-white d-flex flex-column flex-md-row align-items-md-center justify-content-between">
       <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Transporte em Lote — {{ pacientes|length }} paciente(s)</h4>
+      <div class="fw-bold mt-2 mt-md-0" style="font-size:1.1em; background:#1565c0; color:#fff; border-radius:6px; padding:0.4em 1em;">
+        Total no veículo: <span id="topo-total-pessoas">{{ pacientes|length|add:acompanhantes_count }}</span> pessoa(s)
+        <span class="text-light small ms-2">({{ pacientes|length }} paciente(s) + {{ acompanhantes_count }} acompanhante(s))</span>
+      </div>
     </div>
     <div class="card-body p-4" style="background:#f8fafc;">
 
@@ -318,6 +322,8 @@
           var total = pacientes + acompanhantes;
           document.getElementById('total-acomp').textContent = acompanhantes;
           document.getElementById('total-geral').textContent = total;
+          var topoTotal = document.getElementById('topo-total-pessoas');
+          if (topoTotal) topoTotal.textContent = total;
         })();
         </script>
 

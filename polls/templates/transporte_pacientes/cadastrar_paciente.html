@@ -375,13 +375,22 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 {# 1. Feedback de sucesso/erro #}
+{# Mensagem de sucesso customizada com botão Transportar #}
+{% if novo_paciente %}
+  <div class="alert alert-success alert-dismissible fade show d-flex align-items-center justify-content-between gap-3" role="alert" style="font-size:1.1em; font-weight:600;">
+    <span>
+      Paciente cadastrado com sucesso!
+      <span class="d-block small text-muted">Deseja já transportar este paciente?</span>
+    </span>
+    <a href="{% url 'transporte_pacientes:cadastrar_transporte_lote' %}?paciente_ids={{ novo_paciente.id }}" class="btn btn-primary btn-afunda">
+      <i class="bi bi-truck"></i> Transportar
+    </a>
+    <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+{% endif %}
+{# Mensagens padrão #}
 {% if messages %}
   {% for message in messages %}
-    {% if 'success' in message.tags %}
-    <script>
-      window.__pacienteSaveSuccess = true;
-    </script>
-    {% endif %}
     {% if message.tags %}
       <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="font-size:1.1em; font-weight:600;">
         {{ message }}

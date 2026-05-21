@@ -396,14 +396,17 @@ class PacienteForm(forms.ModelForm):
                     logger.warning(f"Exceção ao tentar geocodificar: {e}. Salvando sem latitude/longitude.")
             else:
                 logger.info("Ambiente de produção: geocodificação desabilitada para evitar timeout.")
-        # Duplicidade de paciente (só se telefone for informado)
+        # Permite nomes iguais, mas bloqueia apenas se nome E telefone coincidirem
         if nome and telefone:
             qs = Paciente.objects.filter(nome=nome, telefone=telefone)
             if self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 logger.warning("Paciente duplicado!")
-                raise forms.ValidationError('Já existe um paciente com este nome e telefone.')
+                # Mensagem de erro mais clara e visível
+                self.add_error('nome', 'Já existe um paciente cadastrado com este nome e telefone. Caso seja outro paciente, altere o telefone.')
+                self.add_error('telefone', 'Já existe um paciente cadastrado com este nome e telefone. Caso seja outro paciente, altere o telefone.')
+                raise forms.ValidationError('Já existe um paciente cadastrado com este nome e telefone. Caso seja outro paciente, altere o telefone.')
         # Garante que latitude/longitude tenham no máximo 6 casas decimais, mas nunca bloqueia o cadastro
         if cleaned_data.get('latitude') is not None:
             try:
