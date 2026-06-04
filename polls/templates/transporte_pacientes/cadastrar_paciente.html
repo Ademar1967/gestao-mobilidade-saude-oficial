@@ -55,6 +55,14 @@ function preencherPacienteForm(paciente) {
       el.value = paciente[campo] != null ? paciente[campo] : '';
     }
   }
+
+  // Marca que o formulario esta em modo de atualizacao de paciente existente.
+  // Sem esse ID, o backend interpreta como novo cadastro e pode acusar duplicidade.
+  var hiddenPacienteIds = document.querySelectorAll('input[name="paciente_existente_id"]');
+  hiddenPacienteIds.forEach(function(hiddenEl) {
+    hiddenEl.value = paciente && paciente.id ? paciente.id : '';
+  });
+
   // Gatilho para mostrar/ocultar campo O2 litros
   var evt = document.createEvent('HTMLEvents');
   evt.initEvent('change', true, false);
@@ -203,16 +211,18 @@ function exibirModalConfirmarPreencher(paciente) {
   </div>
   <div class="collapse" id="instrucoesExportImport">
     <ul class="mb-2">
-      <li>Para compartilhar ou arquivar os dados, clique em <b>“Exportar pacientes (Excel)”</b> ou <b>“Exportar pacientes (CSV)”</b> acima do formulário.</li>
-      <li>O arquivo será baixado no seu computador e pode ser enviado para outros setores, colegas, responsáveis pelo transporte, controle administrativo, ou para backup pessoal.</li>
-      <li>Você pode enviar o arquivo por e-mail, WhatsApp, Google Drive ou outro meio digital, conforme a necessidade do seu fluxo de trabalho.</li>
-      <li>O formato Excel (.xlsx) é ideal para edição em planilhas. O formato CSV (.csv) é compatível com a maioria dos sistemas e pode ser importado facilmente.</li>
+      <li><b>Como exportar:</b> O botão <b>Exportar pacientes (Excel)</b> e <b>Exportar pacientes (CSV)</b> está localizado acima deste formulário.</li>
+      <li>Após clicar, o arquivo será baixado no seu computador. Você pode compartilhar com setores, colegas, transporte, administrativo ou para backup.</li>
+      <li>O arquivo pode ser enviado por e-mail, WhatsApp, Google Drive ou outro meio digital, conforme o fluxo do seu trabalho.</li>
+      <li><b>Excel (.xlsx):</b> Ideal para edição em planilhas.</li>
+      <li><b>CSV (.csv):</b> Compatível com a maioria dos sistemas e indicado para importação em outros softwares.</li>
     </ul>
-    <b>Dicas:</b>
+    <b>Dicas importantes:</b>
     <ul class="mb-0">
-      <li>Certifique-se de que o arquivo contém as colunas necessárias (nome, idade, telefone, endereço, etc.).</li>
-      <li>Se tiver dúvidas sobre o formato do arquivo, peça um modelo para a equipe de suporte.</li>
-      <li>Caso receba o arquivo em outro formato, converta para Excel ou CSV antes de importar.</li>
+      <li>Confira se o arquivo contém todas as colunas necessárias (nome, idade, telefone, endereço, etc.).</li>
+      <li>Se tiver dúvidas sobre o formato, solicite um modelo à equipe de suporte.</li>
+      <li>Se receber o arquivo em outro formato, converta para Excel ou CSV antes de importar.</li>
+      <li>Em caso de dúvidas, consulte o suporte ou a documentação do sistema.</li>
     </ul>
   </div>
   <div class="collapse mt-2" id="instrucoesTopoEn">
@@ -296,6 +306,8 @@ function exibirModalConfirmarPreencher(paciente) {
     color: #212121;
     font-weight: 600;
   }
+  /* Tentativa documentada: Remover borda apenas dos inputs do formulário de paciente sem afetar outros formulários do sistema. Se necessário, ajuste o seletor para maior restrição. */
+  /* .card-body form input { border: none !important; box-shadow: none !important; } */
   .form-control:focus, .form-select:focus {
     border-color: #1976d2;
     box-shadow: 0 0 0 2px #1976d2cc;
@@ -382,32 +394,161 @@ document.addEventListener('DOMContentLoaded', function() {
       Paciente cadastrado com sucesso!
       <span class="d-block small text-muted">Deseja já transportar este paciente?</span>
     </span>
-    <a href="{% url 'transporte_pacientes:cadastrar_transporte_lote' %}?paciente_ids={{ novo_paciente.id }}" class="btn btn-primary btn-afunda">
+    {# <a href="{% url 'transporte_pacientes:cadastrar_transporte_lote' %}?paciente_ids={{ novo_paciente.id }}" class="btn btn-primary btn-afunda">
       <i class="bi bi-truck"></i> Transportar
-    </a>
+    </a> #} <!-- [OCULTADO] Cadastro em lote desativado -->
     <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 {% endif %}
 {# Mensagens padrão #}
-{% if messages %}
-  {% for message in messages %}
-    {% if message.tags %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="font-size:1.1em; font-weight:600;">
-        {{ message }}
-        <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% else %}
-      <div class="alert alert-info alert-dismissible fade show" role="alert" style="font-size:1.1em; font-weight:600;">
-        {{ message }}
-        <button type="button" class="btn-close btn-afunda" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endif %}
-  {% endfor %}
-{% endif %}
+{% include 'partials/messages_high_contrast.html' %}
 
 
 
 {# 2. Formulário manual de cadastro (agora primeiro bloco) #}
+
+{# ── BLOCO: Reaproveitar dados de paciente já cadastrado ── #}
+<div class="card mb-3 shadow-sm border-primary">
+  <div class="card-body">
+    <h5 class="card-title mb-2" style="color:#1565c0; background:#e3f2fd; padding:6px 12px; border-radius:6px;">
+      <span class="bi bi-search me-2"></span>Paciente já usa o serviço? Busque e reaproveite os dados
+    </h5>
+    <div class="alert alert-light border mb-2" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
+      Digite o nome do paciente abaixo. Se encontrado, os campos do formulário serão preenchidos automaticamente — você só precisará corrigir ou atualizar o que mudou.
+    </div>
+    <div class="input-group mb-2">
+      <span class="input-group-text"><span class="bi bi-person-search"></span></span>
+      <input type="text" id="busca-paciente-existente" class="form-control form-control-lg"
+             placeholder="Digite o nome do paciente (mínimo 2 letras)..." autocomplete="off">
+      <button type="button" class="btn btn-outline-secondary" id="btn-limpar-busca-paciente" title="Limpar busca">
+        <span class="bi bi-x-lg"></span>
+      </button>
+    </div>
+    <div id="resultados-busca-paciente" class="list-group mb-1" style="max-height:220px; overflow-y:auto;"></div>
+    <div id="aviso-paciente-selecionado" class="alert alert-success d-none mt-2 mb-0">
+      <span class="bi bi-check-circle me-2"></span>
+      <span id="nome-paciente-selecionado"></span> — dados preenchidos. Corrija o que precisar e salve.
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var inputBusca = document.getElementById('busca-paciente-existente');
+  var listaResultados = document.getElementById('resultados-busca-paciente');
+  var avisoSelecionado = document.getElementById('aviso-paciente-selecionado');
+  var nomeSelecionado = document.getElementById('nome-paciente-selecionado');
+  var btnLimpar = document.getElementById('btn-limpar-busca-paciente');
+  var debounceTimer;
+
+  function obterFormularioAlvo() {
+    var formManual = document.getElementById('cadastrar-paciente-form');
+    var formWeb = document.getElementById('revisao-paciente-web-form');
+    var containerWeb = document.getElementById('formularioWeb');
+
+    if (formWeb && containerWeb && containerWeb.classList.contains('show')) {
+      return formWeb;
+    }
+    return formManual || formWeb || document;
+  }
+
+  function preencherFormulario(p) {
+    var formularioAlvo = obterFormularioAlvo();
+
+    function set(sel, val) {
+      var el = formularioAlvo.querySelector(sel);
+      if (el) el.value = val !== null && val !== undefined ? val : '';
+    }
+    function setCheck(sel, val) {
+      var el = formularioAlvo.querySelector(sel);
+      if (el) el.checked = !!val;
+    }
+    set('[name="nome"]', p.nome);
+    set('[name="cartao_sis"]', p.cartao_sis);
+    set('[name="idade"]', p.idade);
+    set('[name="peso"]', p.peso);
+    set('[name="ddd"]', p.ddd);
+    set('[name="telefone"]', p.telefone);
+    set('[name="referencia"]', p.referencia);
+    set('[name="rua"]', p.rua);
+    set('[name="numero"]', p.numero);
+    set('[name="bairro"]', p.bairro);
+    set('[name="estado"]', p.estado);
+    set('[name="cidade"]', p.cidade);
+    set('[name="cep"]', p.cep);
+    set('[name="oxigenio_litros_min"]', p.oxigenio_litros_min);
+    set('[name="acompanhantes"]', p.acompanhantes);
+    set('[name="evolucao"]', p.evolucao);
+    set('[name="observacoes"]', p.observacoes);
+    setCheck('[name="oxigenio"]', p.oxigenio);
+    setCheck('[name="maca"]', p.maca);
+    setCheck('[name="cadeirante"]', p.cadeirante);
+    // Limpa horário da consulta para que o usuário preencha o novo
+    set('[name="horario_consulta"]', '');
+
+    var pacienteExistenteId = formularioAlvo.querySelector('[name="paciente_existente_id"]');
+    if (pacienteExistenteId) {
+      pacienteExistenteId.value = p.id || '';
+    }
+  }
+
+  function buscar(termo) {
+    listaResultados.innerHTML = '<div class="list-group-item text-muted">Buscando...</div>';
+    fetch('/api/pacientes/sugestoes/?q=' + encodeURIComponent(termo))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        listaResultados.innerHTML = '';
+        if (!data.sucesso || !data.resultados.length) {
+          listaResultados.innerHTML = '<div class="list-group-item text-muted">Nenhum paciente encontrado.</div>';
+          return;
+        }
+        data.resultados.forEach(function(p) {
+          var item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+          item.innerHTML = '<span><strong>' + p.nome + '</strong>'
+            + (p.cartao_sis ? ' <small class="text-muted">SIS: ' + p.cartao_sis + '</small>' : '')
+            + (p.telefone ? ' <small class="text-muted ms-2"><span class="bi bi-telephone"></span> ' + (p.ddd ? p.ddd + ' ' : '') + p.telefone + '</small>' : '')
+            + '</span>'
+            + '<span class="badge bg-primary rounded-pill ms-2">Selecionar</span>';
+          item.addEventListener('click', function() {
+            preencherFormulario(p);
+            listaResultados.innerHTML = '';
+            inputBusca.value = '';
+            avisoSelecionado.classList.remove('d-none');
+            nomeSelecionado.textContent = p.nome;
+            // Rola até o formulário
+            var form = document.querySelector('form[method="post"]');
+            if (form) form.scrollIntoView({behavior: 'smooth', block: 'start'});
+          });
+          listaResultados.appendChild(item);
+        });
+      })
+      .catch(function() {
+        listaResultados.innerHTML = '<div class="list-group-item text-danger">Erro ao buscar. Tente novamente.</div>';
+      });
+  }
+
+  inputBusca.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    var termo = this.value.trim();
+    avisoSelecionado.classList.add('d-none');
+    if (termo.length < 2) { listaResultados.innerHTML = ''; return; }
+    debounceTimer = setTimeout(function() { buscar(termo); }, 350);
+  });
+
+  btnLimpar.addEventListener('click', function() {
+    inputBusca.value = '';
+    listaResultados.innerHTML = '';
+    avisoSelecionado.classList.add('d-none');
+    var hiddenPacienteIds = document.querySelectorAll('input[name="paciente_existente_id"]');
+    hiddenPacienteIds.forEach(function(hiddenEl) {
+      hiddenEl.value = '';
+    });
+  });
+})();
+</script>
+
 <div class="card mb-3 shadow-sm">
   <div class="card-body">
     <h5 class="card-title mb-2" style="color:#f57c00; background:#fff3e0; padding:6px 12px; border-radius:6px;">Cadastrar paciente manualmente</h5>
@@ -435,6 +576,7 @@ document.addEventListener('DOMContentLoaded', function() {
       {% endif %}
       <form method="post" id="revisao-paciente-web-form" autocomplete="on">
         {% csrf_token %}
+        <input type="hidden" name="paciente_existente_id" id="id_paciente_existente_id_web" value="{{ request.POST.paciente_existente_id|default:'' }}">
         <input type="hidden" name="salvar_web" value="1">
         <input type="hidden" name="arquivo_origem_nome" value="{{ arquivo_origem_nome|default:'' }}">
         <input type="hidden" name="arquivo_origem_tipo" value="{{ arquivo_origem_tipo|default:'' }}">
@@ -565,8 +707,12 @@ document.addEventListener('DOMContentLoaded', function() {
     {# --- NOVO FORMULÁRIO VISUAL PREMIUM --- #}
     <form method="post" id="cadastrar-paciente-form" autocomplete="on">
       {% if form.errors %}
-        <div class="alert alert-danger" role="alert">
+        <div class="alert alert-danger" role="alert" id="alerta-erros-cadastro-paciente">
           <strong>Por favor, corrija os erros abaixo:</strong>
+          <div class="small mt-1">Os campos com erro estao destacados em vermelho no formulario.</div>
+          <div class="mt-2 fw-bold">
+            Campos pendentes: <span id="contador-campos-pendentes">0</span>
+          </div>
           <ul class="mb-0">
             {% for field in form %}
               {% for error in field.errors %}
@@ -580,12 +726,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       {% endif %}
       {% csrf_token %}
+      <input type="hidden" name="paciente_existente_id" id="id_paciente_existente_id" value="{{ request.POST.paciente_existente_id|default:'' }}">
       <fieldset class="card shadow-sm mb-3">
         <legend class="card-header" style="font-size:1.15em; font-weight:600; background:#e3f2fd; color:#0d47a1; border-radius:6px 6px 0 0;">Dados Pessoais</legend>
         <div class="card-body pb-2">
           <div class="row g-2">
             <div class="col-md-5 mb-2">
-              {{ form.nome.label_tag }}<span class="text-danger">*</span> {{ form.nome }}
+              {{ form.nome.label_tag }}<span class="text-danger">*</span> 
+              {{ form.nome }}
               {% if form.nome.errors %}
                 <div class="text-danger small">{{ form.nome.errors }}</div>
               {% endif %}
@@ -608,7 +756,8 @@ document.addEventListener('DOMContentLoaded', function() {
               {% endif %}
             </div>
             <div class="col-md-1 mb-2">
-              {{ form.idade.label_tag }}<span class="text-danger">*</span> {{ form.idade }}
+              {{ form.idade.label_tag }}<span class="text-danger">*</span> 
+              {{ form.idade }}
               {% if form.idade.errors %}
                 <div class="text-danger small">{{ form.idade.errors }}</div>
               {% endif %}
@@ -619,6 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {{ form.peso }}
                 <span class="input-group-text">kg</span>
               </div>
+              <small class="form-text text-muted">Preencha o peso em <b>kg</b> (quilogramas).</small>
               {% if form.peso.errors %}
                 <div class="text-danger small">{{ form.peso.errors }}</div>
               {% endif %}
@@ -664,19 +814,22 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card-body pb-2">
           <div class="row g-2">
             <div class="col-md-5 mb-2">
-              {{ form.rua.label_tag }}<span class="text-danger">*</span> {{ form.rua }}
+              {{ form.rua.label_tag }}<span class="text-danger">*</span> 
+              {{ form.rua }}
               {% if form.rua.errors %}
                 <div class="text-danger small">{{ form.rua.errors }}</div>
               {% endif %}
             </div>
             <div class="col-md-2 mb-2">
-              {{ form.numero.label_tag }}<span class="text-danger">*</span> {{ form.numero }}
+              {{ form.numero.label_tag }}<span class="text-danger">*</span> 
+              {{ form.numero }}
               {% if form.numero.errors %}
                 <div class="text-danger small">{{ form.numero.errors }}</div>
               {% endif %}
             </div>
             <div class="col-md-3 mb-2">
-              {{ form.bairro.label_tag }}<span class="text-danger">*</span> {{ form.bairro }}
+              {{ form.bairro.label_tag }}<span class="text-danger">*</span> 
+              {{ form.bairro }}
               {% if form.bairro.errors %}
                 <div class="text-danger small">{{ form.bairro.errors }}</div>
               {% endif %}
@@ -692,7 +845,8 @@ document.addEventListener('DOMContentLoaded', function() {
               {% endif %}
             </div>
             <div class="col-md-5 mb-2">
-              {{ form.cidade.label_tag }}<span class="text-danger">*</span> {{ form.cidade }}
+              {{ form.cidade.label_tag }}<span class="text-danger">*</span> 
+              {{ form.cidade }}
               {% if form.cidade.errors %}
                 <div class="text-danger small">{{ form.cidade.errors }}</div>
               {% endif %}
@@ -807,6 +961,79 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+  var camposComErro = [
+    {% for field in form %}
+      {% if field.errors %}'{{ field.name }}',{% endif %}
+    {% endfor %}
+  ];
+  var contadorPendentes = document.getElementById('contador-campos-pendentes');
+  var alertaErros = document.getElementById('alerta-erros-cadastro-paciente');
+
+  if (!camposComErro.length) return;
+
+  function atualizarContador() {
+    var pendentes = 0;
+    camposComErro.forEach(function(nomeCampo) {
+      var el = document.querySelector('#cadastrar-paciente-form [name="' + nomeCampo + '"]');
+      if (!el) return;
+      var valor = '';
+
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        if (!el.checked) {
+          pendentes += 1;
+        }
+        return;
+      }
+
+      valor = (el.value || '').trim();
+      if (!valor) {
+        pendentes += 1;
+      }
+    });
+
+    if (contadorPendentes) {
+      contadorPendentes.textContent = String(pendentes);
+    }
+
+    if (alertaErros && pendentes === 0) {
+      alertaErros.classList.remove('alert-danger');
+      alertaErros.classList.add('alert-success');
+    }
+  }
+
+  var primeiroCampo = null;
+  camposComErro.forEach(function(nomeCampo) {
+    var el = document.querySelector('#cadastrar-paciente-form [name="' + nomeCampo + '"]');
+    if (!el) return;
+    if (!primeiroCampo) primeiroCampo = el;
+
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      var formCheck = el.closest('.form-check');
+      if (formCheck) {
+        formCheck.classList.add('border', 'border-danger', 'rounded', 'p-2');
+      }
+    } else {
+      el.classList.add('is-invalid');
+    }
+  });
+
+  if (primeiroCampo) {
+    primeiroCampo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    try { primeiroCampo.focus(); } catch (e) {}
+  }
+
+  camposComErro.forEach(function(nomeCampo) {
+    var el = document.querySelector('#cadastrar-paciente-form [name="' + nomeCampo + '"]');
+    if (!el) return;
+    el.addEventListener('input', atualizarContador);
+    el.addEventListener('change', atualizarContador);
+  });
+
+  atualizarContador();
+});
+</script>
+<script>
 // --- Máscaras de telefone e CEP ---
 $(document).ready(function() {
   function aplicarMascaraTelefoneNativa(input) {
@@ -842,8 +1069,7 @@ $(document).ready(function() {
 
 // --- Auto-save rascunho (localStorage) ---
 document.addEventListener('DOMContentLoaded', function() {
-  // ...existing code for auto-save rascunho...
-  // (mantido igual para foco no autocomplete/modal)
+  // Auto-save de rascunho desativado temporariamente neste template.
 });
 
 // --- Mostrar/ocultar campo O2 L/min ---

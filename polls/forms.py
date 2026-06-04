@@ -89,15 +89,16 @@ class TransporteForm(forms.ModelForm):
     @staticmethod
     def _formatar_opcao_veiculo(veiculo):
         # Exibe primeiro o patrimônio (ou placa, se van), depois o tipo
+        lotacao_txt = f" (lotação: {getattr(veiculo, 'lotacao', 0) or 0})"
         if veiculo.tipo_veiculo == 'ambulancia' and veiculo.patrimonio:
-            return f"{veiculo.patrimonio} - Ambulância"
+            return f"{veiculo.patrimonio} - Ambulância{lotacao_txt}"
         if veiculo.tipo_veiculo == 'van' and veiculo.placa:
-            return f"{veiculo.placa} - Van"
+            return f"{veiculo.placa} - Van{lotacao_txt}"
         if veiculo.patrimonio:
-            return f"{veiculo.patrimonio} - {veiculo.get_tipo_veiculo_display()}"
+            return f"{veiculo.patrimonio} - {veiculo.get_tipo_veiculo_display()}{lotacao_txt}"
         if veiculo.placa:
-            return f"{veiculo.placa} - {veiculo.get_tipo_veiculo_display()}"
-        return f"{veiculo.get_tipo_veiculo_display()} sem identificação"
+            return f"{veiculo.placa} - {veiculo.get_tipo_veiculo_display()}{lotacao_txt}"
+        return f"{veiculo.get_tipo_veiculo_display()} sem identificação{lotacao_txt}"
 
     @staticmethod
     def _formatar_opcao_clinica(clinica):
@@ -202,11 +203,13 @@ class TransporteForm(forms.ModelForm):
         return cleaned_data
     class Meta:
         model = Transporte
-        fields = '__all__'
+        exclude = ['lote_id']
         widgets = {
             'data_transporte': forms.DateInput(attrs={'type': 'date'}),
             'hora_saida': forms.TimeInput(attrs={'type': 'time'}),
+            'hora_chegada': forms.TimeInput(attrs={'type': 'time'}),
             'observacoes': forms.Textarea(attrs={'rows':2, 'class':'auto-expand'}),
+            'paciente': forms.Select(attrs={'id': 'id_paciente_select', 'size': '1'}),
         }
 
 from django import forms
@@ -310,8 +313,18 @@ class PacienteForm(forms.ModelForm):
     def save(self, commit=True):
         """Salva o paciente montando o campo endereco legado, separando DDD e Cartão SIS."""
         instance = super().save(commit=False)
+        is_new = not bool(getattr(instance, 'pk', None))
         # Garante que o consentimento LGPD seja salvo corretamente
         instance.consentimento_lgpd = self.cleaned_data.get('consentimento_lgpd', False)
+
+        # Regra de negocio: novo paciente nasce ativo no servico.
+        # Inativacao deve ocorrer apenas por acao explicita de inativar.
+        if is_new:
+            instance.servico_ativo = True
+            instance.data_inativacao = None
+            instance.motivo_inativacao = ''
+            instance.observacao_inativacao = ''
+
         # Monta o campo endereco legado para compatibilidade
         rua = self.cleaned_data.get('rua', '')
         numero = self.cleaned_data.get('numero', '')
@@ -401,6 +414,13 @@ class PacienteForm(forms.ModelForm):
             qs = Paciente.objects.filter(nome=nome, telefone=telefone)
             if self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
+
+            # Fallback de seguranca: quando o frontend envia paciente_existente_id,
+            # exclui esse ID da busca de duplicidade mesmo se instance nao foi montada.
+            paciente_existente_id = (self.data.get('paciente_existente_id') or '').strip()
+            if paciente_existente_id and paciente_existente_id.isdigit():
+                qs = qs.exclude(pk=int(paciente_existente_id))
+
             if qs.exists():
                 logger.warning("Paciente duplicado!")
                 # Mensagem de erro mais clara e visível
@@ -486,6 +506,8 @@ class VeiculoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['placa'].required = False
         self.fields['placa'].help_text = 'Preencha apenas para vans terceirizadas.'
+        self.fields['lotacao'].label = 'Lotação operacional total'
+        self.fields['lotacao'].help_text = 'Informe o total de pessoas permitido no veículo, incluindo o motorista.'
     class Meta:
         model = Veiculo
         fields = '__all__'
