@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,11 +31,22 @@ def strtobool(val):
     if val in ('n', 'no', 'f', 'false', 'off', '0'):
         return False
     raise ValueError(f"invalid truth value: {val}")
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!')
-# DEBUG: Forçado para True para debug local
-DEBUG = True
-# ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS, ou domínio do Render por padrão
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'transporte-de-enfermos.onrender.com']
+
+DEBUG = strtobool(os.environ.get('DJANGO_DEBUG', '1'))
+
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!'
+    else:
+        raise ImproperlyConfigured('Defina DJANGO_SECRET_KEY em produção.')
+
+# ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS.
+_allowed_hosts_env = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    '127.0.0.1,localhost,transporte-de-enfermos.onrender.com',
+)
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(',') if host.strip()]
 
 # Corrige validação CSRF atrás de proxy HTTPS (Render)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -154,10 +166,18 @@ SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '7200'))  # 2 hora
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o navegador
 
-# --- Compatibilidade extra para sessão segura em produção ---
-SESSION_COOKIE_SECURE = False  # Permite cookie de sessão em HTTP para testes locais
-SESSION_COOKIE_SAMESITE = 'Lax'  # 'Lax' é seguro e compatível para maioria dos casos
-# Se usar subdomínios ou integração cross-site, troque para 'None' e ajuste CSRF_COOKIE_SAMESITE também
+# Segurança condicional por ambiente.
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax'
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
 
 
 # Static files (CSS, JavaScript, Images)

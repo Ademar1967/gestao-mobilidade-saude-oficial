@@ -29,8 +29,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('', include('polls.urls')),
-    # Django endpoints (autocomplete) têm prioridade sobre DRF
-    path('api/', include('polls.urls')),
     path('api/', include('polls.api_urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
