@@ -2,6 +2,7 @@ services:
   - type: web
     name: transporte-de-enfermos
     runtime: python
+    pythonVersion: 3.12.3
     repo: https://github.com/Ademar1967/-transporte-de-enfermos
     branch: main
     buildCommand: pip install -r requirements.txt
