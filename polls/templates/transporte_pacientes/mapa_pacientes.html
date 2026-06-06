@@ -3,13 +3,7 @@
 <div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
   <strong>Aviso de edição:</strong> você está no template <strong>mapa_pacientes.html</strong>.
 </div>
-{% with breadcrumbs=[
-  {'label': 'Início', 'url': '/'},
-  {'label': 'Pacientes', 'url': '/'},
-  {'label': 'Mapa de Pacientes', 'url': ''}
-] %}
-  {% include 'partials/breadcrumbs_dynamic.html' %}
-{% endwith %}
+{% include 'partials/breadcrumbs_dynamic.html' %}
 <div class="container mt-4">
   <h4>Pacientes no Mapa</h4>
   <div id="map" style="height: 500px; width: 100%;"></div>

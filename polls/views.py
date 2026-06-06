@@ -170,7 +170,7 @@ def editar_transporte(request, transporte_id):
 from django.shortcuts import render
 def mapa_pacientes(request):
 	"""Exibe o mapa interativo de pacientes usando Leaflet."""
-	return render(request, 'polls/mapa_pacientes.html')
+	return render(request, 'transporte_pacientes/mapa_pacientes.html')
 
 # Stub seguro para a view pacientes_json
 def pacientes_json(request):
@@ -1271,8 +1271,9 @@ def listar_transportes(request):
 	lote_dict = defaultdict(list)
 	individuais = []
 	for t in transportes_qs:
-		if t.lote_id:
-			lote_dict[str(t.lote_id)].append(t)
+		lote_id = getattr(t, 'lote_id', None)
+		if lote_id:
+			lote_dict[str(lote_id)].append(t)
 		else:
 			individuais.append(t)
 
