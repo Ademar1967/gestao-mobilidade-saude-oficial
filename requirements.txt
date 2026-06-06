@@ -122,6 +122,7 @@ rfc3987-syntax
 rpds-py
 Send2Trash
 setuptools
+wheel
 six
 soupsieve
 sqlparse
