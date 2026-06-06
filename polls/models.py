@@ -51,34 +51,31 @@ class Paciente(models.Model):
 
     # Novo campo opcional para horário da consulta
     horario_consulta = models.TimeField(null=True, blank=True, help_text="Horário da consulta do paciente (opcional)")
-        # Ciclo de vida do paciente no serviço
-        MOTIVO_INATIVACAO_CHOICES = [
-            ("alta", "Alta"),
-            ("obito", "Obito"),
-            ("mudanca_cidade", "Mudanca de cidade"),
-            ("nao_precisa", "Nao necessita mais transporte"),
-            ("outros", "Outros"),
-        ]
-        servico_ativo = models.BooleanField(default=True, db_index=True, help_text="Paciente apto a usar o servico de transporte")
-        data_inativacao = models.DateTimeField(null=True, blank=True)
-        motivo_inativacao = models.CharField(max_length=30, choices=MOTIVO_INATIVACAO_CHOICES, blank=True)
-        observacao_inativacao = models.TextField(blank=True)
+    # Ciclo de vida do paciente no serviço
+    MOTIVO_INATIVACAO_CHOICES = [
+        ("alta", "Alta"),
+        ("obito", "Obito"),
+        ("mudanca_cidade", "Mudanca de cidade"),
+        ("nao_precisa", "Nao necessita mais transporte"),
+        ("outros", "Outros"),
+    ]
+    servico_ativo = models.BooleanField(default=True, db_index=True, help_text="Paciente apto a usar o servico de transporte")
+    data_inativacao = models.DateTimeField(null=True, blank=True)
+    motivo_inativacao = models.CharField(max_length=30, choices=MOTIVO_INATIVACAO_CHOICES, blank=True)
+    observacao_inativacao = models.TextField(blank=True)
 
-        def __str__(self):
-            return self.nome
+    def inativar(self, motivo="outros", observacao=""):
+        from django.utils import timezone
+        self.servico_ativo = False
+        self.data_inativacao = timezone.now()
+        self.motivo_inativacao = motivo or "outros"
+        self.observacao_inativacao = observacao or ""
 
-        def inativar(self, motivo="outros", observacao=""):
-            from django.utils import timezone
-            self.servico_ativo = False
-            self.data_inativacao = timezone.now()
-            self.motivo_inativacao = motivo or "outros"
-            self.observacao_inativacao = observacao or ""
-
-        def reativar(self):
-            self.servico_ativo = True
-            self.data_inativacao = None
-            self.motivo_inativacao = ""
-            self.observacao_inativacao = ""
+    def reativar(self):
+        self.servico_ativo = True
+        self.data_inativacao = None
+        self.motivo_inativacao = ""
+        self.observacao_inativacao = ""
 
     def __str__(self):
         return self.nome
