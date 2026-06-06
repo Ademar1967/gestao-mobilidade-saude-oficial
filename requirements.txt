@@ -6,3 +6,4 @@ django-admin-interface
 django-colorfield
 django-crispy-forms
 crispy-bootstrap5
+pandas
