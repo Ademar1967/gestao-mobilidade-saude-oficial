@@ -189,7 +189,10 @@ ADMIN_ALLOWED_IPS = [ip.strip() for ip in _admin_ips_env.split(',') if ip.strip(
 
 # Sessão salva no banco de dados — persiste mesmo quando Render reinicia o servidor
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '7200'))  # 2 horas
+try:
+    SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '28800'))  # 8 horas
+except (TypeError, ValueError):
+    SESSION_COOKIE_AGE = 28800
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o navegador
 
