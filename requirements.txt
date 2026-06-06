@@ -7,4 +7,4 @@ django-colorfield
 django-crispy-forms
 crispy-bootstrap5
 pandas
-djangorestframework
+django-rest-framework
