@@ -92,6 +92,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'transporte_django.middleware.AdminIPAllowlistMiddleware',
     'transporte_django.middleware.LoginObrigatorioMiddleware',
 ]
 
@@ -171,6 +172,21 @@ USE_TZ = True
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# Isolamento do admin: use um caminho não óbvio em produção.
+# Ex.: DJANGO_ADMIN_PATH=/painel-interno-9x7/
+_admin_path = os.environ.get('DJANGO_ADMIN_PATH', '/painel-interno-192/').strip()
+if not _admin_path.startswith('/'):
+    _admin_path = '/' + _admin_path
+if not _admin_path.endswith('/'):
+    _admin_path = _admin_path + '/'
+ADMIN_URL_PATH = _admin_path
+
+# Lista opcional de IPs permitidos no admin (separados por vírgula).
+# Ex.: DJANGO_ADMIN_ALLOWED_IPS=177.10.10.10,189.55.22.33
+_admin_ips_env = os.environ.get('DJANGO_ADMIN_ALLOWED_IPS', '').strip()
+ADMIN_ALLOWED_IPS = [ip.strip() for ip in _admin_ips_env.split(',') if ip.strip()]
+
 # Sessão salva no banco de dados — persiste mesmo quando Render reinicia o servidor
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '7200'))  # 2 horas

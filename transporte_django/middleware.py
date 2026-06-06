@@ -1,6 +1,6 @@
 from django.shortcuts import redirect
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 
 # URLs que ficam abertas sem login (login, logout, admin, webhook WhatsApp, API token)
 URLS_PUBLICAS = [
@@ -8,12 +8,29 @@ URLS_PUBLICAS = [
 	'/media/',
     '/login/',
     '/logout/',
-    '/admin/',
+    settings.ADMIN_URL_PATH,
     '/api/whatsapp/webhook/',
     '/api/token/',
     '/api/token/refresh/',
     '/autocomplete_endereco_unidade/',
 ]
+
+
+class AdminIPAllowlistMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        admin_path = settings.ADMIN_URL_PATH
+        allowed_ips = getattr(settings, 'ADMIN_ALLOWED_IPS', [])
+
+        if request.path_info.startswith(admin_path) and allowed_ips:
+            forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+            client_ip = forwarded_for.split(',')[0].strip() if forwarded_for else request.META.get('REMOTE_ADDR', '').strip()
+            if client_ip not in allowed_ips:
+                return HttpResponseForbidden('Acesso ao admin bloqueado para este IP.')
+
+        return self.get_response(request)
 
 class LoginObrigatorioMiddleware:
     def __init__(self, get_response):
