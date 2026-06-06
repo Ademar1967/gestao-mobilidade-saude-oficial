@@ -3,6 +3,9 @@
 
 {% include 'partials/navbar.html' %}
 {% block content %}
+<div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
+  <strong>Aviso de edição:</strong> você está no template <strong>buscar_editar_paciente.html</strong>.
+</div>
 {% with breadcrumbs=[
   {'label': 'Início', 'url': url 'transporte_pacientes:home'},
   {'label': 'Pacientes', 'url': url 'transporte_pacientes:home'},

@@ -219,6 +219,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {% include 'partials/breadcrumbs_dynamic.html' %}
 {% block content %}
+<div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
+  <strong>Aviso de edição:</strong> você está no template <strong>cadastrar_transporte.html</strong>.
+</div>
 {% if messages %}
   <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:2000; min-width:340px; max-width:90vw;">
     {% for message in messages %}
