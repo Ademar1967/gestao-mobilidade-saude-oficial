@@ -1,0 +1,23 @@
+{% if messages %}
+  <div aria-live="polite" aria-atomic="true" class="mb-3">
+    {% for message in messages %}
+      {% if message.tags == 'error' %}
+        <div class="alert alert-danger fw-semibold border border-danger" role="alert">
+          {{ message }}
+        </div>
+      {% elif message.tags == 'warning' %}
+        <div class="alert alert-warning fw-semibold border border-warning" role="alert">
+          {{ message }}
+        </div>
+      {% elif message.tags == 'success' %}
+        <div class="alert alert-success fw-semibold border border-success" role="alert">
+          {{ message }}
+        </div>
+      {% else %}
+        <div class="alert alert-info fw-semibold border border-info" role="alert">
+          {{ message }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
