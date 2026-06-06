@@ -4,3 +4,5 @@ whitenoise
 gunicorn
 django-admin-interface
 django-colorfield
+django-crispy-forms
+crispy-bootstrap4
