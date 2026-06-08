@@ -1,5 +1,5 @@
-
 from django.db import models
+from django.utils import timezone
 
 class MensagemWhatsApp(models.Model):
     numero = models.CharField(max_length=30)
@@ -16,6 +16,11 @@ class Enfermagem(models.Model):
         return self.nome
 
 class Paciente(models.Model):
+    SERVICO_STATUS_CHOICES = [
+        ("ativo", "Ativo"),
+        ("suspenso", "Suspenso temporariamente"),
+        ("encerrado", "Encerrado"),
+    ]
     nome = models.CharField(max_length=100)
     cartao_sis = models.CharField("Cartão SIS", max_length=10, blank=True, help_text="Número do cartão do SUS/SIS de Mogi das Cruzes")
     idade = models.PositiveIntegerField(null=True, blank=True)
@@ -57,25 +62,99 @@ class Paciente(models.Model):
         ("obito", "Obito"),
         ("mudanca_cidade", "Mudanca de cidade"),
         ("nao_precisa", "Nao necessita mais transporte"),
+        ("suspensao_temporaria", "Suspensao temporaria"),
+        ("decisao_familiar", "Decisao familiar"),
+        ("retorno_servico", "Retorno ao servico"),
         ("outros", "Outros"),
     ]
+    servico_status = models.CharField(
+        max_length=20,
+        choices=SERVICO_STATUS_CHOICES,
+        default="ativo",
+        db_index=True,
+        help_text="Status operacional do paciente no servico de transporte"
+    )
     servico_ativo = models.BooleanField(default=True, db_index=True, help_text="Paciente apto a usar o servico de transporte")
     data_inativacao = models.DateTimeField(null=True, blank=True)
     motivo_inativacao = models.CharField(max_length=30, choices=MOTIVO_INATIVACAO_CHOICES, blank=True)
     observacao_inativacao = models.TextField(blank=True)
+    data_prevista_retorno = models.DateField(null=True, blank=True)
+
+    def atualizar_status_servico(
+        self,
+        novo_status,
+        motivo="outros",
+        observacao="",
+        data_prevista_retorno=None,
+        usuario_responsavel="",
+        save=True,
+    ):
+        status_anterior = self.servico_status or ("ativo" if self.servico_ativo else "encerrado")
+        motivo = motivo or "outros"
+        observacao = observacao or ""
+
+        self.servico_status = novo_status
+        self.servico_ativo = novo_status == "ativo"
+
+        if novo_status == "ativo":
+            self.data_inativacao = None
+            self.data_prevista_retorno = None
+            self.motivo_inativacao = ""
+            self.observacao_inativacao = ""
+        else:
+            self.data_inativacao = timezone.now()
+            self.motivo_inativacao = motivo
+            self.observacao_inativacao = observacao
+            self.data_prevista_retorno = data_prevista_retorno if novo_status == "suspenso" else None
+
+        if save:
+            self.save()
+
+        if self.pk:
+            PacienteStatusHistorico.objects.create(
+                paciente=self,
+                status_anterior=status_anterior,
+                status_novo=novo_status,
+                motivo=motivo,
+                observacao=observacao,
+                data_prevista_retorno=data_prevista_retorno if novo_status == "suspenso" else None,
+                usuario_responsavel=usuario_responsavel or "",
+            )
+
+        return self
+
+    def suspender(self, motivo="suspensao_temporaria", observacao="", data_prevista_retorno=None, usuario_responsavel=""):
+        return self.atualizar_status_servico(
+            novo_status="suspenso",
+            motivo=motivo,
+            observacao=observacao,
+            data_prevista_retorno=data_prevista_retorno,
+            usuario_responsavel=usuario_responsavel,
+        )
+
+    def encerrar(self, motivo="outros", observacao="", usuario_responsavel=""):
+        return self.atualizar_status_servico(
+            novo_status="encerrado",
+            motivo=motivo,
+            observacao=observacao,
+            usuario_responsavel=usuario_responsavel,
+        )
 
     def inativar(self, motivo="outros", observacao=""):
-        from django.utils import timezone
-        self.servico_ativo = False
-        self.data_inativacao = timezone.now()
-        self.motivo_inativacao = motivo or "outros"
-        self.observacao_inativacao = observacao or ""
+        # Compatibilidade retroativa: inativar continua funcionando e equivale a encerrar.
+        return self.encerrar(motivo=motivo, observacao=observacao)
 
-    def reativar(self):
-        self.servico_ativo = True
-        self.data_inativacao = None
-        self.motivo_inativacao = ""
-        self.observacao_inativacao = ""
+    def reativar(self, observacao="", usuario_responsavel=""):
+        return self.atualizar_status_servico(
+            novo_status="ativo",
+            motivo="retorno_servico",
+            observacao=observacao,
+            usuario_responsavel=usuario_responsavel,
+        )
+
+    @property
+    def pode_agendar_transporte(self):
+        return self.servico_status == "ativo" and self.servico_ativo
 
     def __str__(self):
         return self.nome
@@ -119,6 +198,25 @@ class Paciente(models.Model):
             'endereco': self.endereco_formatado(),
             'contato': self.contato_formatado(),
         }
+
+
+class PacienteStatusHistorico(models.Model):
+    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='historico_status_servico')
+    status_anterior = models.CharField(max_length=20, choices=Paciente.SERVICO_STATUS_CHOICES)
+    status_novo = models.CharField(max_length=20, choices=Paciente.SERVICO_STATUS_CHOICES)
+    motivo = models.CharField(max_length=30, choices=Paciente.MOTIVO_INATIVACAO_CHOICES, blank=True)
+    observacao = models.TextField(blank=True)
+    data_prevista_retorno = models.DateField(null=True, blank=True)
+    usuario_responsavel = models.CharField(max_length=150, blank=True)
+    data_evento = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-data_evento"]
+        verbose_name = "Histórico de status do paciente"
+        verbose_name_plural = "Históricos de status dos pacientes"
+
+    def __str__(self):
+        return f"{self.paciente.nome}: {self.status_anterior} -> {self.status_novo}"
 
 class Veiculo(models.Model):
     TIPO_CHOICES = [
@@ -215,6 +313,3 @@ class Transporte(models.Model):
             'enfermagem': self.enfermagem.nome if self.enfermagem else '',
             'paciente': paciente_ops,
         }
-from django.db import models
-
-# Create your models here.

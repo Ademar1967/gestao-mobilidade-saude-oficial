@@ -149,13 +149,6 @@ function exibirModalConfirmarPreencher(paciente) {
 
 {% include 'partials/breadcrumbs_dynamic.html' %}
 
-
-<div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
-  <strong>Aviso de edição:</strong> você está no template <strong>cadastrar_paciente.html</strong>.
-</div>
-
-
-
 <div class="row g-3 mb-3">
   <div class="d-flex gap-2 mb-2">
     <button class="btn btn-info btn-sm fw-bold shadow-sm d-flex align-items-center gap-1 px-3 py-1" type="button" data-bs-toggle="collapse" data-bs-target="#instrucoesExportImport" aria-expanded="false" aria-controls="instrucoesExportImport">
@@ -730,6 +723,26 @@ document.addEventListener('DOMContentLoaded', function() {
           </ul>
         </div>
       {% endif %}
+      <div class="alert alert-info" role="alert" id="orientacao-campos-paciente" style="border-left:4px solid #0dcaf0;">
+        <div class="fw-bold mb-1">Orientação de preenchimento</div>
+        <div class="small mb-2">
+          Para salvar, preencha os <span class="text-danger fw-bold">campos obrigatórios</span>. Os demais podem ser completados depois em Editar.
+        </div>
+        <div class="small mb-1 fw-semibold">Campos obrigatórios deste formulário:</div>
+        <div class="d-flex flex-wrap gap-1 mb-2">
+          {% for field in form %}
+            {% if field.field.required %}
+              <span class="badge text-bg-danger">{{ field.label }}</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="small mb-1 fw-semibold">Campos condicionais (inativação):</div>
+        <ul class="small mb-0 ps-3">
+          <li>Se Serviço status estiver em Ativo, deixe Data inativação e Motivo inativação em branco.</li>
+          <li>Se Serviço status estiver em Suspenso temporariamente ou Encerrado, preencha Data inativação e Motivo inativação.</li>
+          <li>Data prevista retorno é opcional e usada quando houver expectativa de reativação.</li>
+        </ul>
+      </div>
       {% csrf_token %}
       <input type="hidden" name="paciente_existente_id" id="id_paciente_existente_id" value="{{ request.POST.paciente_existente_id|default:'' }}">
       <fieldset class="card shadow-sm mb-3">
@@ -930,6 +943,67 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
       </fieldset>
+
+      <fieldset class="card shadow-sm mb-3" id="card-status-servico">
+        <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#fff3e0; color:#e65100; border-radius:6px 6px 0 0;">Status no Serviço de Transporte</legend>
+        <div class="card-body pb-2">
+          <div class="row g-2">
+            <div class="col-md-4 mb-2">
+              {{ form.servico_status.label_tag }}<span class="text-danger">*</span>
+              {{ form.servico_status }}
+              <small class="form-text text-muted">No cadastro novo, o padrão é <strong>Ativo</strong>.</small>
+              {% if form.servico_status.errors %}
+                <div class="text-danger small">{{ form.servico_status.errors }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-4 mb-2 d-flex align-items-end">
+              <div class="form-check">
+                {{ form.servico_ativo }}
+                {{ form.servico_ativo.label_tag }}
+                <small class="d-block form-text text-muted">Marcado automaticamente quando o status estiver em Ativo.</small>
+              </div>
+              {% if form.servico_ativo.errors %}
+                <div class="text-danger small">{{ form.servico_ativo.errors }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div id="campos-inativacao" class="border rounded p-2 mt-2" style="background:#fff8f6;">
+            <div class="small fw-semibold mb-2">Preencha estes campos quando o status for Suspenso temporariamente ou Encerrado.</div>
+            <div class="row g-2">
+              <div class="col-md-4 mb-2">
+                {{ form.data_inativacao.label_tag }}
+                {{ form.data_inativacao }}
+                {% if form.data_inativacao.errors %}
+                  <div class="text-danger small">{{ form.data_inativacao.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 mb-2">
+                {{ form.motivo_inativacao.label_tag }}
+                {{ form.motivo_inativacao }}
+                {% if form.motivo_inativacao.errors %}
+                  <div class="text-danger small">{{ form.motivo_inativacao.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 mb-2">
+                {{ form.data_prevista_retorno.label_tag }}
+                {{ form.data_prevista_retorno }}
+                {% if form.data_prevista_retorno.errors %}
+                  <div class="text-danger small">{{ form.data_prevista_retorno.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="col-12 mb-2">
+                {{ form.observacao_inativacao.label_tag }}
+                {{ form.observacao_inativacao }}
+                {% if form.observacao_inativacao.errors %}
+                  <div class="text-danger small">{{ form.observacao_inativacao.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
       {{ form.latitude }}
       {{ form.longitude }}
       <div class="mb-3 mt-3 p-2 border rounded bg-light">
@@ -1036,6 +1110,28 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   atualizarContador();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  var statusSelect = document.getElementById('id_servico_status');
+  var servicoAtivo = document.getElementById('id_servico_ativo');
+  var blocoInativacao = document.getElementById('campos-inativacao');
+
+  function atualizarCamposStatus() {
+    if (!statusSelect || !blocoInativacao) return;
+    var status = statusSelect.value || 'ativo';
+    var estaAtivo = status === 'ativo';
+
+    blocoInativacao.style.display = estaAtivo ? 'none' : 'block';
+    if (servicoAtivo) {
+      servicoAtivo.checked = estaAtivo;
+    }
+  }
+
+  if (statusSelect) {
+    statusSelect.addEventListener('change', atualizarCamposStatus);
+    atualizarCamposStatus();
+  }
 });
 </script>
 <script>
@@ -1514,10 +1610,13 @@ if (inputNome) {
 
 <div class="text-center mt-4 mb-2">
   <button id="toggleHistoricoBtn" class="btn btn-outline-warning btn-sm px-4 py-2 btn-afunda" type="button" onclick="toggleHistorico()" style="color: #fff; background-color: #ff9800; border-color: #ff9800;">
-    <span id="toggleHistoricoText">Mostrar lista de pacientes</span>
+    <span id="toggleHistoricoText">Ocultar lista de pacientes</span>
   </button>
 </div>
-<div id="historicoPacientes" style="display: none;">
+<div id="historicoPacientes" style="display: block;">
+  <div class="alert alert-success py-2 mb-2" style="border-left:4px solid #2b8a3e;">
+    Histórico ativo: pacientes cadastrados ficam salvos no banco de dados e continuam disponíveis após fechar/reabrir a página.
+  </div>
   {% include 'transporte_pacientes/_historico_pacientes.html' %}
 </div>
 
@@ -1606,6 +1705,9 @@ if (inputNome) {
 
 {% block extra_scripts %}
 <script>
+  var HISTORICO_PACIENTES_STORAGE_KEY = 'historicoPacientesVisivel';
+  var PACIENTE_DRAFT_STORAGE_KEY = 'rascunhoCadastroPacienteV1';
+
   function toggleHistorico() {
     var historico = document.getElementById('historicoPacientes');
     var btnText = document.getElementById('toggleHistoricoText');
@@ -1613,21 +1715,117 @@ if (inputNome) {
     if (historico.style.display === 'none' || historico.style.display === '') {
       historico.style.display = 'block';
       btnText.textContent = 'Ocultar lista de pacientes';
+      try { localStorage.setItem(HISTORICO_PACIENTES_STORAGE_KEY, '1'); } catch (e) {}
+    } else {
+      historico.style.display = 'none';
+      btnText.textContent = 'Mostrar lista de pacientes';
+      try { localStorage.setItem(HISTORICO_PACIENTES_STORAGE_KEY, '0'); } catch (e) {}
+    }
+  }
+
+  function aplicarPreferenciaHistorico() {
+    var historico = document.getElementById('historicoPacientes');
+    var btnText = document.getElementById('toggleHistoricoText');
+    if (!historico || !btnText) return;
+
+    var visivel = '1';
+    try {
+      var salvo = localStorage.getItem(HISTORICO_PACIENTES_STORAGE_KEY);
+      if (salvo === '0' || salvo === '1') visivel = salvo;
+    } catch (e) {}
+
+    if (visivel === '1') {
+      historico.style.display = 'block';
+      btnText.textContent = 'Ocultar lista de pacientes';
     } else {
       historico.style.display = 'none';
       btnText.textContent = 'Mostrar lista de pacientes';
     }
   }
+
   document.addEventListener('DOMContentLoaded', function() {
-    var historico = document.getElementById('historicoPacientes');
-    var btnText = document.getElementById('toggleHistoricoText');
-    if (btnText) {
-      if (!historico || historico.style.display === 'none' || historico.style.display === '') {
-        btnText.textContent = 'Mostrar lista de pacientes';
-      } else {
-        btnText.textContent = 'Ocultar lista de pacientes';
-      }
+    aplicarPreferenciaHistorico();
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('cadastrar-paciente-form');
+    if (!form) return;
+
+    var limparRascunhoAposSalvar = {% if limpar_rascunho_paciente %}true{% else %}false{% endif %};
+    var possuiErrosForm = {% if form.errors %}true{% else %}false{% endif %};
+
+    if (limparRascunhoAposSalvar) {
+      try { localStorage.removeItem(PACIENTE_DRAFT_STORAGE_KEY); } catch (e) {}
+      return;
     }
+
+    function coletarRascunho() {
+      var dados = {};
+      var campos = form.querySelectorAll('input, select, textarea');
+      campos.forEach(function(el) {
+        if (!el.name) return;
+        if (el.name === 'csrfmiddlewaretoken') return;
+        if (el.type === 'password' || el.type === 'file') return;
+
+        if (el.type === 'checkbox') {
+          dados[el.name] = !!el.checked;
+          return;
+        }
+
+        if (el.type === 'radio') {
+          if (el.checked) dados[el.name] = el.value;
+          return;
+        }
+
+        dados[el.name] = el.value;
+      });
+      return dados;
+    }
+
+    function aplicarRascunho(dados) {
+      Object.keys(dados || {}).forEach(function(nome) {
+        var els = form.querySelectorAll('[name="' + nome + '"]');
+        if (!els.length) return;
+
+        els.forEach(function(el) {
+          if (el.type === 'checkbox') {
+            el.checked = !!dados[nome];
+            return;
+          }
+          if (el.type === 'radio') {
+            el.checked = String(el.value) === String(dados[nome]);
+            return;
+          }
+          el.value = dados[nome];
+        });
+      });
+    }
+
+    function salvarRascunho() {
+      try {
+        localStorage.setItem(PACIENTE_DRAFT_STORAGE_KEY, JSON.stringify(coletarRascunho()));
+      } catch (e) {}
+    }
+
+    if (!possuiErrosForm) {
+      try {
+        var bruto = localStorage.getItem(PACIENTE_DRAFT_STORAGE_KEY);
+        if (bruto) {
+          aplicarRascunho(JSON.parse(bruto));
+        }
+      } catch (e) {}
+    }
+
+    var campos = form.querySelectorAll('input, select, textarea');
+    campos.forEach(function(el) {
+      if (!el.name || el.name === 'csrfmiddlewaretoken') return;
+      el.addEventListener('input', salvarRascunho);
+      el.addEventListener('change', salvarRascunho);
+    });
+
+    form.addEventListener('submit', function() {
+      try { localStorage.removeItem(PACIENTE_DRAFT_STORAGE_KEY); } catch (e) {}
+    });
   });
 </script>
 {% endblock %}

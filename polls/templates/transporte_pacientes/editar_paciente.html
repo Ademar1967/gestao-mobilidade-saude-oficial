@@ -5,13 +5,43 @@
 <div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
   <strong>Aviso de edição:</strong> você está no template <strong>editar_paciente.html</strong>.
 </div>
-{% with breadcrumbs=[
-  {'label': 'Início', 'url': url 'transporte_pacientes:home'},
-  {'label': 'Pacientes', 'url': url 'transporte_pacientes:home'},
-  {'label': 'Editar Paciente', 'url': ''}
-] %}
-  {% include 'partials/breadcrumbs_dynamic.html' %}
-{% endwith %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'transporte_pacientes:home' %}">Início</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'transporte_pacientes:home' %}">Pacientes</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Editar Paciente</li>
+  </ol>
+</nav>
+{% if request.GET.pendencias %}
+<div class="alert alert-danger py-3 mb-3 shadow-sm" style="border-left:6px solid #dc3545;">
+  <div class="d-flex align-items-start gap-2">
+    <i class="bi bi-exclamation-triangle-fill fs-4 mt-1"></i>
+    <div class="w-100">
+      <div class="fw-bold mb-1">Atenção: este paciente precisa de correção antes de seguir</div>
+      <div class="small mb-2">
+        Os itens abaixo estão pendentes. Abra o formulário e corrija os campos destacados em amarelo/laranja.
+      </div>
+      <div class="mt-2 p-2 bg-white rounded border" id="checklist-pendencias-edicao"
+           data-pendencias="{{ request.GET.pendencias|escape }}"
+           data-campos="{{ request.GET.campos|default:''|escape }}">
+        <div class="fw-semibold small mb-1">O que precisa ser corrigido</div>
+        <div class="text-muted small mb-2">Clique em um item para ir direto ao campo correspondente.</div>
+        <ul class="small mb-0 ps-3" id="checklist-pendencias-lista">
+          <li>Carregando itens de correção...</li>
+        </ul>
+      </div>
+      <div class="alert alert-warning mt-3 mb-0 py-2 px-3">
+        <strong>Onde corrigir:</strong> role a página e procure os campos com borda laranja e fundo claro. Eles também são destacados automaticamente.
+      </div>
+    </div>
+  </div>
+  {% if request.GET.voltar %}
+    <a href="{{ request.GET.voltar }}" class="btn btn-warning btn-sm mt-2">
+      <i class="bi bi-arrow-left-circle me-1"></i> Voltar para transporte em lote
+    </a>
+  {% endif %}
+</div>
+{% endif %}
 <!-- MELHORIA ATIVA: Este formulário foi atualizado com melhorias de usabilidade. Última atualização: 07/03/2026. -->
 <div class="container mt-4">
   <div class="row justify-content-center">
@@ -22,11 +52,37 @@
           <h3 class="mb-0">Editar Paciente: {{ paciente.nome }}</h3>
         </div>
         <div class="card-body">
+          {% if pendencias_texto %}
+          <div class="alert alert-danger border border-danger border-3 shadow-sm mb-4 py-3">
+            <div class="fw-bold mb-1 fs-5">Campos que precisam ser corrigidos agora</div>
+                      <div class="small mb-2">Os blocos em vermelho abaixo são exatamente os campos que precisam ser corrigidos:</div>
+                      <div class="vstack gap-2" id="chips-pendencias-resumo">
+                        {% for pendencia in campos_pendentes_info %}
+                          <a href="#bloco-{{ pendencia.nome }}" class="text-decoration-none text-reset d-block">
+                            <div class="d-flex align-items-start gap-2 p-2 bg-white rounded border border-danger-subtle shadow-sm">
+                              <span class="badge bg-danger mt-1">{{ forloop.counter }}</span>
+                              <div class="flex-grow-1">
+                                <div class="fw-bold text-danger">{{ pendencia.label }}</div>
+                                <div class="small text-muted">{{ pendencia.descricao }}</div>
+                              </div>
+                              <span class="badge bg-warning text-dark align-self-center">Ir para o campo</span>
+                            </div>
+                          </a>
+                        {% empty %}
+                          <div class="small text-muted">Nenhum campo pendente foi identificado.</div>
+                        {% endfor %}
+                      </div>
+          </div>
+          {% endif %}
           <form method="post" autocomplete="on" id="form-editar-paciente" data-autosave="true" data-autosave-label="da edição de paciente">
             {% csrf_token %}
             {% for field in form %}
-              <div class="mb-3">
-                <label class="form-label fw-bold">{{ field.label }}</label>
+                        <div id="bloco-{{ field.name }}" class="mb-3{% if field.name in campos_pendentes %} campo-pendente-bloco{% endif %}" data-field-name="{{ field.name }}" {% if field.name in campos_pendentes %}style="background:linear-gradient(180deg,#fff5f5 0%,#ffe8e8 100%); border:5px solid #dc3545; box-shadow:0 0 0 4px rgba(220,53,69,.18), 0 10px 24px rgba(220,53,69,.15); border-radius:16px; padding:18px; position:relative; scroll-margin-top:120px;"{% endif %}>
+                {% if field.name in campos_pendentes %}
+                            <div class="campo-pendente-faixa mb-2" style="font-size:1rem;"><i class="bi bi-exclamation-octagon-fill"></i> CAMPO EXATO A CORRIGIR AGORA</div>
+                            <div class="small fw-semibold text-danger mb-2">Se este bloco estiver em vermelho, ele é a caixa exata que precisa de atenção.</div>
+                {% endif %}
+                          <label class="form-label fw-bold{% if field.name in campos_pendentes %} text-danger{% endif %}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.help_text %}
                   <small class="form-text text-muted">{{ field.help_text }}</small>
@@ -82,18 +138,125 @@
   .btn-orange-elevated:focus {
     outline: 2px solid #ff9800;
   }
+
+  #form-editar-paciente .campo-pendente-destaque {
+    border: 3px solid #dc3545 !important;
+    box-shadow: 0 0 0 0.25rem rgba(220,53,69,.28) !important;
+    background-color: #fff1f2 !important;
+    animation: pendenciaPulse 1.4s ease-in-out infinite;
+  }
+
+  #form-editar-paciente .campo-pendente-widget {
+    border: 4px solid #dc3545 !important;
+    background: #fff5f5 !important;
+    box-shadow: 0 0 0 3px rgba(220,53,69,.16) !important;
+    border-radius: 10px !important;
+    min-height: 44px;
+  }
+
+  #form-editar-paciente .campo-pendente-select2 {
+    border: 3px solid #dc3545 !important;
+    box-shadow: 0 0 0 0.25rem rgba(220,53,69,.28) !important;
+    border-radius: 10px !important;
+    animation: pendenciaPulse 1.4s ease-in-out infinite;
+  }
+
+  #form-editar-paciente .campo-pendente-select2 .select2-selection,
+  #form-editar-paciente .campo-pendente-select2 .select2-selection--single,
+  #form-editar-paciente .campo-pendente-select2 .select2-selection--multiple {
+    border: 4px solid #dc3545 !important;
+    background: #fff5f5 !important;
+    box-shadow: 0 0 0 3px rgba(220,53,69,.16) !important;
+    min-height: 44px;
+  }
+
+  @keyframes pendenciaPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+  }
+
+  #form-editar-paciente .campo-pendente-bloco {
+    border: 5px solid #dc3545 !important;
+    border-radius: 16px !important;
+    padding: 18px !important;
+    background: linear-gradient(180deg, #fff5f5 0%, #ffe8e8 100%) !important;
+    box-shadow: 0 0 0 4px rgba(220,53,69,.18), 0 10px 24px rgba(220,53,69,.15) !important;
+    position: relative;
+    scroll-margin-top: 120px;
+  }
+
+  #form-editar-paciente .campo-pendente-bloco::before {
+    content: "CAMPO EXATO A CORRIGIR";
+    position: absolute;
+    top: -12px;
+    right: 14px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    box-shadow: 0 4px 12px rgba(220,53,69,.3);
+  }
+
+  #form-editar-paciente .campo-pendente-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fff3cd;
+    color: #7a4b00;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  #form-editar-paciente .campo-pendente-aviso {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  #form-editar-paciente .campo-pendente-faixa {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-left: 6px solid #dc3545;
+    background: #fff1f2;
+    color: #7f1d1d;
+    font-weight: 800;
+    border-radius: 8px;
+  }
+
+  #form-editar-paciente .campo-pendente-detalhe {
+    margin-top: 4px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px dashed #dc3545;
+    border-radius: 10px;
+    color: #7f1d1d;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  #chips-pendencias-resumo .badge {
+    font-size: 0.82rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid rgba(220,53,69,.35);
+    background: #dc3545 !important;
+    color: #fff !important;
+  }
 </style>
-<div class="text-end mb-2" style="font-size:0.97em; color:#1976d2; font-weight:400;">
-  Última atualização: 07/03/2026 17:11
-</div>
-<script>
-  document.getElementById('fechar-melhoria').onclick = function() {
-    var alert = document.getElementById('melhoria-alert');
-    alert.style.transform = 'scale(0.97) translateY(2px)';
-    alert.style.boxShadow = '0 1px 2px #90caf9';
-    setTimeout(function(){ alert.style.display = 'none'; }, 120);
-  };
-</script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Efeito de afundamento para todos os botões
@@ -111,6 +274,185 @@
         btn.style.transform = '';
         btn.style.boxShadow = '';
       });
+    });
+
+    var params = new URLSearchParams(window.location.search);
+    var camposParam = (params.get('campos') || '').trim();
+    if (!camposParam) return;
+
+    var nomesCampos = camposParam.split(',').map(function(v) { return (v || '').trim(); }).filter(Boolean);
+    var primeiro = null;
+
+    nomesCampos.forEach(function(nomeCampo) {
+      var el = document.getElementById('id_' + nomeCampo) || document.querySelector('[name="' + nomeCampo + '"]');
+      if (!el) return;
+
+      el.classList.add('campo-pendente-destaque');
+
+      var select2Container = el.nextElementSibling;
+      if (select2Container && select2Container.classList && select2Container.classList.contains('select2')) {
+        select2Container.classList.add('campo-pendente-select2');
+      } else if (el.classList.contains('select2-hidden-accessible')) {
+        var wrapper = el.parentElement ? el.parentElement.querySelector('.select2') : null;
+        if (wrapper) {
+          wrapper.classList.add('campo-pendente-select2');
+        }
+      }
+
+      var bloco = el.closest('.mb-3') || el.closest('.form-check') || el.parentElement;
+      if (bloco) {
+        bloco.classList.add('campo-pendente-bloco');
+        bloco.id = bloco.id || ('bloco-' + nomeCampo);
+
+        if (!bloco.querySelector('.campo-pendente-faixa')) {
+          var faixa = document.createElement('div');
+          faixa.className = 'campo-pendente-faixa';
+          faixa.innerHTML = '<i class="bi bi-exclamation-octagon-fill"></i> Campo pendente: revise e corrija este item';
+          bloco.insertBefore(faixa, bloco.firstChild);
+        }
+
+        if (!bloco.querySelector('.campo-pendente-detalhe')) {
+          var detalhe = document.createElement('div');
+          detalhe.className = 'campo-pendente-detalhe';
+          detalhe.textContent = 'Este é o box exato da correção. Preencha este campo antes de salvar.';
+          bloco.appendChild(detalhe);
+        }
+
+        var label = bloco.querySelector('.form-label, label');
+        if (label) {
+          label.classList.add('campo-pendente-label');
+          if (!label.querySelector('.bi')) {
+            label.insertAdjacentHTML('afterbegin', '<i class="bi bi-pen-fill"></i>');
+          }
+        }
+
+        if (el.classList.contains('campo-pendente-widget')) {
+          el.setAttribute('aria-invalid', 'true');
+        }
+
+        if (!bloco.querySelector('.campo-pendente-aviso')) {
+          var aviso = document.createElement('div');
+          aviso.className = 'campo-pendente-aviso';
+          aviso.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i> Corrigir agora';
+          bloco.appendChild(aviso);
+        }
+      }
+
+      if (!primeiro) {
+        primeiro = el;
+      }
+    });
+
+    if (primeiro && primeiro.scrollIntoView) {
+      primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try { primeiro.focus({ preventScroll: true }); } catch (e) { try { primeiro.focus(); } catch (_) {} }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var box = document.getElementById('checklist-pendencias-edicao');
+    var lista = document.getElementById('checklist-pendencias-lista');
+    var chipsResumo = document.getElementById('chips-pendencias-resumo');
+    if (!box || !lista) return;
+
+    var campos = (box.getAttribute('data-campos') || '').trim();
+    var pendencias = (box.getAttribute('data-pendencias') || '').trim();
+
+    var itens = [];
+    var camposKeys = [];
+    var camposPermitidos = {
+      nome: true,
+      cartao_sis: true,
+      idade: true,
+      peso: true,
+      rua: true,
+      numero: true,
+      bairro: true,
+      cidade: true,
+      estado: true,
+      cep: true,
+      endereco: true,
+      referencia: true,
+      ddd: true,
+      telefone: true,
+      tratamento: true,
+      oxigenio: true,
+      oxigenio_litros_min: true,
+      observacoes: true,
+      evolucao: true,
+      status: true,
+      maca: true,
+      cadeirante: true,
+      acompanhantes: true,
+      latitude: true,
+      longitude: true,
+      consentimento_lgpd: true,
+      horario_consulta: true,
+      servico_status: true,
+      servico_ativo: true,
+      data_inativacao: true,
+      motivo_inativacao: true,
+      observacao_inativacao: true,
+      data_prevista_retorno: true
+    };
+    if (pendencias) {
+      itens = pendencias.split(',').map(function(item) { return (item || '').trim(); }).filter(Boolean);
+    }
+    if (!itens.length && campos) {
+      itens = campos.split(',').map(function(item) { return (item || '').trim(); }).filter(Boolean);
+    }
+    if (campos) {
+      camposKeys = campos.split(',').map(function(item) { return (item || '').trim(); });
+    }
+
+    lista.innerHTML = '';
+    if (chipsResumo) {
+      chipsResumo.innerHTML = '';
+    }
+    itens.forEach(function(item) {
+      var idx = itens.indexOf(item);
+      var campoKey = camposKeys[idx] || '';
+      if (campoKey && !camposPermitidos[campoKey]) {
+        return;
+      }
+
+      var itemNormalizado = item.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]+/g, '_');
+      if (!campoKey && (itemNormalizado.indexOf('tipo_de_transporte') !== -1 || itemNormalizado.indexOf('tipo_transporte') !== -1)) {
+        return;
+      }
+
+      var li = document.createElement('li');
+      if (campoKey) {
+        li.innerHTML = '<span class="badge bg-warning text-dark me-2">Pendente</span><a href="#id_' + campoKey + '" class="text-decoration-none fw-semibold js-ir-campo-pendente" data-campo="' + campoKey + '">' + item + '</a>';
+        if (chipsResumo) {
+          var chip = document.createElement('span');
+          chip.className = 'badge rounded-pill';
+          chip.textContent = item;
+          chipsResumo.appendChild(chip);
+        }
+      } else {
+        li.innerHTML = '<span class="badge bg-warning text-dark me-2">Pendente</span>' + item;
+      }
+      lista.appendChild(li);
+    });
+
+    if (!itens.length) {
+      var li = document.createElement('li');
+      li.textContent = 'Nenhum campo pendente informado.';
+      lista.appendChild(li);
+    }
+
+    lista.addEventListener('click', function(ev) {
+      var link = ev.target.closest('.js-ir-campo-pendente');
+      if (!link) return;
+      ev.preventDefault();
+      var alvo = document.getElementById(link.getAttribute('data-campo') ? 'id_' + link.getAttribute('data-campo') : '');
+      if (!alvo) {
+        alvo = document.querySelector(link.getAttribute('href'));
+      }
+      if (!alvo) return;
+      alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try { alvo.focus({ preventScroll: true }); } catch (e) { try { alvo.focus(); } catch (_) {} }
     });
   });
 </script>

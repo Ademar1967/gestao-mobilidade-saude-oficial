@@ -196,6 +196,11 @@ except (TypeError, ValueError):
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o navegador
 
+# Evita conflito de sessão entre múltiplos projetos Django rodando no mesmo host
+# (ex.: localhost:8000 e localhost:8001 compartilham escopo de cookie por domínio).
+SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME', 'tp_sessionid')
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME', 'tp_csrftoken')
+
 # Segurança condicional por ambiente.
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = 'Lax'

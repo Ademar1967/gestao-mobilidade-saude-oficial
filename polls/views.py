@@ -229,17 +229,67 @@ def cadastrar_transporte_lote(request):
 	from .models import Paciente, Transporte, Veiculo
 	from django.contrib import messages
 
+	def determinar_modo_lote(ids_pacientes, modo_informado=''):
+		"""Define modo padrão intuitivo: todos selecionados -> unico; parcial -> misto."""
+		modo_informado = (modo_informado or '').strip().lower()
+		if modo_informado in ('misto', 'unico'):
+			return modo_informado
+
+		ids_validos = [str(pid).strip() for pid in (ids_pacientes or []) if str(pid).strip()]
+		if not ids_validos:
+			return 'misto'
+
+		total_ativos = Paciente.objects.filter(servico_ativo=True).count()
+		if total_ativos > 0 and len(set(ids_validos)) == total_ativos:
+			return 'unico'
+		return 'misto'
+
+	def listar_campos_obrigatorios_faltando(post_data, modo_lote_atual, pacientes_validos_atual):
+		"""Retorna os campos obrigatórios ausentes no cadastro em lote."""
+		faltando = []
+
+		if not ((post_data.get('veiculo') or '').strip() or (post_data.get('veiculo_livre') or '').strip()):
+			faltando.append('Veículo')
+		if not ((post_data.get('condutor') or '').strip() or (post_data.get('condutor_manual') or '').strip()):
+			faltando.append('Condutor')
+		if not (post_data.get('data_transporte') or '').strip():
+			faltando.append('Data do transporte')
+
+		if modo_lote_atual == 'unico':
+			if not ((post_data.get('clinica_unica') or '').strip() or (post_data.get('clinica_manual_unica') or '').strip()):
+				faltando.append('Clínica de destino para todos os pacientes selecionados')
+		else:
+			pacientes_sem_clinica = []
+			for paciente in pacientes_validos_atual:
+				clinica_id = (post_data.get(f'clinica_{paciente.id}') or '').strip()
+				clinica_manual = (post_data.get(f'clinica_manual_{paciente.id}') or '').strip()
+				if not clinica_id and not clinica_manual:
+					pacientes_sem_clinica.append(paciente.nome)
+			if pacientes_sem_clinica:
+				faltando.append(
+					'Clínica de destino pendente para: ' + ', '.join(pacientes_sem_clinica)
+				)
+
+		return faltando
+
 	import logging
 	logger = logging.getLogger("transporte_lote")
 	logger.info(f"Método da requisição: {request.method}")
 	logger.info(f"GET params: {request.GET}")
 	logger.info(f"POST params: {request.POST}")
 	logger.info(f"Iniciando processamento da view cadastrar_transporte_lote")
+	paciente_ids_sessao = request.session.get('paciente_ids_lote', [])
 	if request.method == 'POST':
+		otimizar_rota_mista = request.POST.get('otimizar_rota_mista') == '1'
+		ordem_pacientes_raw = request.POST.get('ordem_pacientes', '')
+		ordem_manual_editada = request.POST.get('ordem_manual_editada') == '1'
 		pacientes_ids = request.POST.getlist('pacientes')
 		if not pacientes_ids:
 			pacientes_ids = request.GET.get('paciente_ids', '').split(',') if request.GET.get('paciente_ids') else []
+		if not pacientes_ids and paciente_ids_sessao:
+			pacientes_ids = [str(pid) for pid in paciente_ids_sessao]
 		pacientes_ids = [pid for pid in pacientes_ids if str(pid).strip()]
+		modo_lote = determinar_modo_lote(pacientes_ids, request.POST.get('modo_lote', ''))
 		logger.info(f"POST - pacientes_ids recebidos: {pacientes_ids}")
 		nomes = []
 		total_acompanhantes = 0
@@ -260,9 +310,23 @@ def cadastrar_transporte_lote(request):
 				logger.warning(f"Paciente ID inválido: {paciente_id}")
 				continue
 		if not pacientes_validos:
-			messages.error(request, 'Nenhum paciente válido selecionado. Verifique os IDs informados.')
+			messages.error(request, 'Nenhum paciente válido selecionado. Volte para a lista e marque pelo menos um paciente para a viagem.')
 			logger.error(f"Nenhum paciente válido: {pacientes_ids}")
-			return redirect('transporte_pacientes:listar_transportes')
+			return redirect('transporte_pacientes:cadastrar_paciente')
+
+		campos_obrigatorios_faltando = listar_campos_obrigatorios_faltando(request.POST, modo_lote, pacientes_validos)
+		if campos_obrigatorios_faltando:
+			forms_validos = False
+			forms_erros.append('Campos obrigatórios ausentes: ' + '; '.join(campos_obrigatorios_faltando) + '.')
+
+		if ordem_manual_editada and ordem_pacientes_raw:
+			ordem_ids = [pid.strip() for pid in ordem_pacientes_raw.split(',') if pid.strip()]
+			if ordem_ids:
+				mapa_pacientes_validos = {str(p.id): p for p in pacientes_validos}
+				pacientes_ordenados = [mapa_pacientes_validos[pid] for pid in ordem_ids if pid in mapa_pacientes_validos]
+				ids_ja_incluidos = {str(p.id) for p in pacientes_ordenados}
+				pacientes_restantes = [p for p in pacientes_validos if str(p.id) not in ids_ja_incluidos]
+				pacientes_validos = pacientes_ordenados + pacientes_restantes
 
 		total_acompanhantes_pacientes = sum((getattr(p, 'acompanhantes', 0) or 0) for p in pacientes_validos)
 		total_passageiros = len(pacientes_validos) + total_acompanhantes_pacientes
@@ -284,10 +348,54 @@ def cadastrar_transporte_lote(request):
 			)
 
 		if forms_validos:
+			clinicas_por_id = {
+				str(c.get('id', '')): (c.get('nome', '') or '').strip()
+				for c in clinicas
+				if c.get('id')
+			}
+
+			def resolver_clinica_manual(clinica_id, clinica_manual):
+				clinica_manual = (clinica_manual or '').strip()
+				if clinica_manual:
+					return clinica_manual
+				return clinicas_por_id.get(str(clinica_id or '').strip(), '')
+
+			def normalizar_texto(valor):
+				return ' '.join((valor or '').strip().lower().split())
+
+			itens_lote = []
 			for paciente in pacientes_validos:
+				if modo_lote == 'unico':
+					clinica_id = request.POST.get('clinica_unica', '')
+					clinica_manual = request.POST.get('clinica_manual_unica', '')
+				else:
+					clinica_id = request.POST.get(f'clinica_{paciente.id}', '')
+					clinica_manual = request.POST.get(f'clinica_manual_{paciente.id}', '')
+
+				clinica_manual_resolvida = resolver_clinica_manual(clinica_id, clinica_manual)
+				itens_lote.append({
+					'paciente': paciente,
+					'clinica_manual': clinica_manual_resolvida,
+					'destino_display': clinica_manual_resolvida or 'Destino não informado',
+					'chave_rota': (
+						normalizar_texto(clinica_manual_resolvida),
+						normalizar_texto(getattr(paciente, 'bairro', '')),
+						normalizar_texto(getattr(paciente, 'nome', '')),
+					),
+				})
+
+			if modo_lote == 'misto' and otimizar_rota_mista and not ordem_manual_editada:
+				itens_lote = sorted(itens_lote, key=lambda item: item['chave_rota'])
+
+			sequencia_rota = []
+			for item in itens_lote:
+				paciente = item['paciente']
 				# Cria o form para cada paciente, já preenchendo o campo paciente
 				dados_post = request.POST.copy()
 				dados_post['paciente'] = paciente.id
+				dados_post.setdefault('tipo_transporte', 'CONSULTA')
+				dados_post['clinica'] = ''
+				dados_post['clinica_manual'] = item['clinica_manual']
 				form = TransporteForm(dados_post)
 				if form.is_valid():
 					transporte = form.save(commit=False)
@@ -297,13 +405,31 @@ def cadastrar_transporte_lote(request):
 					total_acompanhantes += acompanhantes
 					transporte.save()
 					nomes.append(paciente.nome)
+					if modo_lote == 'misto':
+						sequencia_rota.append(f"{len(sequencia_rota) + 1}. {paciente.nome} -> {item['destino_display']}")
 				else:
 					forms_validos = False
 					erros_paciente = form.errors.get('paciente', [])
 					if any(msg_duplicidade in str(erro).lower() for erro in erros_paciente):
 						pacientes_duplicados.append(paciente.nome)
 					else:
-						forms_erros.append(f"{paciente.nome}: verifique os campos obrigatórios.")
+						campos_pendentes = []
+						campos_pendentes_chaves = []
+						for nome_campo in form.errors.keys():
+							if nome_campo in ('paciente', '__all__'):
+								continue
+							if nome_campo in form.fields:
+								label_campo = form.fields[nome_campo].label or nome_campo
+							else:
+								label_campo = nome_campo
+							campos_pendentes.append(str(label_campo))
+							campos_pendentes_chaves.append(str(nome_campo))
+						forms_erros.append({
+							'paciente_id': paciente.id,
+							'paciente_nome': paciente.nome,
+							'campos_pendentes': campos_pendentes,
+							'campos_pendentes_chaves': campos_pendentes_chaves,
+						})
 		if nomes and forms_validos:
 			if len(nomes) == 1:
 				messages.success(request, f'Transporte cadastrado para o paciente "{nomes[0]}".')
@@ -315,7 +441,13 @@ def cadastrar_transporte_lote(request):
 					f'Atenção: cadastro confirmado com excesso de lotação sob responsabilidade do usuário. '
 					f'Total operacional {total_operacional} para lotação {veiculo_lote.lotacao} ({veiculo_lote}).'
 				)
+			if modo_lote == 'misto' and otimizar_rota_mista and sequencia_rota:
+				resumo_sequencia = ' | '.join(sequencia_rota[:8])
+				if len(sequencia_rota) > 8:
+					resumo_sequencia += ' | ...'
+				messages.info(request, f'Sequência sugerida da rota mista: {resumo_sequencia}')
 			messages.info(request, f'Total de acompanhantes informados: {total_acompanhantes}')
+			request.session['limpar_rascunho_transporte_lote'] = True
 			return redirect('transporte_pacientes:listar_transportes')
 		else:
 			if pacientes_duplicados:
@@ -325,15 +457,41 @@ def cadastrar_transporte_lote(request):
 					f'Pacientes: {", ".join(pacientes_duplicados)}.'
 				)
 			else:
-				if forms_erros and all(str(e).startswith('Excesso de lotação:') for e in forms_erros):
+				if forms_erros and all(isinstance(e, str) and str(e).startswith('Excesso de lotação:') for e in forms_erros):
 					erro_msg = ''
 				else:
 					erro_msg = 'Preencha os campos obrigatórios e selecione pelo menos um paciente.'
 			if forms_erros:
+				from urllib.parse import quote_plus
+				from django.urls import reverse
+				from django.utils.html import format_html
+				from django.utils.html import escape
+				from django.utils.safestring import mark_safe
+
+				paciente_ids_param = ','.join(str(pid) for pid in pacientes_ids if str(pid).strip())
+				url_lote_retorno = f"{reverse('transporte_pacientes:cadastrar_transporte_lote')}?paciente_ids={paciente_ids_param}"
+				itens_html = []
+
+				for erro in forms_erros:
+					if isinstance(erro, dict):
+						campos_txt = ', '.join(erro.get('campos_pendentes') or ['campos obrigatórios'])
+						campos_chaves_txt = ','.join(erro.get('campos_pendentes_chaves') or [])
+						url_editar = (
+							f"{reverse('transporte_pacientes:editar_paciente', args=[erro['paciente_id']])}"
+							f"?pendencias={quote_plus(campos_txt)}&campos={quote_plus(campos_chaves_txt)}&voltar={quote_plus(url_lote_retorno)}"
+						)
+						itens_html.append(
+							f'<li><strong>{escape(erro["paciente_nome"])}</strong>: verifique {escape(campos_txt)}. '
+							f'<a href="{escape(url_editar)}" class="btn btn-sm btn-warning ms-2">Corrigir no cadastro</a></li>'
+						)
+					else:
+						itens_html.append(f'<li>{escape(erro)}</li>')
+
+				lista_erros_html = mark_safe('<ul class="mb-0">' + ''.join(itens_html) + '</ul>')
 				if erro_msg:
-					erro_msg += '\n' + '\n'.join(forms_erros)
+					erro_msg = format_html('{}<br>{}', erro_msg, lista_erros_html)
 				else:
-					erro_msg = '\n'.join(forms_erros)
+					erro_msg = lista_erros_html
 			messages.error(request, erro_msg)
 		form = TransporteForm(request.POST)  # Para manter dados preenchidos na tela
 		pacientes = Paciente.objects.filter(id__in=pacientes_ids)
@@ -349,8 +507,12 @@ def cadastrar_transporte_lote(request):
 
 		return render(request, 'transporte_pacientes/cadastrar_transporte_lote.html', {
 			'form': form,
+			'modo_lote': modo_lote,
+			'limpar_rascunho_transporte_lote': False,
+			'otimizar_rota_mista': request.POST.get('otimizar_rota_mista') == '1',
 			'forcar_duplicado': request.POST.get('forcar_duplicado') == '1',
 			'forcar_excesso_lotacao': request.POST.get('forcar_excesso_lotacao') == '1',
+			'pacientes_duplicados': pacientes_duplicados,
 			'pacientes_disponiveis': pacientes_disponiveis,
 			'pacientes_ids': pacientes_ids,
 			'paciente_ids_lote': [str(pid) for pid in pacientes_ids if str(pid)],
@@ -365,18 +527,24 @@ def cadastrar_transporte_lote(request):
 	else:
 		form = TransporteForm()
 		pacientes_ids = request.GET.get('paciente_ids', '').split(',') if request.GET.get('paciente_ids') else []
+		if not pacientes_ids and paciente_ids_sessao:
+			pacientes_ids = [str(pid) for pid in paciente_ids_sessao]
 		pacientes_ids = [pid for pid in pacientes_ids if str(pid).strip()]
+		modo_lote = determinar_modo_lote(pacientes_ids, request.GET.get('modo_lote', ''))
+		limpar_rascunho_transporte_lote = bool(request.session.pop('limpar_rascunho_transporte_lote', False))
 		logger.info(f"GET - pacientes_ids recebidos: {pacientes_ids}")
 		pacientes_disponiveis = Paciente.objects.filter(servico_ativo=True).order_by('-data_cadastro')
 		if pacientes_ids:
 			pacientes = Paciente.objects.filter(id__in=pacientes_ids, servico_ativo=True)
 			logger.info(f"Pacientes encontrados: {[p.id for p in pacientes]}")
 			if not pacientes.exists():
-				messages.error(request, 'Nenhum paciente válido encontrado para os IDs informados.')
+				messages.error(request, 'Nenhum paciente válido encontrado para os IDs informados. Volte à lista de pacientes e selecione novamente.')
 				logger.error(f"Nenhum paciente válido encontrado para: {pacientes_ids}")
+				return redirect('transporte_pacientes:cadastrar_paciente')
 		else:
 			pacientes = []
-			messages.warning(request, 'Nenhum paciente selecionado para o lote.')
+			messages.warning(request, 'Nenhum paciente selecionado. Volte à lista de pacientes e marque pelo menos um item para a viagem.')
+			return redirect('transporte_pacientes:cadastrar_paciente')
 
 		# Calcular total de acompanhantes (preferir valores do POST se houver)
 		if request.method == 'POST' and pacientes_ids:
@@ -404,8 +572,12 @@ def cadastrar_transporte_lote(request):
 
 		return render(request, 'transporte_pacientes/cadastrar_transporte_lote.html', {
 			'form': form,
+			'modo_lote': modo_lote,
+			'limpar_rascunho_transporte_lote': limpar_rascunho_transporte_lote,
+			'otimizar_rota_mista': request.GET.get('otimizar_rota_mista', '1') == '1',
 			'forcar_duplicado': False,
 			'forcar_excesso_lotacao': False,
+			'pacientes_duplicados': [],
 			'pacientes_disponiveis': pacientes_disponiveis,
 			'pacientes_ids': pacientes_ids,
 			   'paciente_ids_lote': [str(pid) for pid in pacientes_ids if str(pid)],
@@ -557,6 +729,7 @@ def cadastrar_paciente(request):
 					   messages.warning(request, f'Paciente salvo, mas não foi possível mover o arquivo: {exc}')
 
 			   messages.success(request, msg_html)
+			   request.session['limpar_rascunho_paciente'] = True
 			   return redirect('transporte_pacientes:cadastrar_paciente')
 		   else:
 			   detalhes_erros = []
@@ -577,6 +750,7 @@ def cadastrar_paciente(request):
 			   messages.error(request, msg_erro)
 	else:
 		form = PacienteForm()
+	limpar_rascunho_paciente = bool(request.session.pop('limpar_rascunho_paciente', False))
 	pacientes = Paciente.objects.all().order_by('-id')
 	# Cálculo robusto dos totais
 	total_pacientes = pacientes.count()
@@ -588,6 +762,7 @@ def cadastrar_paciente(request):
 		'total_pacientes': total_pacientes,
 		'total_acompanhantes': total_acompanhantes,
 		'total_geral': total_geral,
+		'limpar_rascunho_paciente': limpar_rascunho_paciente,
 	})
 def excluir_selecionadas_enfermagem(request):
 	"""Exclui os membros de enfermagem marcados via checkbox na listagem."""
@@ -905,6 +1080,18 @@ from django.utils import timezone
 def cadastrar_transporte_v2(request):
 	"""Fluxo legado mantido apenas como atalho para o cadastro em lote."""
 	messages.info(request, 'O fluxo V2 foi descontinuado. Use o cadastro em lote, que e mais completo.')
+	return redirect('transporte_pacientes:cadastrar_transporte_lote')
+
+
+def preparar_cadastro_transporte_lote(request):
+	"""Armazena os pacientes selecionados em sessão e abre o cadastro em lote."""
+	if request.method != 'POST':
+		return redirect('transporte_pacientes:listar_transportes')
+
+	paciente_ids_raw = request.POST.get('paciente_ids', '')
+	paciente_ids = [pid.strip() for pid in paciente_ids_raw.split(',') if pid.strip()]
+	request.session['paciente_ids_lote'] = paciente_ids
+	request.session['paciente_ids_lote_origem'] = 'historico_pacientes'
 	return redirect('transporte_pacientes:cadastrar_transporte_lote')
 import logging
 import shutil
@@ -1304,6 +1491,7 @@ def listar_transportes(request):
 				break
 
 	return render(request, 'transporte_pacientes/listar_transportes.html', {
+		'transportes': transportes_qs,
 		'grupos': grupos,
 		'novo_lote': novo_lote,
 		'novo_lote_info': novo_lote_info,
@@ -1378,6 +1566,66 @@ def cadastrar_transporte(request):
 			messages.error(request, f'Nao foi possivel cadastrar transporte. {first_error}')
 		else:
 			messages.error(request, 'Nao foi possivel cadastrar transporte. Verifique os campos obrigatorios.')
+
+		paciente_id_post = str(post_data.get('paciente') or '').strip()
+		if paciente_id_post.isdigit():
+			paciente_ref = Paciente.objects.filter(id=int(paciente_id_post)).first()
+			if paciente_ref:
+				from urllib.parse import quote_plus
+				from django.urls import reverse
+				from django.utils.html import format_html
+
+				pendencias = []
+				pendencias_chaves = []
+				if not getattr(paciente_ref, 'consentimento_lgpd', False):
+					pendencias.append('Li e concordo com o tratamento dos dados pessoais conforme a LGPD')
+					pendencias_chaves.append('consentimento_lgpd')
+				if not (getattr(paciente_ref, 'servico_status', '') or '').strip():
+					pendencias.append('Servico status')
+					pendencias_chaves.append('servico_status')
+				if getattr(paciente_ref, 'acompanhantes', None) is None:
+					pendencias.append('Acompanhantes')
+					pendencias_chaves.append('acompanhantes')
+
+				if not (getattr(paciente_ref, 'rua', '') or '').strip():
+					pendencias.append('Rua')
+					pendencias_chaves.append('rua')
+				if not (getattr(paciente_ref, 'numero', '') or '').strip():
+					pendencias.append('Numero')
+					pendencias_chaves.append('numero')
+				if not (getattr(paciente_ref, 'bairro', '') or '').strip():
+					pendencias.append('Bairro')
+					pendencias_chaves.append('bairro')
+				if not (getattr(paciente_ref, 'cidade', '') or '').strip():
+					pendencias.append('Cidade')
+					pendencias_chaves.append('cidade')
+
+				status_ref = getattr(paciente_ref, 'servico_status', '') or ''
+				if status_ref in ('suspenso', 'encerrado'):
+					if not getattr(paciente_ref, 'data_inativacao', None):
+						pendencias.append('Data inativacao')
+						pendencias_chaves.append('data_inativacao')
+					if not (getattr(paciente_ref, 'motivo_inativacao', '') or '').strip():
+						pendencias.append('Motivo inativacao')
+						pendencias_chaves.append('motivo_inativacao')
+
+				if pendencias:
+					pendencias_txt = ', '.join(pendencias)
+					pendencias_chaves_txt = ','.join(pendencias_chaves)
+					url_voltar = f"{reverse('transporte_pacientes:cadastrar_transporte')}?paciente_id={paciente_ref.id}"
+					url_editar = (
+						f"{reverse('transporte_pacientes:editar_paciente', args=[paciente_ref.id])}"
+						f"?pendencias={quote_plus(pendencias_txt)}&campos={quote_plus(pendencias_chaves_txt)}&voltar={quote_plus(url_voltar)}"
+					)
+					messages.warning(
+						request,
+						format_html(
+							'{}: itens para corrigir/complementar: {}. <a href="{}" class="btn btn-sm btn-warning ms-2">Corrigir no cadastro</a>',
+							paciente_ref.nome,
+							pendencias_txt,
+							url_editar,
+						),
+					)
 		lote_id_ctx = post_data.get('lote_id', '').strip()
 	else:
 		# GET: pré-preenchimentos
@@ -1661,8 +1909,128 @@ def editar_paciente(request, pk):
 	from django.shortcuts import get_object_or_404, redirect, render
 	from .forms import PacienteForm
 	from .models import Paciente
+	import re
+	import unicodedata
+
+	def _descricao_pendencia(campo):
+		mapa = {
+			'nome': 'Informe o nome completo do paciente.',
+			'cartao_sis': 'Preencha o CPF/CNS/cartao de identificacao usado no cadastro.',
+			'idade': 'Informe a idade correta do paciente.',
+			'peso': 'Preencha o peso atual do paciente.',
+			'rua': 'Informe a rua ou logradouro.',
+			'numero': 'Informe o numero do endereco.',
+			'bairro': 'Informe o bairro.',
+			'cidade': 'Informe a cidade.',
+			'estado': 'Informe o estado.',
+			'cep': 'Informe o CEP.',
+			'endereco': 'Complete o endereco principal do paciente.',
+			'referencia': 'Adicione um ponto de referencia, se existir.',
+			'ddd': 'Informe o DDD do telefone.',
+			'telefone': 'Informe um telefone de contato.',
+			'tratamento': 'Informe o tipo de tratamento, se aplicavel.',
+			'oxigenio': 'Confirme se o paciente usa oxigenio.',
+			'oxigenio_litros_min': 'Informe a vazao de oxigenio, quando necessario.',
+			'observacoes': 'Registre observacoes importantes.',
+			'evolucao': 'Registre a evolucao/estado clinico.',
+			'status': 'Selecione o status correto do paciente.',
+			'maca': 'Marque se o paciente precisa de maca.',
+			'cadeirante': 'Marque se o paciente usa cadeira de rodas.',
+			'acompanhantes': 'Informe a quantidade de acompanhantes.',
+			'latitude': 'Informe a latitude, se existir.',
+			'longitude': 'Informe a longitude, se existir.',
+			'consentimento_lgpd': 'Confirme o consentimento LGPD.',
+			'horario_consulta': 'Informe o horario da consulta.',
+			'servico_status': 'Selecione se o paciente esta ativo, suspenso ou encerrado.',
+			'servico_ativo': 'Comece com ativo, ou ajuste conforme a situacao real.',
+			'data_inativacao': 'Informe a data da inativacao.',
+			'motivo_inativacao': 'Explique o motivo da inativacao.',
+			'observacao_inativacao': 'Detalhe a observacao da inativacao.',
+			'data_prevista_retorno': 'Informe a data prevista para retorno, se houver.',
+		}
+		return mapa.get(campo, 'Este e o campo exato que precisa de revisao.')
+
+	def _normalizar(texto):
+		return unicodedata.normalize('NFKD', str(texto)).encode('ASCII', 'ignore').decode('ASCII').lower().strip()
+
+	def _quebrar_pendencias_texto(texto):
+		itens = []
+		for parte in re.split(r'[\n;,]+', texto or ''):
+			parte = (parte or '').strip()
+			if parte:
+				itens.append(parte)
+		return itens
+
+	def _inferir_campo_por_texto(texto_item, form_ref):
+		texto_norm = _normalizar(texto_item)
+		aliases = {
+			'nome': 'nome',
+			'cartao sis': 'cartao_sis',
+			'cartao_sis': 'cartao_sis',
+			'idade': 'idade',
+			'peso': 'peso',
+			'rua': 'rua',
+			'logradouro': 'rua',
+			'numero': 'numero',
+			'bairro': 'bairro',
+			'cidade': 'cidade',
+			'estado': 'estado',
+			'uf': 'estado',
+			'cep': 'cep',
+			'endereco': 'endereco',
+			'referencia': 'referencia',
+			'ddd': 'ddd',
+			'telefone': 'telefone',
+			'tratamento': 'tratamento',
+			'oxigenio': 'oxigenio',
+			'fluxo de o2 em litros por minuto': 'oxigenio_litros_min',
+			'oxigenio litros min': 'oxigenio_litros_min',
+			'litros por minuto': 'oxigenio_litros_min',
+			'observacoes': 'observacoes',
+			'evolucao': 'evolucao',
+			'status': 'status',
+			'maca': 'maca',
+			'cadeirante': 'cadeirante',
+			'acompanhantes': 'acompanhantes',
+			'latitude': 'latitude',
+			'longitude': 'longitude',
+			'lgpd': 'consentimento_lgpd',
+			'consentimento': 'consentimento_lgpd',
+			'horario da consulta': 'horario_consulta',
+			'horario consulta': 'horario_consulta',
+			'servico status': 'servico_status',
+			'servico ativo': 'servico_ativo',
+			'data inativacao': 'data_inativacao',
+			'motivo inativacao': 'motivo_inativacao',
+			'observacao inativacao': 'observacao_inativacao',
+			'data prevista retorno': 'data_prevista_retorno',
+		}
+		for chave, campo in aliases.items():
+			if chave in texto_norm and campo in form_ref.fields:
+				return campo
+		for nome_campo, field in form_ref.fields.items():
+			label_norm = _normalizar(field.label or '')
+			helptxt_norm = _normalizar(field.help_text or '')
+			nome_norm = _normalizar(nome_campo)
+			if label_norm and label_norm in texto_norm:
+				return nome_campo
+			if nome_norm and nome_norm in texto_norm:
+				return nome_campo
+			if helptxt_norm and any(palavra and palavra in texto_norm for palavra in helptxt_norm.split()[:6]):
+				return nome_campo
+		return ''
+
+	def _limpar_lista_campos(valor):
+		itens = []
+		for item in (valor or '').split(','):
+			item = (item or '').strip()
+			if item and item not in itens:
+				itens.append(item)
+		return itens
 
 	paciente = get_object_or_404(Paciente, pk=pk)
+	campos_pendentes = _limpar_lista_campos(request.GET.get('campos', ''))
+	pendencias_texto = (request.GET.get('pendencias') or '').strip()
 	if request.method == 'POST':
 		form = PacienteForm(request.POST, instance=paciente)
 		if form.is_valid():
@@ -1670,7 +2038,32 @@ def editar_paciente(request, pk):
 			return redirect('transporte_pacientes:cadastrar_paciente')
 	else:
 		form = PacienteForm(instance=paciente)
-	return render(request, 'transporte_pacientes/editar_paciente.html', {'form': form, 'paciente': paciente})
+
+	if not campos_pendentes and pendencias_texto:
+		for item in _quebrar_pendencias_texto(pendencias_texto):
+			campo_inferido = _inferir_campo_por_texto(item, form)
+			if campo_inferido and campo_inferido not in campos_pendentes:
+				campos_pendentes.append(campo_inferido)
+	campos_pendentes_info = []
+	for nome_campo in campos_pendentes:
+		label = form.fields[nome_campo].label if nome_campo in form.fields else nome_campo.replace('_', ' ').title()
+		if nome_campo in form.fields:
+			widget = form.fields[nome_campo].widget
+			widget.attrs['class'] = (widget.attrs.get('class', '') + ' campo-pendente-widget').strip()
+			widget.attrs['style'] = (widget.attrs.get('style', '') + ' border:4px solid #dc3545 !important; background:#fff5f5 !important; box-shadow:0 0 0 3px rgba(220,53,69,.16) !important;').strip()
+		campos_pendentes_info.append({
+			'nome': nome_campo,
+			'label': label,
+			'descricao': _descricao_pendencia(nome_campo),
+		})
+	return render(request, 'transporte_pacientes/editar_paciente.html', {
+		'form': form,
+		'paciente': paciente,
+		'campos_pendentes': campos_pendentes,
+		'campos_pendentes_info': campos_pendentes_info,
+		'pendencias_texto': pendencias_texto,
+		'voltar_transporte_url': request.GET.get('voltar', ''),
+	})
 
 
 def autocomplete_endereco_unidade(request):

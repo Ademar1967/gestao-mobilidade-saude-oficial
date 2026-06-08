@@ -25,70 +25,158 @@
 {% endif %}
 
 <div class="container mt-4">
-  <div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
-    <strong>Aviso de edição:</strong> você está no template <strong>cadastrar_transporte_lote.html</strong>.
-  </div>
   <div class="card shadow-sm">
-    <div class="card-header bg-primary text-white d-flex flex-column flex-md-row align-items-md-center justify-content-between">
-      <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Transporte em Lote — {{ pacientes|length }} paciente(s)</h4>
-      <div class="fw-bold mt-2 mt-md-0" style="font-size:1.1em; background:#1565c0; color:#fff; border-radius:6px; padding:0.4em 1em;">
-        Total no veículo: <span id="topo-total-pessoas">{{ pacientes|length|add:acompanhantes_count }}</span> pessoa(s)
-        <span class="text-light small ms-2">({{ pacientes|length }} paciente(s) + {{ acompanhantes_count }} acompanhante(s))</span>
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2" style="background:linear-gradient(90deg,#0b3d91 0%, #072a66 55%, #041b45 100%); border-bottom:2px solid #0d47a1;">
+      <h4 class="mb-0" style="color:#eaf2ff; font-weight:600; font-size:0.98rem; letter-spacing:.1px;"><i class="bi bi-truck me-2"></i>Transporte Compartilhado — {{ pacientes|length }} paciente(s)</h4>
+      <div style="font-size:0.98rem; font-weight:600; color:#eaf2ff;">
+        Total no veículo: <span id="topo-total-pessoas">{{ pacientes|length|add:acompanhantes_count|add:"1" }}</span> pessoa(s)
+        <span class="ms-2" style="font-size:0.98rem; color:#eaf2ff;">(<span id="topo-pacientes">{{ pacientes|length }}</span> paciente(s) + <span id="topo-acompanhantes">{{ acompanhantes_count }}</span> acompanhante(s) + <span id="topo-motorista">1</span> motorista)</span>
+        <span id="topo-status-compartilhamento" class="ms-2 badge {% if pacientes|length > 1 %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}" style="font-size:0.8rem; vertical-align:middle;">
+          {% if pacientes|length > 1 %}Compartilhado{% else %}Individual{% endif %}
+        </span>
       </div>
     </div>
     <div class="card-body p-4" style="background:#f8fafc;">
 
-      <div class="alert alert-info d-flex align-items-start mb-4" style="border-left:5px solid #1976d2;">
-        <i class="bi bi-info-circle-fill me-2 mt-1" style="font-size:1.3em;"></i>
+      <div class="alert d-flex align-items-start mb-3" style="background:#eef5ff; border:1px solid #b6d4fe; border-left:6px solid #0d6efd; color:#1f3b63;">
+        <i class="bi bi-people-fill me-2 mt-1"></i>
         <div>
-          <strong>Como funciona:</strong> Preencha os dados comuns (veículo, condutor, data) uma única vez.
+          <strong>Como funciona o compartilhamento:</strong>
+          este transporte fica <strong id="status-compartilhamento-label">{% if pacientes|length > 1 %}compartilhado{% else %}individual{% endif %}</strong>
+          quando há mais de 1 paciente na viagem.
+          <div class="small mt-1" id="resumo-compartilhamento-detalhe">
+            Agora: {{ pacientes|length }} paciente(s), {{ acompanhantes_count }} acompanhante(s) e 1 motorista, total de {{ pacientes|length|add:acompanhantes_count|add:"1" }} pessoa(s) no veículo.
+          </div>
+        </div>
+      </div>
+
+      <div class="alert d-flex align-items-start mb-4" style="background:linear-gradient(90deg,#ebfbee 0%,#d3f9d8 100%); border:2px solid #40c057; border-left:8px solid #2b8a3e; color:#1b4332; box-shadow:0 4px 14px rgba(43,138,62,.18);">
+        <i class="bi bi-info-circle-fill me-2 mt-1" style="font-size:1.3em; color:#2f9e44;"></i>
+        <div>
+          <strong style="font-size:1.05em;">Transporte compartilhado:</strong> Preencha os dados comuns (veículo, condutor, data) uma única vez.
           Para cada paciente, escolha a <strong>clínica de destino individual</strong>.
           Um registro de transporte será criado para cada paciente.
         </div>
       </div>
 
-      <form method="post" id="form-lote">
+      <form method="post" id="form-lote" novalidate>
         {% csrf_token %}
         <input type="hidden" name="paciente_ids_lote" value="{{ paciente_ids_lote }}">
+        <input type="hidden" name="forcar_duplicado" id="id_forcar_duplicado" value="{% if forcar_duplicado %}1{% else %}0{% endif %}">
+        <input type="hidden" name="ordem_pacientes" id="ordem_pacientes" value="">
+        <input type="hidden" name="ordem_manual_editada" id="ordem_manual_editada" value="0">
+        <div id="alerta-campos-faltando" class="alert alert-warning py-2 mb-3 d-none" role="alert" tabindex="-1" style="position:sticky; top:12px; z-index:1080; box-shadow:0 8px 18px rgba(0,0,0,.12);"></div>
+
+        {% if pacientes_duplicados %}
+        <div class="alert alert-warning border border-warning-subtle mb-3" style="border-left:6px solid #f59f00;">
+          <div class="fw-bold mb-1">Alguns pacientes já possuem transporte para esta data.</div>
+          <div class="small mb-2">Se você confirmar, o sistema cadastrará mesmo assim (duplicidade controlada).</div>
+          <div class="small mb-2"><strong>Pacientes:</strong> {{ pacientes_duplicados|join:", " }}</div>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-warning btn-afunda" id="btnConfirmarDuplicidadeLote">
+              <i class="bi bi-check-circle me-1"></i> Cadastrar mesmo assim
+            </button>
+            <a href="{% url 'transporte_pacientes:cadastrar_paciente' %}" class="btn btn-secondary btn-afunda">
+              <i class="bi bi-x-circle me-1"></i> Desistir
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="card mb-4" style="border:2px solid #40c057; box-shadow:0 4px 14px rgba(43,138,62,.16);">
+          <div class="card-header fw-bold" style="background:linear-gradient(90deg,#ebfbee 0%,#d3f9d8 100%); color:#1b4332; border-bottom:2px solid #40c057;">
+            <i class="bi bi-diagram-3 me-1"></i> Definição de destinos
+          </div>
+          <div class="card-body">
+            <div class="small mb-2" style="color:#2f4f4f;">
+              <strong>Importante:</strong> transporte compartilhado define quem vai no mesmo veículo; aqui você define <strong>como preencher os destinos</strong>.
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="modo_lote" id="modo_lote_misto" value="misto" {% if modo_lote != 'unico' %}checked{% endif %}>
+              <label class="form-check-label" for="modo_lote_misto">
+                Destino individual por paciente
+              </label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="modo_lote" id="modo_lote_unico" value="unico" {% if modo_lote == 'unico' %}checked{% endif %}>
+              <label class="form-check-label" for="modo_lote_unico">
+                Mesmo destino para todos
+              </label>
+            </div>
+            <div class="form-text" style="color:#2b8a3e; font-weight:700;">
+              Use "Mesmo destino para todos" quando todos vão para a mesma clínica/endereço e horário.
+            </div>
+            <div id="status-modo-lote" class="small mt-2" style="color:#1f3b63; font-weight:700;">
+              Modo atual: {% if modo_lote == 'unico' %}Mesmo destino para todos{% else %}Destino individual por paciente{% endif %}
+            </div>
+            <div class="small mt-2" style="color:#495057;">
+              A rota final pode ser definida pelo condutor de acordo com o conhecimento da cidade e condições do dia.
+            </div>
+          </div>
+        </div>
 
         <!-- CAMPOS COMUNS -->
-        <div class="card mb-4 border-primary">
+        <div class="card mb-4 border-primary" id="card-dados-comuns">
           <div class="card-header bg-primary bg-opacity-10 fw-bold text-primary">
             <i class="bi bi-sliders me-1"></i> Dados comuns para todos os pacientes
           </div>
           <div class="card-body">
+            <div class="alert alert-primary py-2 mb-3 small" style="border-left:4px solid #0d6efd;">
+              <strong>Orientação:</strong> preencha aqui apenas as informações da viagem (veículo, condutor, data e observações gerais).
+              A definição de clínica é feita no próximo bloco, individualmente para cada paciente.
+            </div>
+            <div class="alert alert-light border small mb-3" style="border-left:4px solid #adb5bd;">
+              <strong>Campos obrigatórios:</strong> veículo, condutor, data e clínica de destino.
+              Se algum item ficar em branco, o sistema vai listar os campos faltantes e destacar os locais que precisam de correção.
+            </div>
             <div class="row g-3">
 
               <!-- Veículo -->
               <div class="col-md-6">
-                <label class="form-label fw-bold"><i class="bi bi-truck-front me-1"></i>Veículo</label>
+                <label class="form-label fw-bold"><i class="bi bi-truck-front me-1"></i>Veículo <span class="text-danger">*</span></label>
                 <select name="veiculo" id="id_veiculo_lote" class="form-select">
                   <option value="">— Selecione um veículo —</option>
                   {% for v in veiculos %}
-                    <option value="{{ v.id }}">{{ v }}</option>
+                    <option value="{{ v.id }}" data-lotacao="{{ v.lotacao|default_if_none:0 }}">{{ v }}</option>
                   {% endfor %}
                 </select>
+                <div class="form-text text-danger d-none mt-1" data-error-for="veiculo"></div>
                 <div class="mt-2">
                   <input type="text" name="veiculo_livre" id="id_veiculo_livre_lote" class="form-control"
                     placeholder="Ou digite placa/patrimônio manualmente" autocomplete="off">
                   <div class="form-text">Preencha este campo se o veículo não estiver na lista acima.</div>
+                  <div class="form-text text-danger d-none mt-1" data-error-for="veiculo_livre"></div>
                 </div>
               </div>
 
               <!-- Condutor -->
               <div class="col-md-6">
-                <label class="form-label fw-bold"><i class="bi bi-person-lines-fill me-1"></i>Condutor</label>
+                <label class="form-label fw-bold"><i class="bi bi-person-lines-fill me-1"></i>Condutor <span class="text-danger">*</span></label>
                 <select name="condutor" class="form-select">
                   <option value="">— Selecione um condutor —</option>
                   {% for c in condutores %}
                     <option value="{{ c.id }}">{{ c.nome }}</option>
                   {% endfor %}
                 </select>
+                <div class="form-text text-danger d-none mt-1" data-error-for="condutor"></div>
                 <div class="mt-2">
                   <input type="text" name="condutor_manual" class="form-control"
                     placeholder="Ou digite o nome do condutor" autocomplete="off">
                   <div class="form-text">Preencha se o condutor não estiver na lista.</div>
+                  <div class="form-text text-danger d-none mt-1" data-error-for="condutor_manual"></div>
                 </div>
+              </div>
+
+              <!-- Tipo de transporte -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold"><i class="bi bi-arrow-left-right me-1"></i>Tipo de Transporte <span class="text-danger">*</span></label>
+                <select name="tipo_transporte" class="form-select" id="id_tipo_transporte_lote" required>
+                  <option value="CONSULTA" selected>Consulta (ida)</option>
+                  <option value="RETORNO">Retorno (volta)</option>
+                  <option value="OUTRO_MUNICIPIO">Outro/Município</option>
+                  <option value="OUTRO_FORA">Outro/Fora do Município</option>
+                </select>
+                <div class="form-text text-danger d-none mt-1" data-error-for="tipo_transporte"></div>
               </div>
 
               <!-- Enfermagem -->
@@ -111,6 +199,7 @@
                 <label class="form-label fw-bold"><i class="bi bi-calendar me-1"></i>Data *</label>
                 <input type="date" name="data_transporte" class="form-control" required
                   value="{{ today|date:'Y-m-d' }}">
+                <div class="form-text text-danger d-none mt-1" data-error-for="data_transporte"></div>
               </div>
               <div class="col-md-2">
                 <label class="form-label fw-bold"><i class="bi bi-clock me-1"></i>Horário Saída <span class="text-muted fw-normal">(opcional)</span></label>
@@ -127,29 +216,71 @@
                 <textarea name="observacoes" class="form-control" rows="2" placeholder="Observações comuns a todos os transportes..."></textarea>
               </div>
 
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="forcar_excesso_lotacao" id="id_forcar_excesso_lotacao" value="1" {% if forcar_excesso_lotacao %}checked{% endif %}>
+                  <label class="form-check-label fw-semibold" for="id_forcar_excesso_lotacao">
+                    Permitir excesso de lotação (confirmo ciência e responsabilidade)
+                  </label>
+                </div>
+                <div id="box-excesso-detalhes" class="mt-2">
+                  <div id="box-excesso-info" class="alert alert-warning py-2 mb-2" style="border-left:4px solid #f59f00;">
+                    <strong>Capacidade operacional:</strong> o cálculo considera pacientes + acompanhantes + motorista.
+                  </div>
+                  <div id="box-excesso-texto" class="form-text text-danger">
+                    Marque apenas quando realmente necessário. Se houver excesso e esta opção não estiver marcada, o sistema bloqueará o salvamento.
+                  </div>
+                  <div id="erro-excesso-lotacao" class="form-text text-danger d-none mt-1"></div>
+                </div>
+              </div>
+
+              <div class="col-12" id="bloco-clinica-unica" style="display:none;">
+                <div class="border rounded p-3 bg-light" id="wrapper-clinica-unica">
+                  <label class="form-label fw-bold"><i class="bi bi-hospital me-1"></i>Clínica de destino para todos os pacientes selecionados <span class="text-danger">*</span></label>
+                  <select name="clinica_unica" class="form-select mb-2">
+                    <option value="">— Selecione a clínica —</option>
+                    {% for cl in clinicas %}
+                      <option value="{{ cl.id }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}</option>
+                    {% endfor %}
+                  </select>
+                  <div class="form-text text-danger d-none mt-1" data-error-for="clinica_unica"></div>
+                  <input type="text" name="clinica_manual_unica" class="form-control" placeholder="Ou digite o nome da clínica manualmente" autocomplete="off">
+                  <div class="form-text text-danger d-none mt-1" data-error-for="clinica_manual_unica"></div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
 
         <!-- CLINICA POR PACIENTE -->
-        <div class="card mb-4 border-success">
+        <div class="card mb-4 border-success" id="card-clinicas-por-paciente">
           <div class="card-header bg-success bg-opacity-10 fw-bold text-success">
-            <i class="bi bi-hospital me-1"></i> Clínica de destino por paciente
+            <i class="bi bi-hospital me-1"></i> Clínica de destino por paciente <span class="text-danger">*</span>
           </div>
           <div class="card-body p-0">
-            <table class="table table-bordered mb-0">
+            <div class="px-3 py-2 border-bottom bg-light small text-muted">
+              Selecione a clínica de cada paciente. A sequência de paradas poderá ser definida pelo condutor durante a viagem.
+            </div>
+            <div class="px-3 py-2 border-bottom bg-white small" style="color:#334155;">
+              <span class="fw-semibold me-2">Ações rápidas:</span>
+              <span class="badge text-bg-light border me-1"><i class="bi bi-arrow-repeat"></i> Reaproveitar dados</span>
+              <span class="badge text-bg-light border"><i class="bi bi-trash"></i> Remover da viagem</span>
+            </div>
+            <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0 tabela-lote-pacientes">
               <thead class="table-light">
                 <tr>
-                  <th style="width:30px;">#</th>
+                  <th style="width:44px;" class="text-center">#</th>
                   <th>Paciente</th>
-                  <th>Condições</th>
-                  <th>Clínica (selecionar ou digitar)</th>
+                  <th style="min-width:170px;">Condições</th>
+                  <th style="min-width:340px;">Clínica (selecionar ou digitar)</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="tbody-pacientes-lote">
                 {% for pac in pacientes %}
-                <tr>
-                  <td class="text-center fw-bold">{{ forloop.counter }}</td>
+                <tr data-paciente-id="{{ pac.id }}" data-acompanhantes="{{ pac.acompanhantes|default_if_none:0 }}">
+                  <td class="text-center fw-bold col-numero-linha">{{ forloop.counter }}</td>
                   <td>
                     <div class="d-flex align-items-center gap-2">
                       <div>
@@ -161,94 +292,6 @@
                       </button>
                     </div>
                   </td>
-                  </tbody>
-                  </table>
-                  </div>
-
-                  <!-- Modal de confirmação para preenchimento automático do paciente (lote) -->
-                  <div class="modal fade" id="modalConfirmarPreencherPacienteLote" tabindex="-1" aria-labelledby="modalConfirmarPreencherPacienteLoteLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header bg-warning">
-                          <h5 class="modal-title" id="modalConfirmarPreencherPacienteLoteLabel">Paciente já cadastrado</h5>
-                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                          <div class="alert alert-warning mb-2"><b>Este paciente já foi cadastrado ou já utilizou o serviço anteriormente.</b></div>
-                          <div id="modalConfirmarPreencherPacienteLoteBody" class="mb-2"></div>
-                          <div class="alert alert-info small">Deseja reutilizar os dados anteriores? Você poderá revisar e atualizar qualquer campo antes de salvar.</div>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                          <button type="button" class="btn btn-success" id="btnConfirmarPreencherPacienteLote">Reutilizar dados e preencher</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <script>
-                  document.addEventListener('DOMContentLoaded', function() {
-                    // Botão de preenchimento automático para cada paciente do lote
-                    document.querySelectorAll('.btn-preencher-paciente-lote').forEach(function(btn) {
-                      btn.addEventListener('click', function() {
-                        var pacienteId = btn.getAttribute('data-paciente-id');
-                        if (!pacienteId) return;
-                        fetch('/api/pacientes/' + pacienteId + '/detalhes/')
-                          .then(function(response) { return response.json(); })
-                          .then(function(data) {
-                            if (data && !data.erro) {
-                              exibirModalConfirmarPreencherPacienteLote(data, pacienteId);
-                            }
-                          });
-                      });
-                    });
-
-                    function preencherCamposPacienteLote(data, pacienteId) {
-                      // Preenche campos comuns do formulário de transporte em lote para o paciente selecionado
-                      // Exemplo: rua, numero, bairro, cidade, estado, cep, referencia, observacoes
-                      // O nome dos campos pode variar conforme o template, ajuste conforme necessário
-                      var prefix = '[name^="' + pacienteId + '_"]';
-                      // Exemplo: se os campos forem nomeados como rua_{{pac.id}}, numero_{{pac.id}}, etc.
-                      if (data.rua !== undefined) document.querySelector('input[name="rua_' + pacienteId + '"]') && (document.querySelector('input[name="rua_' + pacienteId + '"]').value = data.rua);
-                      if (data.numero !== undefined) document.querySelector('input[name="numero_' + pacienteId + '"]') && (document.querySelector('input[name="numero_' + pacienteId + '"]').value = data.numero);
-                      if (data.bairro !== undefined) document.querySelector('input[name="bairro_' + pacienteId + '"]') && (document.querySelector('input[name="bairro_' + pacienteId + '"]').value = data.bairro);
-                      if (data.cidade !== undefined) document.querySelector('input[name="cidade_' + pacienteId + '"]') && (document.querySelector('input[name="cidade_' + pacienteId + '"]').value = data.cidade);
-                      if (data.estado !== undefined) document.querySelector('input[name="estado_' + pacienteId + '"]') && (document.querySelector('input[name="estado_' + pacienteId + '"]').value = data.estado);
-                      if (data.cep !== undefined) document.querySelector('input[name="cep_' + pacienteId + '"]') && (document.querySelector('input[name="cep_' + pacienteId + '"]').value = data.cep);
-                      if (data.referencia !== undefined) document.querySelector('input[name="referencia_' + pacienteId + '"]') && (document.querySelector('input[name="referencia_' + pacienteId + '"]').value = data.referencia);
-                      if (data.observacoes !== undefined) document.querySelector('input[name="observacoes_' + pacienteId + '"]') && (document.querySelector('input[name="observacoes_' + pacienteId + '"]').value = data.observacoes);
-                      // Adicione outros campos conforme necessário
-                    }
-
-                    function exibirModalConfirmarPreencherPacienteLote(data, pacienteId) {
-                      var body = document.getElementById('modalConfirmarPreencherPacienteLoteBody');
-                      if (!body) return;
-                      var html = '';
-                      html += '<div class="mb-2"><strong>Nome:</strong> ' + (data.nome || '') + '</div>';
-                      html += '<div class="mb-2"><strong>Idade:</strong> ' + (data.idade || '') + '</div>';
-                      html += '<div class="mb-2"><strong>Peso:</strong> ' + (data.peso || '') + '</div>';
-                      html += '<div class="mb-2"><strong>Telefone:</strong> ' + (data.ddd ? '('+data.ddd+') ' : '') + (data.telefone || '') + '</div>';
-                      html += '<div class="mb-2"><strong>Endereço:</strong> ' + [data.rua, data.numero, data.bairro, data.cidade, data.estado, data.cep].filter(Boolean).join(', ') + '</div>';
-                      html += '<div class="mb-2"><strong>Referência:</strong> ' + (data.referencia || '') + '</div>';
-                      html += '<div class="mb-2"><strong>O2:</strong> ' + (data.oxigenio ? 'Sim' : 'Não') + (data.oxigenio_litros_min ? ' ('+data.oxigenio_litros_min+' L/min)' : '') + '</div>';
-                      html += '<div class="mb-2"><strong>Maca:</strong> ' + (data.maca ? 'Sim' : 'Não') + '</div>';
-                      html += '<div class="mb-2"><strong>Cadeirante:</strong> ' + (data.cadeirante ? 'Sim' : 'Não') + '</div>';
-                      html += '<div class="mb-2"><strong>Acompanhante:</strong> ' + (data.acompanhante ? 'Sim' : 'Não') + '</div>';
-                      html += '<div class="mb-2"><strong>Evolução:</strong> ' + (data.evolucao || '') + '</div>';
-                      html += '<div class="mb-2"><strong>Observações:</strong> ' + (data.observacoes || '') + '</div>';
-                      body.innerHTML = html;
-                      var modal = new bootstrap.Modal(document.getElementById('modalConfirmarPreencherPacienteLote'));
-                      modal.show();
-                      var btn = document.getElementById('btnConfirmarPreencherPacienteLote');
-                      if (btn) {
-                        btn.onclick = function() {
-                          preencherCamposPacienteLote(data, pacienteId);
-                          modal.hide();
-                        };
-                      }
-                    }
-                  });
-                  </script>
                   <td>
                     {% if pac.oxigenio %}<span class="badge bg-info">O2{% if pac.oxigenio_litros_min %} {{ pac.oxigenio_litros_min }}L/min{% endif %}</span> {% endif %}
                     {% if pac.maca %}<span class="badge bg-warning text-dark">Maca</span> {% endif %}
@@ -257,24 +300,26 @@
                   </td>
                   <td>
                     <div class="d-flex align-items-center gap-2">
-                      <div class="flex-grow-1">
-                        <select name="clinica_{{ forloop.counter0 }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-idx="{{ forloop.counter0 }}" data-clinicas='{{ clinicas_json }}'>
+                      <div class="flex-grow-1" id="wrapper-clinica-{{ pac.id }}">
+                        <select name="clinica_{{ pac.id }}" class="form-select form-select-sm mb-1 select-clinica-lote" data-paciente-id="{{ pac.id }}" data-clinicas='{{ clinicas_json }}'>
                           <option value="">— Selecione a clínica —</option>
                           {% for cl in clinicas %}
                             <option value="{{ cl.id }}" data-endereco="{{ cl.endereco|default:'' }}" data-cidade="{{ cl.cidade|default:'' }}" data-cep="{{ cl.cep|default:'' }}">{{ cl.nome }}{% if cl.endereco %} — {{ cl.endereco }}{% endif %}{% if cl.cidade %}, {{ cl.cidade }}{% endif %}</option>
                           {% endfor %}
                         </select>
+                        <div class="form-text text-danger d-none mt-1" data-error-for-paciente="{{ pac.id }}-select"></div>
                         <!-- Box verde com endereço da clínica selecionada -->
-                        <div id="endereco_box_{{ forloop.counter0 }}" class="alert alert-success d-none mt-2 mb-2" style="padding:10px; border-left:5px solid #28a745;">
+                        <div id="endereco_box_{{ pac.id }}" class="alert alert-success d-none mt-2 mb-2" style="padding:10px; border-left:5px solid #28a745;">
                           <strong>📍 Endereço da Clínica:</strong><br>
-                          <span id="endereco_text_{{ forloop.counter0 }}"></span>
+                          <span id="endereco_text_{{ pac.id }}"></span>
                         </div>
-                        <input type="text" name="clinica_manual_{{ forloop.counter0 }}"
+                        <input type="text" name="clinica_manual_{{ pac.id }}"
                           class="form-control form-control-sm input-clinica-manual-lote"
                           placeholder="Ou digite o nome da clínica manualmente"
                           autocomplete="off">
+                        <div class="form-text text-danger d-none mt-1" data-error-for-paciente="{{ pac.id }}-manual"></div>
                       </div>
-                      <button type="button" class="btn btn-outline-danger btn-sm btn-excluir-paciente-lote" title="Remover paciente do lote" aria-label="Remover paciente" style="min-width:32px;">
+                      <button type="button" class="btn btn-outline-danger btn-sm btn-excluir-paciente-lote" title="Remover paciente da viagem" aria-label="Remover paciente" style="min-width:32px;" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Remover paciente apenas desta viagem">
                         <i class="bi bi-trash"></i>
                       </button>
                     </div>
@@ -284,6 +329,40 @@
                 {% endfor %}
               </tbody>
             </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal único para reaproveitar dados do paciente no lote -->
+        <div class="modal fade modal-suave-reaproveitar" id="modalConfirmarPreencherPacienteLote" tabindex="-1" aria-labelledby="modalConfirmarPreencherPacienteLoteLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="modalConfirmarPreencherPacienteLoteLabel">Paciente já cadastrado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div class="alert alert-warning mb-2"><b>Este paciente já foi cadastrado ou já utilizou o serviço anteriormente.</b></div>
+                <div id="modalConfirmarPreencherPacienteLoteBody" class="mb-2"></div>
+                <div class="alert alert-info small">Deseja reutilizar os dados anteriores? Você poderá revisar e atualizar qualquer campo antes de salvar.</div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarPreencherPacienteLote">Reutilizar dados e preencher</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-4 border-info" id="card-resumo-destinos" style="display:none;">
+          <div class="card-header bg-info bg-opacity-10 fw-bold text-info">
+            <i class="bi bi-geo-alt me-1"></i> Resumo por destino
+          </div>
+          <div class="card-body">
+            <div class="small text-muted mb-2">
+              Quantidade de paradas por clínica/destino para apoiar a decisão antes de salvar.
+            </div>
+            <div id="resumo-destinos-misto" class="d-flex flex-wrap gap-2"></div>
           </div>
         </div>
 
@@ -293,8 +372,25 @@
           <strong>{{ pacientes|length }}</strong> paciente(s)
           +
           <strong id="total-acomp">0</strong> acompanhante(s)
+          +
+          <strong id="total-motorista">1</strong> motorista
           =
           <strong id="total-geral" style="font-size:1.3em;">{{ pacientes|length }}</strong> PESSOA(S) NO VEÍCULO
+        </div>
+
+        <div class="card mb-3 border-secondary" id="card-pacientes-selecionados">
+          <div class="card-header bg-secondary bg-opacity-10 fw-bold text-secondary">
+            <i class="bi bi-person-lines-fill me-1"></i> Pacientes selecionados
+          </div>
+          <div class="card-body py-2">
+            <ul class="list-group list-group-flush" id="lista-pacientes-selecionados">
+              {% for pac in pacientes %}
+                <li class="list-group-item px-0 py-2">{{ forloop.counter }}. {{ pac.nome }} <span class="text-muted">(Acompanhantes: {{ pac.acompanhantes|default_if_none:0 }})</span></li>
+              {% empty %}
+                <li class="list-group-item px-0 py-2 text-muted">Nenhum paciente selecionado.</li>
+              {% endfor %}
+            </ul>
+          </div>
         </div>
 
         <script>
@@ -322,22 +418,33 @@
         (function() {
           var acompanhantes = {{ acompanhantes_count }};
           var pacientes = {{ pacientes|length }};
-          var total = pacientes + acompanhantes;
+          var motorista = 1;
+          var total = pacientes + acompanhantes + motorista;
           document.getElementById('total-acomp').textContent = acompanhantes;
+          document.getElementById('total-motorista').textContent = motorista;
           document.getElementById('total-geral').textContent = total;
           var topoTotal = document.getElementById('topo-total-pessoas');
           if (topoTotal) topoTotal.textContent = total;
+          var topoPacientes = document.getElementById('topo-pacientes');
+          if (topoPacientes) topoPacientes.textContent = pacientes;
+          var topoAcompanhantes = document.getElementById('topo-acompanhantes');
+          if (topoAcompanhantes) topoAcompanhantes.textContent = acompanhantes;
+          var topoMotorista = document.getElementById('topo-motorista');
+          if (topoMotorista) topoMotorista.textContent = motorista;
         })();
         </script>
 
         <!-- BOTÕES -->
         <div class="d-flex gap-2 flex-wrap mt-3">
           <button type="submit" class="btn btn-success btn-lg btn-afunda" id="btnSalvarLote">
-            <i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s))
+            <i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s) + {{ acompanhantes_count }} acompanhante(s) + 1 motorista = {{ pacientes|length|add:acompanhantes_count|add:"1" }} pessoa(s))
           </button>
           <a href="javascript:history.back()" class="btn btn-secondary btn-lg btn-afunda">
             <i class="bi bi-arrow-left me-1"></i> Voltar
           </a>
+        </div>
+        <div id="status-rascunho-lote" class="small text-muted mt-2" aria-live="polite">
+          Rascunho automatico ativo.
         </div>
 
       </form>
@@ -348,25 +455,454 @@
 <script>
 // Unificação de todos os scripts para evitar conflitos e múltiplos bindings
 document.addEventListener('DOMContentLoaded', function() {
+  var tbodyPacientes = document.getElementById('tbody-pacientes-lote');
+  var ordemOriginalPacientes = [];
+  var modalPreencherEl = document.getElementById('modalConfirmarPreencherPacienteLote');
+  var modalPreencherBody = document.getElementById('modalConfirmarPreencherPacienteLoteBody');
+  var btnConfirmarPreencher = document.getElementById('btnConfirmarPreencherPacienteLote');
+  var chkExcessoLotacao = document.getElementById('id_forcar_excesso_lotacao');
+  var boxExcessoDetalhes = document.getElementById('box-excesso-detalhes');
+  var boxExcessoInfo = document.getElementById('box-excesso-info');
+  var boxExcessoTexto = document.getElementById('box-excesso-texto');
+  var contextoPreencher = null;
+  var modalPreencher = null;
+  var carregandoPreenchimento = false;
+
+  function atualizarJanelaExcesso() {
+    if (!chkExcessoLotacao) return;
+    var ocultar = !!chkExcessoLotacao.checked;
+
+    if (boxExcessoDetalhes) {
+      boxExcessoDetalhes.style.display = ocultar ? 'none' : 'block';
+      return;
+    }
+
+    [boxExcessoInfo, boxExcessoTexto].forEach(function(el) {
+      if (!el) return;
+      el.style.display = ocultar ? 'none' : 'block';
+    });
+  }
+
+  if (chkExcessoLotacao) {
+    chkExcessoLotacao.addEventListener('change', atualizarJanelaExcesso);
+    atualizarJanelaExcesso();
+  }
+
+  if (tbodyPacientes) {
+    ordemOriginalPacientes = Array.from(tbodyPacientes.querySelectorAll('tr[data-paciente-id]')).map(function(tr) {
+      return tr.getAttribute('data-paciente-id');
+    });
+  }
+
+  if (modalPreencherEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    modalPreencher = bootstrap.Modal.getOrCreateInstance(modalPreencherEl, {
+      backdrop: 'static',
+      keyboard: true
+    });
+  }
+
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+      bootstrap.Tooltip.getOrCreateInstance(el);
+    });
+  }
+
+  function preencherCamposPacienteLote(data, pacienteId) {
+    var campos = ['rua', 'numero', 'bairro', 'cidade', 'estado', 'cep', 'referencia', 'observacoes'];
+    campos.forEach(function(campo) {
+      var input = document.querySelector('input[name="' + campo + '_' + pacienteId + '"]');
+      if (input && data[campo] !== undefined) {
+        input.value = data[campo] || '';
+      }
+    });
+  }
+
+  function abrirModalReaproveitar(data, pacienteId) {
+    if (!modalPreencherBody || !modalPreencher) return;
+    var html = '';
+    html += '<div class="mb-2"><strong>Nome:</strong> ' + (data.nome || '') + '</div>';
+    html += '<div class="mb-2"><strong>Idade:</strong> ' + (data.idade || '') + '</div>';
+    html += '<div class="mb-2"><strong>Peso:</strong> ' + (data.peso || '') + '</div>';
+    html += '<div class="mb-2"><strong>Telefone:</strong> ' + (data.ddd ? '(' + data.ddd + ') ' : '') + (data.telefone || '') + '</div>';
+    html += '<div class="mb-2"><strong>Endereço:</strong> ' + [data.rua, data.numero, data.bairro, data.cidade, data.estado, data.cep].filter(Boolean).join(', ') + '</div>';
+    html += '<div class="mb-2"><strong>Referência:</strong> ' + (data.referencia || '') + '</div>';
+    html += '<div class="mb-2"><strong>O2:</strong> ' + (data.oxigenio ? 'Sim' : 'Não') + (data.oxigenio_litros_min ? ' (' + data.oxigenio_litros_min + ' L/min)' : '') + '</div>';
+    html += '<div class="mb-2"><strong>Maca:</strong> ' + (data.maca ? 'Sim' : 'Não') + '</div>';
+    html += '<div class="mb-2"><strong>Cadeirante:</strong> ' + (data.cadeirante ? 'Sim' : 'Não') + '</div>';
+    html += '<div class="mb-2"><strong>Acompanhante:</strong> ' + (data.acompanhante ? 'Sim' : 'Não') + '</div>';
+    html += '<div class="mb-2"><strong>Evolução:</strong> ' + (data.evolucao || '') + '</div>';
+    html += '<div class="mb-2"><strong>Observações:</strong> ' + (data.observacoes || '') + '</div>';
+    modalPreencherBody.innerHTML = html;
+    contextoPreencher = { data: data, pacienteId: pacienteId };
+    modalPreencher.show();
+  }
+
+  if (btnConfirmarPreencher) {
+    btnConfirmarPreencher.addEventListener('click', function() {
+      if (!contextoPreencher) return;
+      preencherCamposPacienteLote(contextoPreencher.data, contextoPreencher.pacienteId);
+      if (modalPreencher) {
+        modalPreencher.hide();
+      }
+    });
+  }
+
+  function setOrdemManualEditada(valor) {
+    var campo = document.getElementById('ordem_manual_editada');
+    if (campo) {
+      campo.value = valor ? '1' : '0';
+    }
+  }
+
+  function normalizarTexto(valor) {
+    return (valor || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function obterDestinoLinha(tr) {
+    var pacienteId = tr.getAttribute('data-paciente-id');
+    var sel = tr.querySelector('.select-clinica-lote');
+    var inp = tr.querySelector('[name="clinica_manual_' + pacienteId + '"]');
+    var destino = '';
+    if (sel && sel.value) {
+      var opt = sel.options[sel.selectedIndex];
+      destino = (opt && opt.textContent ? opt.textContent : '').trim();
+    }
+    if (!destino && inp && inp.value.trim()) {
+      destino = inp.value.trim();
+    }
+    return destino || 'Destino não informado';
+  }
+
+  function sincronizarOrdemPacientes() {
+    var ordem = [];
+    if (!tbodyPacientes) return;
+    tbodyPacientes.querySelectorAll('tr[data-paciente-id]').forEach(function(tr) {
+      ordem.push(tr.getAttribute('data-paciente-id'));
+    });
+    var campoOrdem = document.getElementById('ordem_pacientes');
+    if (campoOrdem) {
+      campoOrdem.value = ordem.join(',');
+    }
+  }
+
+  function atualizarNumeracaoLinhas() {
+    if (!tbodyPacientes) return;
+    tbodyPacientes.querySelectorAll('tr[data-paciente-id]').forEach(function(tr, idx) {
+      var el = tr.querySelector('.col-numero-linha');
+      if (el) el.textContent = String(idx + 1);
+    });
+  }
+
+  function construirPreviewRota() {
+    var modo = document.querySelector('input[name="modo_lote"]:checked');
+    var modoSelecionado = modo ? modo.value : 'misto';
+    var cardPreview = document.getElementById('card-preview-rota');
+    var lista = document.getElementById('preview-rota-mista');
+
+    if (!cardPreview || !lista) return;
+    if (modoSelecionado !== 'misto') {
+      cardPreview.style.display = 'none';
+      lista.innerHTML = '';
+      return;
+    }
+
+    cardPreview.style.display = 'block';
+    var html = '';
+    if (tbodyPacientes) {
+      tbodyPacientes.querySelectorAll('tr[data-paciente-id]').forEach(function(tr, idx) {
+        var nome = (tr.querySelector('strong') || {}).textContent || ('Paciente ' + (idx + 1));
+        var destino = obterDestinoLinha(tr);
+
+        html += '<li><strong>' + nome + '</strong> -> ' + destino + '</li>';
+      });
+    }
+    lista.innerHTML = html;
+  }
+
+  function construirResumoDestinos() {
+    var modo = document.querySelector('input[name="modo_lote"]:checked');
+    var modoSelecionado = modo ? modo.value : 'misto';
+    var cardResumo = document.getElementById('card-resumo-destinos');
+    var container = document.getElementById('resumo-destinos-misto');
+
+    if (!cardResumo || !container) return;
+    if (modoSelecionado !== 'misto') {
+      cardResumo.style.display = 'none';
+      container.innerHTML = '';
+      return;
+    }
+
+    cardResumo.style.display = 'block';
+    var mapa = {};
+
+    if (tbodyPacientes) {
+      tbodyPacientes.querySelectorAll('tr[data-paciente-id]').forEach(function(tr) {
+        var destino = obterDestinoLinha(tr);
+        mapa[destino] = (mapa[destino] || 0) + 1;
+      });
+    }
+
+    var entradas = Object.keys(mapa).map(function(destino) {
+      return { destino: destino, total: mapa[destino] };
+    });
+
+    entradas.sort(function(a, b) {
+      if (b.total !== a.total) return b.total - a.total;
+      return a.destino.localeCompare(b.destino);
+    });
+
+    var html = '';
+    entradas.forEach(function(item) {
+      html += '<span class="badge text-bg-light border border-info-subtle text-dark" style="font-size:0.92rem;">' +
+        item.destino + ': ' + item.total + ' parada(s)</span>';
+    });
+
+    container.innerHTML = html || '<span class="text-muted small">Nenhum destino informado até o momento.</span>';
+  }
+
+  function atualizarOrdemPreview() {
+    atualizarNumeracaoLinhas();
+    sincronizarOrdemPacientes();
+    construirResumoDestinos();
+    construirPreviewRota();
+  }
+
+  function atualizarStatusSugestao(texto) {
+    var status = document.getElementById('status-sugestao-rota');
+    if (status) {
+      status.textContent = texto || '';
+      status.style.display = texto ? 'inline-block' : 'none';
+    }
+  }
+
+  if (tbodyPacientes) {
+    tbodyPacientes.addEventListener('click', function(e) {
+      var btnPreencher = e.target.closest('.btn-preencher-paciente-lote');
+      if (btnPreencher) {
+        e.preventDefault();
+        if (carregandoPreenchimento) return;
+        if (modalPreencherEl && modalPreencherEl.classList.contains('show')) return;
+        var pacienteIdPreencher = btnPreencher.getAttribute('data-paciente-id');
+        if (!pacienteIdPreencher) return;
+
+        carregandoPreenchimento = true;
+        btnPreencher.disabled = true;
+        fetch('/api/pacientes/' + pacienteIdPreencher + '/detalhes/')
+          .then(function(response) { return response.json(); })
+          .then(function(data) {
+            if (data && !data.erro) {
+              abrirModalReaproveitar(data, pacienteIdPreencher);
+            }
+          })
+          .catch(function() {
+            alert('Não foi possível carregar os dados do paciente para reaproveitar.');
+          })
+          .finally(function() {
+            carregandoPreenchimento = false;
+            btnPreencher.disabled = false;
+          });
+        return;
+      }
+
+      var btnMover = e.target.closest('.btn-mover-linha');
+      if (!btnMover) return;
+      e.preventDefault();
+      var tr = btnMover.closest('tr[data-paciente-id]');
+      if (!tr) return;
+      var direcao = btnMover.getAttribute('data-direcao');
+
+      if (direcao === 'up' && tr.previousElementSibling) {
+        tbodyPacientes.insertBefore(tr, tr.previousElementSibling);
+      }
+      if (direcao === 'down' && tr.nextElementSibling) {
+        tbodyPacientes.insertBefore(tr.nextElementSibling, tr);
+      }
+      setOrdemManualEditada(true);
+      atualizarOrdemPreview();
+      atualizarStatusSugestao('Ordem ajustada manualmente (ainda não salva).');
+    });
+  }
+
+  var btnAplicarSugestaoRota = document.getElementById('btnAplicarSugestaoRota');
+  if (btnAplicarSugestaoRota && tbodyPacientes) {
+    btnAplicarSugestaoRota.addEventListener('click', function() {
+      var linhas = Array.from(tbodyPacientes.querySelectorAll('tr[data-paciente-id]'));
+      linhas.sort(function(a, b) {
+        var destinoA = normalizarTexto(obterDestinoLinha(a));
+        var destinoB = normalizarTexto(obterDestinoLinha(b));
+        if (destinoA !== destinoB) {
+          return destinoA.localeCompare(destinoB);
+        }
+        var nomeA = normalizarTexto((a.querySelector('strong') || {}).textContent || '');
+        var nomeB = normalizarTexto((b.querySelector('strong') || {}).textContent || '');
+        return nomeA.localeCompare(nomeB);
+      });
+
+      linhas.forEach(function(tr) {
+        tbodyPacientes.appendChild(tr);
+      });
+
+      setOrdemManualEditada(true);
+      atualizarOrdemPreview();
+      atualizarStatusSugestao('Sugestão aplicada na tabela (ainda não salva).');
+    });
+  }
+
+  var btnRestaurarOrdemOriginal = document.getElementById('btnRestaurarOrdemOriginal');
+  if (btnRestaurarOrdemOriginal && tbodyPacientes) {
+    btnRestaurarOrdemOriginal.addEventListener('click', function() {
+      var mapaLinhas = {};
+      Array.from(tbodyPacientes.querySelectorAll('tr[data-paciente-id]')).forEach(function(tr) {
+        mapaLinhas[tr.getAttribute('data-paciente-id')] = tr;
+      });
+
+      ordemOriginalPacientes.forEach(function(pacienteId) {
+        if (mapaLinhas[pacienteId]) {
+          tbodyPacientes.appendChild(mapaLinhas[pacienteId]);
+        }
+      });
+
+      // Se houver novas linhas não existentes no carregamento inicial, mantém no final.
+      Array.from(tbodyPacientes.querySelectorAll('tr[data-paciente-id]')).forEach(function(tr) {
+        var idAtual = tr.getAttribute('data-paciente-id');
+        if (ordemOriginalPacientes.indexOf(idAtual) === -1) {
+          tbodyPacientes.appendChild(tr);
+        }
+      });
+
+      setOrdemManualEditada(false);
+      atualizarOrdemPreview();
+      atualizarStatusSugestao('Ordem original restaurada.');
+    });
+  }
+
+  var ultimoModoSelecionado = (document.querySelector('input[name="modo_lote"]:checked') || {}).value || 'misto';
+
+  function atualizarModoLote(evento) {
+    var modo = document.querySelector('input[name="modo_lote"]:checked');
+    var modoSelecionado = modo ? modo.value : 'misto';
+
+    if (evento && evento.type === 'change' && modoSelecionado === 'unico' && ultimoModoSelecionado !== 'unico') {
+      var confirmou = window.confirm('Ao selecionar "Mesmo destino para todos", a mesma clínica/endereço será aplicada para todos os pacientes selecionados. Deseja continuar?');
+      if (!confirmou) {
+        var radioMisto = document.getElementById('modo_lote_misto');
+        if (radioMisto) {
+          radioMisto.checked = true;
+          modoSelecionado = 'misto';
+        }
+      }
+    }
+
+    var blocoUnico = document.getElementById('bloco-clinica-unica');
+    var cardMisto = document.getElementById('card-clinicas-por-paciente');
+    var blocoOtimizacao = document.getElementById('bloco-otimizacao-misto');
+    var chkOtimizacao = document.getElementById('otimizar_rota_mista');
+    var statusModo = document.getElementById('status-modo-lote');
+    if (blocoUnico) {
+      blocoUnico.style.display = modoSelecionado === 'unico' ? 'block' : 'none';
+    }
+    if (cardMisto) {
+      cardMisto.style.display = modoSelecionado === 'unico' ? 'none' : 'block';
+    }
+    if (blocoOtimizacao) {
+      blocoOtimizacao.style.display = modoSelecionado === 'unico' ? 'none' : 'block';
+    }
+    if (chkOtimizacao && modoSelecionado === 'unico') {
+      chkOtimizacao.checked = false;
+    }
+    var btnSugestao = document.getElementById('btnAplicarSugestaoRota');
+    var btnRestaurar = document.getElementById('btnRestaurarOrdemOriginal');
+    if (btnSugestao) {
+      btnSugestao.style.display = modoSelecionado === 'unico' ? 'none' : 'inline-block';
+    }
+    if (btnRestaurar) {
+      btnRestaurar.style.display = modoSelecionado === 'unico' ? 'none' : 'inline-block';
+    }
+    if (statusModo) {
+      statusModo.textContent = 'Modo atual: ' + (modoSelecionado === 'unico' ? 'Mesmo destino para todos' : 'Destino individual por paciente');
+      statusModo.style.color = modoSelecionado === 'unico' ? '#495057' : '#1f3b63';
+    }
+    ultimoModoSelecionado = modoSelecionado;
+    construirResumoDestinos();
+    construirPreviewRota();
+  }
+
+  document.querySelectorAll('input[name="modo_lote"]').forEach(function(radio) {
+    radio.addEventListener('change', function(e) {
+      atualizarModoLote(e);
+    });
+  });
+  atualizarModoLote();
+
   // Exclusão de paciente do lote (remove linha da tabela com confirmação)
   // Delegação de evento para garantir funcionamento mesmo após remoção dinâmica
   function atualizarTotalizador() {
     // Conta pacientes (linhas da tabela)
-    var pacientes = document.querySelectorAll('tbody tr').length;
-    // Conta acompanhantes (badges na coluna condições)
+    var pacientes = document.querySelectorAll('#tbody-pacientes-lote tr[data-paciente-id]').length;
+    // Soma acompanhantes reais por paciente
     var acompanhantes = 0;
-    document.querySelectorAll('tbody tr').forEach(function(tr) {
-      if (tr.querySelector('.badge.bg-success')) {
-        acompanhantes++;
-      }
+    document.querySelectorAll('#tbody-pacientes-lote tr[data-paciente-id]').forEach(function(tr) {
+      var qtd = parseInt(tr.getAttribute('data-acompanhantes') || '0', 10);
+      acompanhantes += isNaN(qtd) ? 0 : qtd;
     });
-    var total = pacientes + acompanhantes;
+    var motorista = 1;
+    var total = pacientes + acompanhantes + motorista;
     document.getElementById('total-acomp').textContent = acompanhantes;
+    document.getElementById('total-motorista').textContent = motorista;
     document.getElementById('total-geral').textContent = total;
+    var topoTotal = document.getElementById('topo-total-pessoas');
+    if (topoTotal) {
+      topoTotal.textContent = total;
+    }
+    var topoPacientes = document.getElementById('topo-pacientes');
+    if (topoPacientes) {
+      topoPacientes.textContent = pacientes;
+    }
+    var topoAcompanhantes = document.getElementById('topo-acompanhantes');
+    if (topoAcompanhantes) {
+      topoAcompanhantes.textContent = acompanhantes;
+    }
+    var topoMotorista = document.getElementById('topo-motorista');
+    if (topoMotorista) {
+      topoMotorista.textContent = motorista;
+    }
+
+    var statusTopo = document.getElementById('topo-status-compartilhamento');
+    var statusResumo = document.getElementById('status-compartilhamento-label');
+    var detalheResumo = document.getElementById('resumo-compartilhamento-detalhe');
+    var compartilhado = pacientes > 1;
+
+    if (statusTopo) {
+      statusTopo.textContent = compartilhado ? 'Compartilhado' : 'Individual';
+      statusTopo.classList.remove('bg-warning', 'bg-info', 'text-dark');
+      statusTopo.classList.add(compartilhado ? 'bg-warning' : 'bg-info', 'text-dark');
+    }
+
+    if (statusResumo) {
+      statusResumo.textContent = compartilhado ? 'compartilhado' : 'individual';
+    }
+
+    if (detalheResumo) {
+      detalheResumo.textContent = 'Agora: ' + pacientes + ' paciente(s), ' + acompanhantes + ' acompanhante(s) e 1 motorista, total de ' + total + ' pessoa(s) no veículo.';
+    }
+
     // Atualiza texto do botão salvar
     var btn = document.getElementById('btnSalvarLote');
     if (btn) {
-      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes (' + pacientes + ' paciente(s))';
+      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes (' + pacientes + ' paciente(s) + ' + acompanhantes + ' acompanhante(s) + ' + motorista + ' motorista = ' + total + ' pessoa(s))';
+    }
+
+    var listaSelecionados = document.getElementById('lista-pacientes-selecionados');
+    if (listaSelecionados) {
+      var itens = [];
+      document.querySelectorAll('#tbody-pacientes-lote tr[data-paciente-id]').forEach(function(tr, idx) {
+        var nomeEl = tr.querySelector('strong');
+        var nome = nomeEl ? nomeEl.textContent.trim() : ('Paciente ' + (idx + 1));
+        var acompanhantesPaciente = parseInt(tr.getAttribute('data-acompanhantes') || '0', 10);
+        if (isNaN(acompanhantesPaciente)) acompanhantesPaciente = 0;
+        itens.push('<li class="list-group-item px-0 py-2">' + (idx + 1) + '. ' + nome + ' <span class="text-muted">(Acompanhantes: ' + acompanhantesPaciente + ')</span></li>');
+      });
+      listaSelecionados.innerHTML = itens.length ? itens.join('') : '<li class="list-group-item px-0 py-2 text-muted">Nenhum paciente selecionado.</li>';
     }
   }
 
@@ -377,12 +913,15 @@ document.addEventListener('DOMContentLoaded', function() {
       var tr = btn.closest('tr');
       var nome = tr.querySelector('strong') ? tr.querySelector('strong').textContent : '';
       // Mensagem de confirmação
-      if (window.confirm('Deseja remover o paciente "' + nome + '" deste lote?')) {
+      if (window.confirm('Deseja remover o paciente "' + nome + '" desta viagem?')) {
         tr.style.transition = 'opacity 0.3s';
         tr.style.opacity = 0;
         setTimeout(function() {
           tr.remove();
           atualizarTotalizador();
+          setOrdemManualEditada(true);
+          atualizarOrdemPreview();
+          atualizarStatusSugestao('Ordem ajustada manualmente (ainda não salva).');
         }, 300);
       }
     }
@@ -411,9 +950,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Ao selecionar uma clínica no select, limpar o campo manual e vice-versa
   document.querySelectorAll('.select-clinica-lote').forEach(function(sel) {
     sel.addEventListener('change', function() {
-      var idx = this.getAttribute('data-idx');
-      var enderecoBox = document.getElementById('endereco_box_' + idx);
-      var enderecoText = document.getElementById('endereco_text_' + idx);
+      var pacienteId = this.getAttribute('data-paciente-id');
+      var enderecoBox = document.getElementById('endereco_box_' + pacienteId);
+      var enderecoText = document.getElementById('endereco_text_' + pacienteId);
 
       if (this.value) {
         // Clínica foi selecionada - mostrar endereço
@@ -446,20 +985,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Limpar campo manual
-        document.querySelector('[name="clinica_manual_' + idx + '"]').value = '';
+        var campoManual = document.querySelector('[name="clinica_manual_' + pacienteId + '"]');
+        if (campoManual) campoManual.value = '';
       } else {
         // Nenhuma clínica selecionada - ocultar box
         enderecoBox.classList.add('d-none');
       }
+      construirPreviewRota();
     });
   });
   document.querySelectorAll('.input-clinica-manual-lote').forEach(function(inp) {
     inp.addEventListener('input', function() {
       var name = this.getAttribute('name');
-      var idx = name.replace('clinica_manual_', '');
+      var pacienteId = name.replace('clinica_manual_', '');
       if (this.value.trim()) {
-        document.querySelector('[name="clinica_' + idx + '"]').value = '';
+        var campoSelect = document.querySelector('[name="clinica_' + pacienteId + '"]');
+        if (campoSelect) campoSelect.value = '';
       }
+      construirPreviewRota();
     });
   });
 
@@ -467,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof jQuery !== 'undefined' && typeof jQuery.fn.autocomplete === 'function') {
     document.querySelectorAll('.input-clinica-manual-lote').forEach(function(inp) {
       var name = inp.getAttribute('name');
-      var idx = name.replace('clinica_manual_', '');
+      var pacienteId = name.replace('clinica_manual_', '');
       jQuery(inp).autocomplete({
         minLength: 2,
         appendTo: 'body',
@@ -500,16 +1043,17 @@ document.addEventListener('DOMContentLoaded', function() {
           inp.value = textoCompleto;
 
           // Limpar o select correspondente
-          var sel = document.querySelector('[name="clinica_' + idx + '"]');
+          var sel = document.querySelector('[name="clinica_' + pacienteId + '"]');
           if (sel) sel.value = '';
 
           // Mostrar endereço no box verde
-          var enderecoBox = document.getElementById('endereco_box_' + idx);
-          var enderecoText = document.getElementById('endereco_text_' + idx);
+          var enderecoBox = document.getElementById('endereco_box_' + pacienteId);
+          var enderecoText = document.getElementById('endereco_text_' + pacienteId);
           if (enderecoBox && enderecoText) {
             enderecoText.textContent = endereco || 'Endereço não disponível';
             enderecoBox.classList.remove('d-none');
           }
+          construirPreviewRota();
           return false;
         }
       }).on('autocompleteopen', function() {
@@ -520,47 +1064,210 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Confirmação antes de salvar, com checagem de todos os campos obrigatórios
   document.getElementById('form-lote').addEventListener('submit', function(e) {
+    sincronizarOrdemPacientes();
     var faltando = [];
-    // Veículo obrigatório: select OU campo manual
-    var veiculo = document.querySelector('[name="veiculo"]').value;
-    var veiculoLivre = document.querySelector('[name="veiculo_livre"]').value.trim();
-    if (!veiculo && !veiculoLivre) {
-      faltando.push('Veículo');
+    var primeiroCampoInvalido = null;
+    var alertaCampos = document.getElementById('alerta-campos-faltando');
+
+    document.querySelectorAll('#form-lote .is-invalid').forEach(function(el) {
+      el.classList.remove('is-invalid');
+    });
+
+    if (alertaCampos) {
+      alertaCampos.classList.add('d-none');
+      alertaCampos.innerHTML = '';
     }
-    // Condutor obrigatório: select OU campo manual
-    var condutor = document.querySelector('[name="condutor"]').value;
-    var condutorManual = document.querySelector('[name="condutor_manual"]').value.trim();
-    if (!condutor && !condutorManual) {
-      faltando.push('Condutor');
+
+    function limparErrosInline() {
+      document.querySelectorAll('[data-error-for], [data-error-for-paciente]').forEach(function(el) {
+        el.textContent = '';
+        el.classList.add('d-none');
+      });
     }
-    // Data obrigatória
-    var data = document.querySelector('[name="data_transporte"]').value;
-    if (!data) {
-      faltando.push('Data do transporte');
+
+    function mostrarErroInline(chave, mensagem) {
+      if (!chave) return;
+      var chaveEscapada = chave.replace(/"/g, '\\"');
+      var elementos = document.querySelectorAll('[data-error-for="' + chaveEscapada + '"] , [data-error-for-paciente="' + chaveEscapada + '"]');
+      elementos.forEach(function(el) {
+        el.textContent = mensagem;
+        el.classList.remove('d-none');
+      });
     }
-    // Clínica obrigatória por paciente
-    var totalPacientes = {{ pacientes|length }};
-    var faltandoClinica = [];
-    for (var i = 0; i < totalPacientes; i++) {
-      var sel = document.querySelector('[name="clinica_' + i + '"]');
-      var inp = document.querySelector('[name="clinica_manual_' + i + '"]');
-      var clinicaSelecionada = (sel && sel.value) || (inp && inp.value.trim());
-      if (!clinicaSelecionada) {
-        faltandoClinica.push(i+1); // 1-based
+
+    function marcarContornoInvalido(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('border', 'border-danger', 'bg-white');
+      el.style.boxShadow = '0 0 0 .2rem rgba(220,53,69,.12)';
+    }
+
+    function limparContornosInvalidos() {
+      document.querySelectorAll('#wrapper-clinica-unica, [id^="wrapper-clinica-"]').forEach(function(el) {
+        el.classList.remove('border-danger', 'bg-white');
+        el.style.boxShadow = '';
+      });
+    }
+
+    limparErrosInline();
+    limparContornosInvalidos();
+
+    function marcarInvalido(el) {
+      if (!el) return;
+      el.classList.add('is-invalid');
+      if (!primeiroCampoInvalido) {
+        primeiroCampoInvalido = el;
       }
     }
-    if (faltandoClinica.length > 0) {
-      faltando.push('Clínica de destino dos pacientes: ' + faltandoClinica.join(', '));
+
+    function obterElementosFaltantes() {
+      return {
+        cardDadosComuns: document.getElementById('card-dados-comuns'),
+        blocoUnico: document.getElementById('bloco-clinica-unica'),
+        cardClinicasPacientes: document.getElementById('card-clinicas-por-paciente')
+      };
     }
-    // Se houver qualquer campo faltando, pede confirmação
+
+    var modoSelecionado = document.querySelector('input[name="modo_lote"]:checked');
+    var modo = modoSelecionado ? modoSelecionado.value : 'misto';
+    // Veículo obrigatório: select OU campo manual
+    var campoVeiculo = document.querySelector('[name="veiculo"]');
+    var campoVeiculoLivre = document.querySelector('[name="veiculo_livre"]');
+    var veiculo = campoVeiculo ? campoVeiculo.value : '';
+    var veiculoLivre = campoVeiculoLivre ? campoVeiculoLivre.value.trim() : '';
+    if (!veiculo && !veiculoLivre) {
+      faltando.push('Veículo');
+      marcarInvalido(campoVeiculo);
+      marcarInvalido(campoVeiculoLivre);
+      mostrarErroInline('veiculo', 'Selecione um veículo ou preencha o campo manual.');
+      mostrarErroInline('veiculo_livre', 'Selecione um veículo ou preencha o campo manual.');
+    }
+    // Condutor obrigatório: select OU campo manual
+    var campoCondutor = document.querySelector('[name="condutor"]');
+    var campoCondutorManual = document.querySelector('[name="condutor_manual"]');
+    var condutor = campoCondutor ? campoCondutor.value : '';
+    var condutorManual = campoCondutorManual ? campoCondutorManual.value.trim() : '';
+    if (!condutor && !condutorManual) {
+      faltando.push('Condutor');
+      marcarInvalido(campoCondutor);
+      marcarInvalido(campoCondutorManual);
+      mostrarErroInline('condutor', 'Selecione um condutor ou preencha o campo manual.');
+      mostrarErroInline('condutor_manual', 'Selecione um condutor ou preencha o campo manual.');
+    }
+    // Data obrigatória
+    var campoData = document.querySelector('[name="data_transporte"]');
+    var data = campoData ? campoData.value : '';
+    if (!data) {
+      faltando.push('Data do transporte');
+      marcarInvalido(campoData);
+      mostrarErroInline('data_transporte', 'Informe a data do transporte.');
+    }
+
+    function obterLotacaoVeiculoSelecionado() {
+      if (!campoVeiculo || !campoVeiculo.value) return null;
+      var opcao = campoVeiculo.options[campoVeiculo.selectedIndex];
+      if (!opcao) return null;
+      var lotacao = parseInt(opcao.getAttribute('data-lotacao') || '0', 10);
+      return isNaN(lotacao) ? null : lotacao;
+    }
+
+    var totalVeiculo = parseInt(document.getElementById('total-geral') ? document.getElementById('total-geral').textContent : '0', 10) || 0;
+    var lotacaoVeiculo = obterLotacaoVeiculoSelecionado();
+    var chkExcesso = document.getElementById('id_forcar_excesso_lotacao');
+    var erroExcesso = document.getElementById('erro-excesso-lotacao');
+    if (erroExcesso) {
+      erroExcesso.textContent = '';
+      erroExcesso.classList.add('d-none');
+    }
+    if (lotacaoVeiculo && totalVeiculo > lotacaoVeiculo && !(chkExcesso && chkExcesso.checked)) {
+      faltando.push('Permitir excesso de lotação');
+      marcarInvalido(chkExcesso);
+      var msgExcesso = 'O total de ' + totalVeiculo + ' pessoa(s) ultrapassa a lotação de ' + lotacaoVeiculo + ' do veículo selecionado.';
+      if (erroExcesso) {
+        erroExcesso.textContent = msgExcesso + ' Marque a opção para continuar sob sua responsabilidade.';
+        erroExcesso.classList.remove('d-none');
+      }
+      if (boxExcessoInfo) {
+        boxExcessoInfo.classList.remove('alert-warning');
+        boxExcessoInfo.classList.add('alert-danger');
+        boxExcessoInfo.innerHTML = '<strong>Excesso de lotação:</strong> ' + msgExcesso;
+      }
+      if (boxExcessoTexto) {
+        boxExcessoTexto.textContent = 'Marque a opção abaixo apenas se confirmar e assumir a responsabilidade pelo excesso de lotação.';
+      }
+    }
+
+    // Tipo de transporte obrigatório
+    var campoTipo = document.querySelector('[name="tipo_transporte"]');
+    var tipo = campoTipo ? campoTipo.value : '';
+    if (!tipo) {
+      faltando.push('Tipo de transporte');
+      marcarInvalido(campoTipo);
+      mostrarErroInline('tipo_transporte', 'Informe o tipo de transporte.');
+    }
+    // Clínica obrigatória (depende do modo)
+    if (modo === 'unico') {
+      var campoClinicaUnica = document.querySelector('[name="clinica_unica"]');
+      var campoClinicaManualUnica = document.querySelector('[name="clinica_manual_unica"]');
+      var clinicaUnica = (campoClinicaUnica || {}).value || '';
+      var clinicaManualUnica = ((campoClinicaManualUnica || {}).value || '').trim();
+      if (!clinicaUnica && !clinicaManualUnica) {
+        faltando.push('Clínica de destino para todos os pacientes selecionados');
+        marcarInvalido(campoClinicaUnica);
+        marcarInvalido(campoClinicaManualUnica);
+        mostrarErroInline('clinica_unica', 'Informe a clínica de destino para todos os pacientes selecionados.');
+        mostrarErroInline('clinica_manual_unica', 'Informe a clínica de destino para todos os pacientes selecionados.');
+        marcarContornoInvalido('wrapper-clinica-unica');
+      }
+    } else {
+      var faltandoClinica = [];
+      document.querySelectorAll('.select-clinica-lote').forEach(function(sel, index) {
+        var pacienteId = sel.getAttribute('data-paciente-id');
+        var inp = document.querySelector('[name="clinica_manual_' + pacienteId + '"]');
+        var clinicaSelecionada = (sel && sel.value) || (inp && inp.value.trim());
+        if (!clinicaSelecionada) {
+          faltandoClinica.push(index + 1);
+          marcarInvalido(sel);
+          marcarInvalido(inp);
+          mostrarErroInline(pacienteId + '-select', 'Informe a clínica deste paciente.');
+          mostrarErroInline(pacienteId + '-manual', 'Informe a clínica deste paciente.');
+          marcarContornoInvalido('wrapper-clinica-' + pacienteId);
+        }
+      });
+      if (faltandoClinica.length > 0) {
+        faltando.push('Clínica de destino dos pacientes: ' + faltandoClinica.join(', '));
+      }
+    }
+
+    // Se houver qualquer campo faltando, bloqueia envio e orienta usuário
     if (faltando.length > 0) {
       e.preventDefault();
-      var msg = '⚠️ Atenção! Existem campos obrigatórios em branco ou incompletos:\n\n- ' + faltando.join('\n- ') + '\n\nSe continuar, o transporte será registrado mesmo com dados faltando.\n\nTem certeza que deseja prosseguir assim mesmo?';
-      if (window.confirm(msg)) {
-        // Se usuário confirmar, submete mesmo assim
-        this.removeEventListener('submit', arguments.callee);
-        this.submit();
-      } // Se cancelar, não faz nada
+
+      var refs = obterElementosFaltantes();
+      if (modo === 'unico' && refs.blocoUnico) {
+        refs.blocoUnico.style.display = 'block';
+      }
+      if (modo !== 'unico' && refs.cardClinicasPacientes) {
+        refs.cardClinicasPacientes.style.display = 'block';
+      }
+
+      if (alertaCampos) {
+        alertaCampos.innerHTML = '<strong>Complete aqui os campos obrigatórios para salvar a viagem:</strong><br><span class="fw-semibold">Os itens com * precisam de atenção.</span><br>• * ' + faltando.join('<br>• * ');
+        alertaCampos.classList.remove('d-none');
+        if (alertaCampos.scrollIntoView) {
+          alertaCampos.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      var alvoScroll = primeiroCampoInvalido || (refs.cardDadosComuns || refs.cardClinicasPacientes);
+      if (alvoScroll && alvoScroll.scrollIntoView) {
+        alvoScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      if (primeiroCampoInvalido && primeiroCampoInvalido.focus) {
+        try { primeiroCampoInvalido.focus({ preventScroll: true }); } catch (_) { primeiroCampoInvalido.focus(); }
+      }
+
       return;
     }
     var btn = document.getElementById('btnSalvarLote');
@@ -569,12 +1276,178 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reabilita botão após 20s caso haja erro no servidor
     setTimeout(function() {
       btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s))';
+      btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Salvar Transportes ({{ pacientes|length }} paciente(s) + {{ acompanhantes_count }} acompanhante(s) + 1 motorista = {{ pacientes|length|add:acompanhantes_count|add:"1" }} pessoa(s))';
     }, 20000);
   });
 
   // Inicializa totalizador ao carregar
   atualizarTotalizador();
+  atualizarOrdemPreview();
+
+  var btnConfirmarDuplicidadeLote = document.getElementById('btnConfirmarDuplicidadeLote');
+  if (btnConfirmarDuplicidadeLote) {
+    btnConfirmarDuplicidadeLote.addEventListener('click', function() {
+      var campoForcarDuplicado = document.getElementById('id_forcar_duplicado');
+      var formLote = document.getElementById('form-lote');
+      if (campoForcarDuplicado) {
+        campoForcarDuplicado.value = '1';
+      }
+      if (formLote) {
+        formLote.requestSubmit();
+      }
+    });
+  }
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('form-lote');
+  if (!form) return;
+
+  var DRAFT_KEY = 'transporte_lote_draft_v1';
+  var limparRascunhoAposSalvar = {{ limpar_rascunho_transporte_lote|yesno:"true,false" }};
+  var statusRascunho = document.getElementById('status-rascunho-lote');
+
+  function atualizarStatusRascunho(texto, cor) {
+    if (!statusRascunho) return;
+    statusRascunho.textContent = texto;
+    statusRascunho.style.color = cor || '#6c757d';
+  }
+
+  function horaAtualPtBr() {
+    return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  if (limparRascunhoAposSalvar) {
+    localStorage.removeItem(DRAFT_KEY);
+    atualizarStatusRascunho('Rascunho limpo apos salvamento.', '#198754');
+  } else {
+    atualizarStatusRascunho('Rascunho automatico ativo.', '#6c757d');
+  }
+
+  function podePersistir(el) {
+    if (!el || !el.name || el.disabled) return false;
+    if (el.type === 'hidden' && ['paciente_ids_lote', 'ordem_pacientes', 'ordem_manual_editada'].indexOf(el.name) === -1) {
+      return false;
+    }
+    return true;
+  }
+
+  function coletarDraft() {
+    var dados = {};
+    var elementos = form.querySelectorAll('input[name], select[name], textarea[name]');
+
+    elementos.forEach(function(el) {
+      if (!podePersistir(el)) return;
+
+      if (el.type === 'radio') {
+        if (el.checked) {
+          dados[el.name] = el.value;
+        }
+      } else if (el.type === 'checkbox') {
+        dados[el.name] = !!el.checked;
+      } else {
+        dados[el.name] = el.value;
+      }
+    });
+
+    return dados;
+  }
+
+  function salvarDraft() {
+    var payload = {
+      savedAt: Date.now(),
+      values: coletarDraft()
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+    atualizarStatusRascunho('Rascunho salvo automaticamente as ' + horaAtualPtBr() + '.', '#0d6efd');
+  }
+
+  function restaurarDraft() {
+    var raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+
+    try {
+      var payload = JSON.parse(raw);
+      var values = (payload && payload.values) || {};
+
+      Object.keys(values).forEach(function(name) {
+        var controles = form.querySelectorAll('[name="' + name.replace(/"/g, '\\"') + '"]');
+        if (!controles || !controles.length) return;
+
+        var primeiro = controles[0];
+        var valor = values[name];
+
+        if (primeiro.type === 'radio') {
+          controles.forEach(function(ctrl) {
+            ctrl.checked = (String(ctrl.value) === String(valor));
+          });
+        } else if (primeiro.type === 'checkbox') {
+          primeiro.checked = !!valor;
+        } else {
+          primeiro.value = valor;
+        }
+      });
+
+      form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+        if (!podePersistir(el)) return;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      atualizarStatusRascunho('Rascunho restaurado automaticamente.', '#495057');
+    } catch (e) {
+      localStorage.removeItem(DRAFT_KEY);
+      atualizarStatusRascunho('Falha ao restaurar rascunho antigo. Um novo rascunho sera criado.', '#dc3545');
+    }
+  }
+
+  restaurarDraft();
+
+  form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el) {
+    if (!podePersistir(el)) return;
+    el.addEventListener('change', salvarDraft);
+    el.addEventListener('input', salvarDraft);
+  });
+});
+</script>
+
+<style>
+  .modal-suave-reaproveitar .modal-dialog {
+    transition: transform .18s ease-out, opacity .18s ease-out;
+    transform: scale(0.98) translateY(4px);
+    opacity: .96;
+  }
+
+  .modal-suave-reaproveitar.show .modal-dialog {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  .tabela-lote-pacientes thead th {
+    font-size: 0.92rem;
+    color: #1f2937;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .tabela-lote-pacientes tbody td {
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    vertical-align: middle;
+  }
+
+  .tabela-lote-pacientes .badge {
+    margin-bottom: 0.25rem;
+  }
+
+  @media (max-width: 768px) {
+    .tabela-lote-pacientes {
+      font-size: 0.9rem;
+    }
+
+    .tabela-lote-pacientes thead th {
+      font-size: 0.84rem;
+    }
+  }
+</style>
 {% endblock %}

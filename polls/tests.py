@@ -2,8 +2,16 @@ from django.test import TestCase
 import tempfile
 from pathlib import Path
 from django.test import override_settings
+from django.conf import settings
 from polls.models import Paciente, Veiculo, Condutor, Clinica, Enfermagem, Transporte
 from django.urls import reverse
+
+
+def _secure_request_kwargs():
+	if getattr(settings, 'SECURE_SSL_REDIRECT', False):
+		return {'secure': True}
+	return {}
+
 # --- TESTES DE MODELS ---
 class ModelsTestCase(TestCase):
 	def test_criar_paciente(self):
@@ -47,6 +55,7 @@ class FormsTestCase(TestCase):
 			'numero': '123',
 			'bairro': 'Centro',
 			'cidade': 'São Paulo',
+			'servico_status': 'ativo',
 			'acompanhantes': 0,
 			'consentimento_lgpd': True,
 		})
@@ -79,12 +88,12 @@ class ViewsTestCase(TestCase):
 
 	def test_home_view(self):
 		url = reverse('transporte_pacientes:home')
-		response = self.client.get(url)
+		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 
 	def test_cadastrar_paciente_view(self):
 		url = reverse('transporte_pacientes:cadastrar_paciente')
-		response = self.client.get(url)
+		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 
 	def test_pacientes_json_geolocalizacao(self):
@@ -96,10 +105,11 @@ class ViewsTestCase(TestCase):
 			longitude=-46.633308
 		)
 		url = reverse('transporte_pacientes:pacientes_json')
-		response = self.client.get(url)
+		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 		self.assertIn('application/json', response['Content-Type'])
-		data = response.json()
+		payload = response.json()
+		data = payload.get('pacientes', [])
 		self.assertTrue(any(
 			p['nome'] == 'Paciente Geo' and p['latitude'] == -23.55052 and p['longitude'] == -46.633308
 			for p in data
@@ -155,7 +165,10 @@ class ArquivosRecebidosViewTestCase(TestCase):
 			(entrada_dir / 'pacientes_teste.csv').write_text('nome,rua,numero,bairro,cidade\nPaciente 1,Rua A,10,Centro,Sao Paulo\n', encoding='utf-8')
 
 			with override_settings(DADOS_RECEBIDOS_DIR=base_dir):
-				response = self.client.get(reverse('transporte_pacientes:arquivos_recebidos_pacientes'))
+				response = self.client.get(
+					reverse('transporte_pacientes:arquivos_recebidos_pacientes'),
+					**_secure_request_kwargs(),
+				)
 
 			self.assertEqual(response.status_code, 200)
 			self.assertContains(response, 'pacientes_teste.csv')
@@ -186,7 +199,8 @@ class ArquivosRecebidosViewTestCase(TestCase):
 					'acompanhantes': 0,
 					'maca': '',
 					'cadeirante': '',
-				})
+					'servico_status': 'ativo',
+				}, **_secure_request_kwargs())
 
 			self.assertIn(response.status_code, [200, 302])
 			self.assertTrue(Paciente.objects.filter(nome='Paciente Pasta').exists())
@@ -204,7 +218,7 @@ class ArquivosRecebidosViewTestCase(TestCase):
 			data_transporte='2026-03-08',
 		)
 		url = reverse('transporte_pacientes:listar_transportes')
-		response = self.client.get(url)
+		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'Transporte')
 
@@ -226,7 +240,7 @@ class ClinicaApiTestCase(TestCase):
 
 	def test_obter_dados_clinica_sucesso(self):
 		url = reverse('transporte_pacientes:obter_dados_clinica', kwargs={'clinica_id': self.clinica.id})
-		response = self.client.get(url)
+		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 		data = response.json()
 		self.assertTrue(data['sucesso'])
@@ -235,7 +249,7 @@ class ClinicaApiTestCase(TestCase):
 
 	def test_obter_dados_clinica_404(self):
 		url = reverse('transporte_pacientes:obter_dados_clinica', kwargs={'clinica_id': 999999})
-		response = self.client.get(url)
+		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 404)
 		data = response.json()
 		self.assertFalse(data['sucesso'])
@@ -243,7 +257,7 @@ class ClinicaApiTestCase(TestCase):
 	def test_buscar_clinicas_sugestoes(self):
 		Clinica.objects.create(nome='Hospital Santa Casa', endereco='Rua A', bairro='Centro', cidade='Sao Paulo')
 		url = reverse('transporte_pacientes:buscar_clinicas_sugestoes')
-		response = self.client.get(url, {'q': 'Santa'})
+		response = self.client.get(url, {'q': 'Santa'}, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 		data = response.json()
 		self.assertTrue(data['sucesso'])
@@ -293,6 +307,7 @@ class PacienteFormRegexValidationTestCase(TestCase):
 			'cep': '12345678',
 			'ddd': '11',
 			'telefone': '998877665',
+			'servico_status': 'ativo',
 			'acompanhantes': 0,
 			'consentimento_lgpd': True,
 		})

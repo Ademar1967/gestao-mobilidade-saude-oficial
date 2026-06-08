@@ -56,6 +56,7 @@ urlpatterns = [
     path('pacientes/corrigir_dados/', views.corrigir_dados_pacientes, name='corrigir_dados_pacientes'),
     path('pacientes-json/', views.pacientes_json, name='pacientes_json'),
     path('mapa-pacientes/', views.mapa_pacientes, name='mapa_pacientes'),
+    path('transporte/cadastrar-lote/preparar/', views.preparar_cadastro_transporte_lote, name='preparar_cadastro_transporte_lote'),
     path('transporte/cadastrar-lote/', views.cadastrar_transporte_lote, name='cadastrar_transporte_lote'),
     path('api/pacientes/count/', views.pacientes_count_api, name='pacientes_count_api'),
     path('api/retorno_sugestao/', views.retorno_sugestao_api, name='retorno_sugestao_api'),

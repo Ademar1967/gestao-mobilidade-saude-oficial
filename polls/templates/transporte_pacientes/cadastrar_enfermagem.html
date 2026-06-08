@@ -31,15 +31,6 @@
 <div class="alert alert-warning py-2 mb-3" style="border-left:4px solid #f59f00;">
   <strong>Aviso de edição:</strong> você está no template <strong>cadastrar_enfermagem.html</strong>.
 </div>
-  <!-- MELHORIA ATIVA: Alerta padronizado no topo -->
-  <div id="melhoria-alert" class="alert alert-success d-flex align-items-center shadow-sm" style="border-left: 6px solid #43a047; background: linear-gradient(90deg, #e8f5e9 80%, #c8e6c9 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem;">
-    <span class="me-2" style="font-size:1.5em; color:#43a047;">&#x2714;&#xFE0F;</span>
-    <span>
-      <span style="color:#256029;">Melhoria aplicada</span><br>
-      <span style="font-size:0.97em; color:#1976d2; font-weight:400;">Última atualização: 07/03/2026 17:11</span>
-    </span>
-    <button type="button" class="btn btn-primary btn-sm ms-auto px-3 py-1 btn-ok-melhoria" onclick="document.getElementById('melhoria-alert').style.opacity=0; setTimeout(function(){document.getElementById('melhoria-alert').style.display='none';},400);">OK, entendi</button>
-  </div>
 
   {% if messages %}
     {% for message in messages %}

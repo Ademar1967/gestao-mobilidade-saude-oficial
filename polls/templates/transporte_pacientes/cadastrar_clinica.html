@@ -442,22 +442,6 @@
   </div>
       <!-- Removido bloco duplicado de exibição de clínicas e campos soltos -->
 
-  <div id="melhoria-alert" class="alert alert-success d-flex align-items-center shadow-sm" style="border-left: 6px solid #43a047; background: linear-gradient(90deg, #e8f5e9 80%, #c8e6c9 100%); font-size: 1.08em; font-weight: 500; margin-bottom: 1.2rem;">
-    <span class="me-2" style="font-size:1.5em; color:#43a047;">&#x2714;&#xFE0F;</span>
-    <span>
-      <span style="color:#256029;">Melhoria aplicada:</span> agora os botões têm efeito visual ao clicar, tornando a experiência mais moderna e intuitiva!<br>
-      <span style="font-size:0.97em; color:#1976d2; font-weight:400;">Última atualização: 07/03/2026 17:11</span>
-    </span>
-    <button type="button" class="btn btn-primary btn-sm ms-auto px-3 py-1 btn-ok-melhoria" onclick="document.getElementById('melhoria-alert').style.opacity=0; setTimeout(function(){document.getElementById('melhoria-alert').style.display='none';},400);">OK, entendi</button>
-  </div>
-  <script>
-    document.getElementById('fechar-melhoria').onclick = function() {
-      var alert = document.getElementById('melhoria-alert');
-      alert.style.transform = 'scale(0.97) translateY(2px)';
-      alert.style.boxShadow = '0 1px 2px #90caf9';
-      setTimeout(function(){ alert.style.display = 'none'; }, 120);
-    };
-  </script>
 </div>
 
 <script>

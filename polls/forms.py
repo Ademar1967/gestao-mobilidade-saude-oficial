@@ -279,6 +279,27 @@ class PacienteForm(forms.ModelForm):
             self.fields['oxigenio_litros_min'].widget.attrs['aria-label'] = 'Litros por minuto de oxigenio'
         if 'cartao_sis' in self.fields:
             self.fields['cartao_sis'].widget.attrs['autocomplete'] = 'off'
+        if 'servico_status' in self.fields and not self.is_bound and not getattr(self.instance, 'pk', None):
+            self.fields['servico_status'].initial = 'ativo'
+        if 'servico_status' in self.fields:
+            self.fields['servico_status'].label = 'Servico status'
+            self.fields['servico_status'].choices = [
+                ('ativo', 'Ativo (padrao)'),
+                ('suspenso', 'Inativo temporario (suspenso)'),
+                ('encerrado', 'Inativo definitivo (encerrado)'),
+            ]
+        if 'data_inativacao' in self.fields:
+            self.fields['data_inativacao'].label = 'Data inativacao'
+            self.fields['data_inativacao'].required = False
+        if 'motivo_inativacao' in self.fields:
+            self.fields['motivo_inativacao'].label = 'Motivo inativacao'
+            self.fields['motivo_inativacao'].required = False
+        if 'observacao_inativacao' in self.fields:
+            self.fields['observacao_inativacao'].label = 'Observacao inativacao'
+            self.fields['observacao_inativacao'].required = False
+        if 'data_prevista_retorno' in self.fields:
+            self.fields['data_prevista_retorno'].label = 'Data prevista retorno'
+            self.fields['data_prevista_retorno'].required = False
         # Placeholders explicativos adicionais
         if 'nome' in self.fields:
             self.fields['nome'].widget.attrs['placeholder'] = 'Nome completo do paciente'
@@ -317,13 +338,16 @@ class PacienteForm(forms.ModelForm):
         # Garante que o consentimento LGPD seja salvo corretamente
         instance.consentimento_lgpd = self.cleaned_data.get('consentimento_lgpd', False)
 
-        # Regra de negocio: novo paciente nasce ativo no servico.
-        # Inativacao deve ocorrer apenas por acao explicita de inativar.
-        if is_new:
-            instance.servico_ativo = True
+        # Regra de negocio: inicia ativo por padrao, mas respeita selecao explicita no formulario.
+        status_servico = self.cleaned_data.get('servico_status') or ('ativo' if is_new else instance.servico_status)
+        instance.servico_status = status_servico
+        instance.servico_ativo = status_servico == 'ativo'
+
+        if status_servico == 'ativo':
             instance.data_inativacao = None
             instance.motivo_inativacao = ''
             instance.observacao_inativacao = ''
+            instance.data_prevista_retorno = None
 
         # Monta o campo endereco legado para compatibilidade
         rua = self.cleaned_data.get('rua', '')
@@ -369,6 +393,26 @@ class PacienteForm(forms.ModelForm):
                 self.add_error('oxigenio_litros_min', 'O valor de O2 deve ser maior que zero.')
         else:
             cleaned_data['oxigenio_litros_min'] = None
+
+        # Regras de ciclo de vida do servico no cadastro/edicao.
+        servico_status = cleaned_data.get('servico_status') or 'ativo'
+        motivo_inativacao = cleaned_data.get('motivo_inativacao')
+        data_inativacao = cleaned_data.get('data_inativacao')
+
+        if servico_status == 'ativo':
+            cleaned_data['servico_ativo'] = True
+            cleaned_data['data_inativacao'] = None
+            cleaned_data['motivo_inativacao'] = ''
+            cleaned_data['observacao_inativacao'] = ''
+            cleaned_data['data_prevista_retorno'] = None
+        else:
+            cleaned_data['servico_ativo'] = False
+            if not data_inativacao:
+                self.add_error('data_inativacao', 'Informe a data de inativacao para status suspenso/encerrado.')
+            if not motivo_inativacao:
+                self.add_error('motivo_inativacao', 'Selecione o motivo da inativacao.')
+            if servico_status != 'suspenso':
+                cleaned_data['data_prevista_retorno'] = None
 
         # Validação: endereço detalhado (UF e CEP não obrigatórios)
         if not (rua and numero and bairro and cidade):
@@ -499,6 +543,12 @@ class PacienteForm(forms.ModelForm):
             'latitude': forms.HiddenInput(),
             'longitude': forms.HiddenInput(),
             'ddd': forms.TextInput(attrs={'placeholder': 'DDD', 'style': 'max-width:50px;'}),
+            'servico_status': forms.Select(attrs={'class': 'form-select'}),
+            'servico_ativo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'data_inativacao': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'motivo_inativacao': forms.Select(attrs={'class': 'form-select'}),
+            'observacao_inativacao': forms.Textarea(attrs={'rows': 2, 'class': 'form-control auto-expand'}),
+            'data_prevista_retorno': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
 
 class VeiculoForm(forms.ModelForm):
