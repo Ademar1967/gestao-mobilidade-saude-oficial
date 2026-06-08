@@ -1,7 +1,10 @@
 from django import forms
 from django.db.models import Q
 from .models import Transporte, Paciente, Veiculo, Condutor, Clinica, Enfermagem
-import requests
+try:
+    import requests
+except ImportError:
+    requests = None
 import re
 import sys
 import os
@@ -426,7 +429,7 @@ class PacienteForm(forms.ModelForm):
         if not latitude or not longitude:
             # Em produção (Render), desabilita geocodificação para evitar timeout
             # Apenas tenta em ambiente local
-            if 'test' in sys.argv or os.environ.get('DEBUG') == 'True':
+            if requests is not None and ('test' in sys.argv or os.environ.get('DEBUG') == 'True'):
                 try:
                     logger.info(f"Buscando geolocalização para: {endereco_completo}")
                     url = f'https://nominatim.openstreetmap.org/search'
