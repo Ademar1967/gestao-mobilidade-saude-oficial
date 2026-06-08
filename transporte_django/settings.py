@@ -22,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 import os
+from importlib.util import find_spec
 
 # Função equivalente ao strtobool do distutils (compatível com Python 3.12+)
 def strtobool(val):
@@ -76,8 +77,10 @@ INSTALLED_APPS = [
     'transporte_django',
     'rest_framework',
     'rest_framework_simplejwt',
-    'django_extensions',
 ]
+
+if find_spec('django_extensions'):
+    INSTALLED_APPS.append('django_extensions')
 
 # Configuração do crispy-forms para Bootstrap 5
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
