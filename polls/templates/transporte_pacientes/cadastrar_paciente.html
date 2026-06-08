@@ -1765,6 +1765,7 @@ if (inputNome) {
       campos.forEach(function(el) {
         if (!el.name) return;
         if (el.name === 'csrfmiddlewaretoken') return;
+        if (el.name === 'paciente_existente_id') return;
         if (el.type === 'password' || el.type === 'file') return;
 
         if (el.type === 'checkbox') {
@@ -1814,6 +1815,12 @@ if (inputNome) {
           aplicarRascunho(JSON.parse(bruto));
         }
       } catch (e) {}
+
+      // Evita reaproveitar ID antigo por engano em novo cadastro.
+      var hiddenPacienteIds = form.querySelectorAll('input[name="paciente_existente_id"]');
+      hiddenPacienteIds.forEach(function(el) {
+        el.value = '';
+      });
     }
 
     var campos = form.querySelectorAll('input, select, textarea');
