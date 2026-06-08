@@ -1044,7 +1044,11 @@ def mensagens_whatsapp(request):
 	return render(request, 'transporte_pacientes/mensagens_whatsapp.html', {'mensagens': mensagens})
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
-from twilio.twiml.messaging_response import MessagingResponse
+
+try:
+	from twilio.twiml.messaging_response import MessagingResponse
+except ImportError:
+	MessagingResponse = None
 
 # Endpoint para receber mensagens do WhatsApp via Twilio
 @csrf_exempt
@@ -1068,6 +1072,8 @@ def whatsapp_webhook(request):
 		    "Endereço: [endereço completo]\n"
 		    "Telefone: [telefone]"
 		)
+		if MessagingResponse is None:
+			return HttpResponse(msg_instrucoes, content_type='text/plain; charset=utf-8')
 		resp = MessagingResponse()
 		resp.message(msg_instrucoes)
 		return HttpResponse(str(resp), content_type='text/xml')
