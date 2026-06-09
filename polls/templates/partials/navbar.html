@@ -1,4 +1,14 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+  <style>
+    .navbar .nav-link.nav-link-active,
+    .navbar .nav-link.nav-link-active:focus,
+    .navbar .nav-link.nav-link-active:hover {
+      color: #fff !important;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+    }
+  </style>
   <div class="container-fluid">
     <a class="navbar-brand fw-bold" href="{% url 'transporte_pacientes:home' %}">Gestão Mobilidade Saúde</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -6,16 +16,16 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:home' %}">Início</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:cadastrar_paciente' %}">Pacientes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:cadastrar_condutor' %}">Condutores</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:cadastrar_enfermagem' %}">Enfermagem</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:cadastrar_clinica' %}">Clínicas</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:listar_transportes' %}">Transportes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:listar_transportes' %}">Impressão</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'transporte_pacientes:mapa_pacientes' %}">Mapa de Pacientes</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'home' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:home' %}">Início</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_paciente' or request.resolver_match.url_name == 'editar_paciente' or request.resolver_match.url_name == 'buscar_editar_paciente' or request.resolver_match.url_name == 'arquivos_recebidos_pacientes' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_paciente' or request.resolver_match.url_name == 'editar_paciente' or request.resolver_match.url_name == 'buscar_editar_paciente' or request.resolver_match.url_name == 'arquivos_recebidos_pacientes' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_paciente' %}">Pacientes</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_condutor' or request.resolver_match.url_name == 'editar_condutor' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_condutor' or request.resolver_match.url_name == 'editar_condutor' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_condutor' %}">Condutores</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_enfermagem' or request.resolver_match.url_name == 'editar_enfermagem' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_enfermagem' or request.resolver_match.url_name == 'editar_enfermagem' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_enfermagem' %}">Enfermagem</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_clinica' or request.resolver_match.url_name == 'corrigir_dados_clinica' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_clinica' or request.resolver_match.url_name == 'corrigir_dados_clinica' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_clinica' %}">Clínicas</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'listar_transportes' or request.resolver_match.url_name == 'cadastrar_transporte' or request.resolver_match.url_name == 'preparar_cadastro_transporte_lote' or request.resolver_match.url_name == 'cadastrar_transporte_lote' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'listar_transportes' or request.resolver_match.url_name == 'cadastrar_transporte' or request.resolver_match.url_name == 'preparar_cadastro_transporte_lote' or request.resolver_match.url_name == 'cadastrar_transporte_lote' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:listar_transportes' %}">Transportes</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'listar_transportes' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'listar_transportes' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:listar_transportes' %}">Impressão</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'mapa_pacientes' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'mapa_pacientes' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:mapa_pacientes' %}">Mapa de Pacientes</a></li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="estatisticasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle{% if request.resolver_match.url_name == 'estatisticas' or request.resolver_match.url_name == 'estatistica_tipo' or request.resolver_match.url_name == 'estatistica_clinica' or request.resolver_match.url_name == 'estatistica_periodo' or request.resolver_match.url_name == 'estatistica_veiculo' or request.resolver_match.url_name == 'estatistica_condutor' %} nav-link-active{% endif %}" href="#" id="estatisticasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Estatísticas
           </a>
           <ul class="dropdown-menu" aria-labelledby="estatisticasDropdown">
