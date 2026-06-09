@@ -689,6 +689,45 @@ def cadastrar_veiculo(request):
 		form = VeiculoForm()
 	veiculos = Veiculo.objects.all().order_by('-id')
 	return render(request, 'transporte_pacientes/cadastrar_veiculo.html', {'form': form, 'veiculos': veiculos})
+
+
+def _normalize_patient_name(value):
+	return ' '.join(str(value or '').split()).strip()
+
+
+def _normalize_phone_digits(ddd, telefone):
+	ddd_digits = ''.join(ch for ch in str(ddd or '') if ch.isdigit())
+	phone_digits = ''.join(ch for ch in str(telefone or '') if ch.isdigit())
+	if not phone_digits:
+		return ''
+	if len(phone_digits) in (10, 11) and not ddd_digits:
+		ddd_digits, phone_digits = phone_digits[:2], phone_digits[2:]
+	return f"{ddd_digits}{phone_digits}" if ddd_digits else phone_digits
+
+
+def _find_existing_patient_for_reuse(post_data):
+	nome = _normalize_patient_name(post_data.get('nome'))
+	if not nome:
+		return None
+
+	candidatos = Paciente.objects.filter(nome__iexact=nome).order_by('-id')
+	if not candidatos.exists():
+		return None
+
+	telefone_chave = _normalize_phone_digits(post_data.get('ddd'), post_data.get('telefone'))
+	if telefone_chave:
+		for paciente in candidatos:
+			if _normalize_phone_digits(getattr(paciente, 'ddd', ''), getattr(paciente, 'telefone', '')) == telefone_chave:
+				return paciente
+		return None
+
+	# Sem telefone, reaproveita automaticamente apenas quando houver um unico nome correspondente.
+	if candidatos.count() == 1:
+		return candidatos.first()
+
+	return None
+
+
 def cadastrar_paciente(request):
 	"""View stub para cadastro de paciente."""
 	from .forms import PacienteForm
@@ -705,6 +744,15 @@ def cadastrar_paciente(request):
 			   except Paciente.DoesNotExist:
 				   paciente_existente = None
 				   messages.warning(request, 'Paciente reaproveitado nao encontrado. O sistema vai cadastrar como novo.')
+
+		   if not paciente_existente:
+			   paciente_reuso_automatico = _find_existing_patient_for_reuse(request.POST)
+			   if paciente_reuso_automatico:
+				   paciente_existente = paciente_reuso_automatico
+				   messages.info(
+					   request,
+					   f'Paciente "{paciente_existente.nome}" ja cadastrado. O sistema reaproveitou o cadastro existente para atualizar os dados.',
+				   )
 
 		   form = PacienteForm(request.POST, instance=paciente_existente)
 		   if form.is_valid():

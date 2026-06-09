@@ -1705,7 +1705,6 @@ if (inputNome) {
 
 {% block extra_scripts %}
 <script>
-  var HISTORICO_PACIENTES_STORAGE_KEY = 'historicoPacientesVisivel';
   var PACIENTE_DRAFT_STORAGE_KEY = 'rascunhoCadastroPacienteV1';
 
   window.addEventListener('pageshow', function(event) {
@@ -1720,11 +1719,9 @@ if (inputNome) {
     if (historico.style.display === 'none' || historico.style.display === '') {
       historico.style.display = 'block';
       btnText.textContent = 'Ocultar lista de pacientes';
-      try { localStorage.setItem(HISTORICO_PACIENTES_STORAGE_KEY, '1'); } catch (e) {}
     } else {
       historico.style.display = 'none';
       btnText.textContent = 'Mostrar lista de pacientes';
-      try { localStorage.setItem(HISTORICO_PACIENTES_STORAGE_KEY, '0'); } catch (e) {}
     }
   }
 
@@ -1732,20 +1729,8 @@ if (inputNome) {
     var historico = document.getElementById('historicoPacientes');
     var btnText = document.getElementById('toggleHistoricoText');
     if (!historico || !btnText) return;
-
-    var visivel = '1';
-    try {
-      var salvo = localStorage.getItem(HISTORICO_PACIENTES_STORAGE_KEY);
-      if (salvo === '0' || salvo === '1') visivel = salvo;
-    } catch (e) {}
-
-    if (visivel === '1') {
-      historico.style.display = 'block';
-      btnText.textContent = 'Ocultar lista de pacientes';
-    } else {
-      historico.style.display = 'none';
-      btnText.textContent = 'Mostrar lista de pacientes';
-    }
+    historico.style.display = 'block';
+    btnText.textContent = 'Ocultar lista de pacientes';
   }
 
   document.addEventListener('DOMContentLoaded', function() {

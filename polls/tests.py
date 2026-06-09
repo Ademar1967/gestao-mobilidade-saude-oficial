@@ -114,6 +114,51 @@ class ViewsTestCase(TestCase):
 			p['nome'] == 'Paciente Geo' and p['latitude'] == -23.55052 and p['longitude'] == -46.633308
 			for p in data
 		))
+
+	def test_cadastrar_paciente_lista_exibe_todos_os_cadastros(self):
+		Paciente.objects.create(nome='Paciente Lista 1', rua='Rua A', numero='10', bairro='Centro', cidade='Sao Paulo')
+		Paciente.objects.create(nome='Paciente Lista 2', rua='Rua B', numero='20', bairro='Centro', cidade='Sao Paulo')
+		response = self.client.get(reverse('transporte_pacientes:cadastrar_paciente'), **_secure_request_kwargs())
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Paciente Lista 1')
+		self.assertContains(response, 'Paciente Lista 2')
+
+	def test_cadastrar_paciente_reaproveita_sem_duplicar_quando_nome_telefone_iguais(self):
+		existente = Paciente.objects.create(
+			nome='Paciente Reaproveitar',
+			rua='Rua Original',
+			numero='1',
+			bairro='Centro',
+			cidade='Sao Paulo',
+			estado='SP',
+			cep='01000-000',
+			ddd='11',
+			telefone='999999999',
+			consentimento_lgpd=True,
+		)
+
+		payload = {
+			'nome': 'Paciente Reaproveitar',
+			'rua': 'Rua Atualizada',
+			'numero': '99',
+			'bairro': 'Novo Bairro',
+			'cidade': 'Sao Paulo',
+			'estado': 'SP',
+			'cep': '02000-000',
+			'ddd': '11',
+			'telefone': '99999-9999',
+			'servico_status': 'ativo',
+			'acompanhantes': 0,
+			'consentimento_lgpd': 'on',
+		}
+
+		response = self.client.post(reverse('transporte_pacientes:cadastrar_paciente'), payload, **_secure_request_kwargs())
+		self.assertEqual(response.status_code, 302)
+
+		self.assertEqual(Paciente.objects.filter(nome='Paciente Reaproveitar', telefone='999999999').count(), 1)
+		existente.refresh_from_db()
+		self.assertEqual(existente.rua, 'Rua Atualizada')
+		self.assertEqual(existente.numero, '99')
 from django.urls import reverse
 from .models import Paciente, Veiculo, Condutor, Clinica, Enfermagem, Transporte
 
