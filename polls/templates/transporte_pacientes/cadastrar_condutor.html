@@ -179,6 +179,16 @@
 {% block extra_scripts %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    var focarNomeCondutor = {% if focar_nome_condutor %}true{% else %}false{% endif %};
+
+    if (focarNomeCondutor) {
+      var inputNomeCondutor = document.querySelector('#form-condutor #id_nome');
+      if (inputNomeCondutor) {
+        inputNomeCondutor.focus();
+        inputNomeCondutor.select();
+      }
+    }
+
     function mostrarSucessoTopo(texto) {
       var existente = document.getElementById('alerta-sucesso-topo-condutor');
       if (existente) existente.remove();

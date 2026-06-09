@@ -644,18 +644,20 @@ def cadastrar_condutor(request):
 	from .forms import CondutorForm
 	from .models import Condutor
 	from django.contrib import messages
+	focar_nome_condutor = bool(request.session.pop('focar_nome_condutor', False))
 	if request.method == 'POST':
 		form = CondutorForm(request.POST)
 		if form.is_valid():
 			condutor = form.save()
 			messages.success(request, f'Condutor "{condutor.nome}" cadastrado com sucesso!')
+			request.session['focar_nome_condutor'] = True
 			return redirect('transporte_pacientes:cadastrar_condutor')
 		else:
 			messages.error(request, 'Erro ao cadastrar condutor: verifique os campos obrigatórios.')
 	else:
 		form = CondutorForm()
 	condutores = Condutor.objects.all().order_by('-id')
-	return render(request, 'transporte_pacientes/cadastrar_condutor.html', {'form': form, 'condutores': condutores})
+	return render(request, 'transporte_pacientes/cadastrar_condutor.html', {'form': form, 'condutores': condutores, 'focar_nome_condutor': focar_nome_condutor})
 def cadastrar_veiculo(request):
 	"""View stub para cadastro de veículo."""
 	from .forms import VeiculoForm
