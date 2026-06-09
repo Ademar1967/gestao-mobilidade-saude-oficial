@@ -407,3 +407,44 @@ class ModelHelperMethodsTestCase(TestCase):
 		resumo = transporte.resumo_operacional()
 		self.assertIn('Paciente Operacao', resumo)
 		self.assertIn('Clinica Operacao', resumo)
+
+
+class MasterDataSyncTestCase(TestCase):
+	def setUp(self):
+		from django.contrib.auth import get_user_model
+		self.username = 'syncuser'
+		self.password = 'testpass123'
+		self.user = get_user_model().objects.create_user(username=self.username, password=self.password)
+		self.client.login(username=self.username, password=self.password)
+
+	def test_cadastro_condutor_atualiza_condutores_csv(self):
+		with tempfile.TemporaryDirectory() as temp_dir:
+			base_dir = Path(temp_dir)
+			with override_settings(BASE_DIR=base_dir):
+				response = self.client.post(
+					reverse('transporte_pacientes:cadastrar_condutor'),
+					{'nome': 'CONDUTOR CSV TESTE'},
+					**_secure_request_kwargs(),
+				)
+
+			self.assertEqual(response.status_code, 302)
+			csv_path = base_dir / 'condutores.csv'
+			self.assertTrue(csv_path.exists())
+			conteudo = csv_path.read_text(encoding='utf-8')
+			self.assertIn('CONDUTOR CSV TESTE', conteudo)
+
+	def test_cadastro_enfermagem_atualiza_enfermagem_csv(self):
+		with tempfile.TemporaryDirectory() as temp_dir:
+			base_dir = Path(temp_dir)
+			with override_settings(BASE_DIR=base_dir):
+				response = self.client.post(
+					reverse('transporte_pacientes:cadastrar_enfermagem'),
+					{'nome': 'ENFERMAGEM CSV TESTE'},
+					**_secure_request_kwargs(),
+				)
+
+			self.assertEqual(response.status_code, 302)
+			csv_path = base_dir / 'enfermagem.csv'
+			self.assertTrue(csv_path.exists())
+			conteudo = csv_path.read_text(encoding='utf-8')
+			self.assertIn('ENFERMAGEM CSV TESTE', conteudo)
