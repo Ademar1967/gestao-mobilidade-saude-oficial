@@ -633,6 +633,7 @@ def cadastrar_clinica(request):
 		form = ClinicaForm(request.POST)
 		if form.is_valid():
 			clinica = form.save()
+			_sync_master_data_csvs_safe()
 			messages.success(request, f'Clínica "{clinica.nome}" cadastrada com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_clinica')
 		else:
@@ -653,6 +654,7 @@ def cadastrar_condutor(request):
 		form = CondutorForm(request.POST)
 		if form.is_valid():
 			condutor = form.save()
+			_sync_master_data_csvs_safe()
 			messages.success(request, f'Condutor "{condutor.nome}" cadastrado com sucesso!')
 			request.session['focar_nome_condutor'] = True
 			return redirect('transporte_pacientes:cadastrar_condutor')
@@ -673,6 +675,7 @@ def cadastrar_veiculo(request):
 		form = VeiculoForm(request.POST)
 		if form.is_valid():
 			veiculo = form.save()
+			_sync_master_data_csvs_safe()
 			if hasattr(veiculo, 'patrimonio') and veiculo.patrimonio:
 				messages.success(request, f'Veículo patrimônio "{veiculo.patrimonio}" cadastrado com sucesso!')
 			elif hasattr(veiculo, 'placa') and veiculo.placa:
@@ -780,6 +783,7 @@ def excluir_selecionadas_enfermagem(request):
 		ids = request.POST.getlist('enfermagem_ids')
 		if ids:
 			Enfermagem.objects.filter(id__in=ids).delete()
+			_sync_master_data_csvs_safe()
 			messages.success(request, f'{len(ids)} membro(s) de enfermagem excluído(s) com sucesso!')
 		else:
 			messages.warning(request, 'Selecione ao menos um membro de enfermagem para excluir.')
@@ -1059,6 +1063,17 @@ def _seed_master_data_if_empty(model_class, command_name):
 			)
 		except Exception:
 			pass
+
+
+def _sync_master_data_csvs_safe():
+	try:
+		from .master_data_sync import sync_master_data_csvs
+		sync_master_data_csvs()
+	except Exception as exc:
+		try:
+			audit_logger.warning('Falha ao sincronizar CSVs-base', extra={'erro': str(exc)})
+		except Exception:
+			pass
 # --- AUTOCOMPLETE DE VEÍCULOS (AMBULÂNCIA POR PATRIMÔNIO, VAN POR PLACA) ---
 @require_GET
 def buscar_veiculos_sugestoes(request):
@@ -1185,6 +1200,7 @@ def editar_condutor(request, condutor_id):
 		form = CondutorForm(request.POST, instance=condutor)
 		if form.is_valid():
 			form.save()
+			_sync_master_data_csvs_safe()
 			from django.contrib import messages
 			messages.success(request, 'Nome do condutor atualizado com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_condutor')
@@ -1200,6 +1216,7 @@ def editar_enfermagem(request, enfermagem_id):
 		form = EnfermagemForm(request.POST, instance=enfermagem)
 		if form.is_valid():
 			form.save()
+			_sync_master_data_csvs_safe()
 			from django.contrib import messages
 			messages.success(request, 'Nome da enfermagem atualizado com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_enfermagem')
@@ -1217,6 +1234,7 @@ def editar_veiculo(request, veiculo_id):
 		form = VeiculoForm(request.POST, instance=veiculo)
 		if form.is_valid():
 			form.save()
+			_sync_master_data_csvs_safe()
 			from django.contrib import messages
 			messages.success(request, 'Dados do veículo atualizados com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_veiculo')
@@ -1752,6 +1770,7 @@ def excluir_enfermagem(request, enfermagem_id):
 	if request.method == 'POST':
 		enfermagem = get_object_or_404(Enfermagem, id=enfermagem_id)
 		enfermagem.delete()
+		_sync_master_data_csvs_safe()
 		messages.success(request, 'Enfermagem excluida com sucesso!')
 	return redirect('transporte_pacientes:cadastrar_enfermagem')
 
@@ -1769,6 +1788,7 @@ def cadastrar_enfermagem(request):
 		form = EnfermagemForm(request.POST)
 		if form.is_valid():
 			form.save()
+			_sync_master_data_csvs_safe()
 			messages.success(request, 'Enfermagem cadastrada com sucesso!')
 			return redirect('transporte_pacientes:cadastrar_enfermagem')
 	else:
@@ -1787,6 +1807,7 @@ def excluir_selecionadas_clinicas(request):
 		ids = request.POST.getlist('clinicas_ids')
 		if ids:
 			Clinica.objects.filter(id__in=ids).delete()
+			_sync_master_data_csvs_safe()
 			messages.success(request, f'{len(ids)} clinica(s) selecionada(s) foram excluidas.')
 		else:
 			messages.warning(request, 'Nenhuma clinica selecionada para exclusao.')
@@ -1802,6 +1823,7 @@ def excluir_todas_clinicas(request):
 	if request.method == 'POST':
 		total = Clinica.objects.count()
 		Clinica.objects.all().delete()
+		_sync_master_data_csvs_safe()
 		messages.success(request, f'Todas as {total} clinicas foram excluidas.')
 	return redirect('transporte_pacientes:cadastrar_clinica')
 
@@ -1815,6 +1837,7 @@ def excluir_clinica(request, clinica_id):
 	if request.method == 'POST':
 		clinica = get_object_or_404(Clinica, id=clinica_id)
 		clinica.delete()
+		_sync_master_data_csvs_safe()
 		messages.success(request, 'Clinica excluida com sucesso!')
 	return redirect('transporte_pacientes:cadastrar_clinica')
 
