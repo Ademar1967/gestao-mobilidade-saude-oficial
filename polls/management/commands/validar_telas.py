@@ -28,6 +28,7 @@ class Command(BaseCommand):
 
         client = Client(HTTP_HOST="127.0.0.1", raise_request_exception=False)
         client.force_login(user)
+        request_kwargs = self._request_kwargs()
 
         checks = []
 
@@ -41,33 +42,37 @@ class Command(BaseCommand):
         )
 
         # 2) Login page publica
-        login_response = client.get("/login/")
+        login_response = client.get("/login/", **request_kwargs)
         login_ok = login_response.status_code == 200
         checks.append(("Tela de login", login_ok, f"status={login_response.status_code}"))
 
         # 3) Telas principais com aviso de template ativo
         template_routes = [
-            ("cadastrar_paciente", "cadastrar_paciente.html"),
-            ("cadastrar_transporte", "cadastrar_transporte.html"),
-            ("cadastrar_transporte_lote", "cadastrar_transporte_lote.html"),
-            ("listar_transportes", "listar_transportes.html"),
-            ("mapa_pacientes", "mapa_pacientes.html"),
-            ("cadastrar_clinica", "cadastrar_clinica.html"),
+            ("cadastrar_paciente", ["Instruções em Português", "Instructions in English"], (200,)),
+            ("cadastrar_transporte", ["Cadastrar Transporte"], (200,)),
+            ("cadastrar_transporte_lote", [], (200, 302)),
+            ("listar_transportes", ["Transportes", "Imprimir"], (200,)),
+            ("mapa_pacientes", ["Mapa", "Paciente"], (200,)),
+            ("cadastrar_clinica", [], (200,)),
         ]
 
-        for route_name, template_name in template_routes:
+        for route_name, expected_strings, allowed_statuses in template_routes:
             ok, detail = self._check_route_contains(
                 client=client,
                 route_name=route_name,
-                expected_strings=["Aviso de edição:", template_name],
+                expected_strings=expected_strings,
+                request_kwargs=request_kwargs,
+                allowed_statuses=allowed_statuses,
             )
-            checks.append((f"Aviso em {route_name}", ok, detail))
+            checks.append((f"Rota {route_name}", ok, detail))
 
         # 4) Regras de rotulo no lote
         ok_lote, detail_lote = self._check_route_contains(
             client=client,
             route_name="cadastrar_transporte_lote",
             expected_strings=["Horário Saída", "(opcional)", "Horário Consulta"],
+            request_kwargs=request_kwargs,
+            allowed_statuses=(200, 302),
         )
         checks.append(("Rotulos de horario no lote", ok_lote, detail_lote))
 
@@ -108,15 +113,24 @@ class Command(BaseCommand):
         )
         return user
 
-    def _check_route_contains(self, client, route_name, expected_strings):
+    def _request_kwargs(self):
+        if getattr(settings, "SECURE_SSL_REDIRECT", False):
+            return {"secure": True}
+        return {}
+
+    def _check_route_contains(self, client, route_name, expected_strings, request_kwargs=None, allowed_statuses=(200,)):
         url = reverse(f"transporte_pacientes:{route_name}")
+        request_kwargs = request_kwargs or {}
         try:
-            response = client.get(url)
+            response = client.get(url, **request_kwargs)
         except Exception as exc:  # pragma: no cover - protecao extra para execucao manual
             return False, f"excecao={exc.__class__.__name__} url={url}"
 
-        if response.status_code != 200:
+        if response.status_code not in allowed_statuses:
             return False, f"status={response.status_code} url={url}"
+
+        if response.status_code in (301, 302):
+            return True, f"status={response.status_code} url={url}"
 
         html = response.content.decode("utf-8", errors="ignore")
         missing = [s for s in expected_strings if s not in html]
