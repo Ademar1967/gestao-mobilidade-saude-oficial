@@ -381,6 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if form.veiculo_livre %}
                   <div class="mt-2">
                     {{ form.veiculo_livre|as_crispy_field }}
+                    <small class="form-text text-muted">Digite ao menos 2 letras para receber sugestões. Ao escolher um item cadastrado, o sistema seleciona automaticamente o veículo.</small>
                   </div>
                 {% endif %}
                 <script>
@@ -414,6 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if form.condutor_manual %}
                   <div class="mt-2">
                     {{ form.condutor_manual|as_crispy_field }}
+                    <small class="form-text text-muted">Digite ao menos 2 letras para receber sugestões. Ao escolher um item cadastrado, o sistema seleciona automaticamente o condutor.</small>
                   </div>
                 {% endif %}
               </div>
@@ -445,6 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% if form.enfermagem_manual %}
                   <div class="mt-2">
                     {{ form.enfermagem_manual|as_crispy_field }}
+                    <small class="form-text text-muted">Digite ao menos 2 letras para receber sugestões. Ao escolher um item cadastrado, o sistema seleciona automaticamente a enfermagem.</small>
                   </div>
                 {% endif %}
               </div>
@@ -652,6 +655,12 @@ document.addEventListener('DOMContentLoaded', function() {
       var baseValues = optionsToSource(selectId);
       fillDatalist(dl, baseValues.slice(0, 80));
 
+      var syncWithSelect = function() {
+        syncManualToSelect(inputId, selectId);
+      };
+      input.addEventListener('change', syncWithSelect);
+      input.addEventListener('blur', syncWithSelect);
+
       var debounceId = null;
       input.addEventListener('input', function() {
         var termo = (input.value || '').trim();
@@ -695,7 +704,40 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
-    function initAutocompleteAjax(inputId, endpoint, fallbackSource) {
+    function normalizeText(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
+
+    function syncManualToSelect(inputId, selectId) {
+      var input = document.getElementById(inputId);
+      var select = document.getElementById(selectId);
+      if (!input || !select) return;
+
+      var typed = normalizeText(input.value);
+      if (!typed) return;
+
+      var matched = null;
+      Array.from(select.options).some(function(opt) {
+        var optionText = normalizeText(opt.textContent || '');
+        if (!opt.value || !optionText) return false;
+        if (optionText === typed) {
+          matched = opt;
+          return true;
+        }
+        return false;
+      });
+
+      if (matched) {
+        select.value = matched.value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+
+    function initAutocompleteAjax(inputId, endpoint, fallbackSource, selectId) {
       if (typeof window.jQuery === 'undefined' || typeof jQuery.fn.autocomplete !== 'function') {
         return;
       }
@@ -739,11 +781,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             response((fallbackFiltrado.length ? fallbackFiltrado : fallback).slice(0, 10));
           });
+        },
+        select: function(event, ui) {
+          var valor = (ui && ui.item && ui.item.value) ? ui.item.value : '';
+          if (valor) {
+            this.value = valor;
+          }
+          if (selectId) {
+            syncManualToSelect(inputId, selectId);
+          }
+          return false;
         }
       }).on('focus click', function() {
         jQuery(this).autocomplete('search', this.value || '');
       }).on('autocompleteopen', function() {
         jQuery('.ui-autocomplete').css('z-index', 3000);
+      }).on('change blur', function() {
+        if (selectId) {
+          syncManualToSelect(inputId, selectId);
+        }
       });
     }
 
@@ -755,10 +811,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fallback robusto: mantem sugestoes mesmo se jQuery UI falhar/carregar atrasado
     initNativeAutocompleteFallback('id_veiculo_livre', 'id_veiculo', 'dl-veiculo-livre', '/api/veiculos/sugestoes/?q=');
     initNativeAutocompleteFallback('id_clinica_manual', 'id_clinica', 'dl-clinica-manual', '/api/clinicas/sugestoes/?q=');
+    initNativeAutocompleteFallback('id_condutor_manual', 'id_condutor', 'dl-condutor-manual', '/api/condutores/sugestoes/?q=');
+    initNativeAutocompleteFallback('id_enfermagem_manual', 'id_enfermagem', 'dl-enfermagem-manual', '/api/enfermagem/sugestoes/?q=');
 
-    initAutocompleteAjax('id_veiculo_livre', '/api/veiculos/sugestoes/?q=', optionsToSource('id_veiculo'));
-    initAutocompleteAjax('id_condutor_manual', '/api/condutores/sugestoes/?q=', optionsToSource('id_condutor'));
-    initAutocompleteAjax('id_enfermagem_manual', '/api/enfermagem/sugestoes/?q=', optionsToSource('id_enfermagem'));
+    initAutocompleteAjax('id_veiculo_livre', '/api/veiculos/sugestoes/?q=', optionsToSource('id_veiculo'), 'id_veiculo');
+    initAutocompleteAjax('id_condutor_manual', '/api/condutores/sugestoes/?q=', optionsToSource('id_condutor'), 'id_condutor');
+    initAutocompleteAjax('id_enfermagem_manual', '/api/enfermagem/sugestoes/?q=', optionsToSource('id_enfermagem'), 'id_enfermagem');
 
     // Exibição de endereço da clínica escolhida (funciona com jQuery UI e datalist nativo)
     (function() {
