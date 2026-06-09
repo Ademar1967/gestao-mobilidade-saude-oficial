@@ -152,7 +152,7 @@
               <!-- Condutor -->
               <div class="col-md-6">
                 <label class="form-label fw-bold"><i class="bi bi-person-lines-fill me-1"></i>Condutor <span class="text-danger">*</span></label>
-                <select name="condutor" class="form-select">
+                <select name="condutor" id="id_condutor_lote" class="form-select">
                   <option value="">— Selecione um condutor —</option>
                   {% for c in condutores %}
                     <option value="{{ c.id }}">{{ c.nome }}</option>
@@ -160,7 +160,7 @@
                 </select>
                 <div class="form-text text-danger d-none mt-1" data-error-for="condutor"></div>
                 <div class="mt-2">
-                  <input type="text" name="condutor_manual" class="form-control"
+                  <input type="text" name="condutor_manual" id="id_condutor_manual_lote" class="form-control"
                     placeholder="Ou digite o nome do condutor" autocomplete="off">
                   <div class="form-text">Preencha se o condutor não estiver na lista.</div>
                   <div class="form-text text-danger d-none mt-1" data-error-for="condutor_manual"></div>
@@ -182,14 +182,14 @@
               <!-- Enfermagem -->
               <div class="col-md-6">
                 <label class="form-label fw-bold"><i class="bi bi-heart-pulse me-1"></i>Enfermagem <span class="text-muted fw-normal">(opcional)</span></label>
-                <select name="enfermagem" class="form-select">
+                <select name="enfermagem" id="id_enfermagem_lote" class="form-select">
                   <option value="">— Selecione —</option>
                   {% for e in enfermagens %}
                     <option value="{{ e.id }}">{{ e.nome }}</option>
                   {% endfor %}
                 </select>
                 <div class="mt-2">
-                  <input type="text" name="enfermagem_manual" class="form-control"
+                  <input type="text" name="enfermagem_manual" id="id_enfermagem_manual_lote" class="form-control"
                     placeholder="Ou digite o nome da enfermagem" autocomplete="off">
                 </div>
               </div>
@@ -1006,6 +1006,153 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  function normalizeText(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  function optionsToSource(selectId) {
+    var select = document.getElementById(selectId);
+    if (!select) return [];
+    return Array.from(select.options)
+      .map(function(opt) { return (opt.textContent || '').trim(); })
+      .filter(function(txt) { return txt && txt !== '— Selecione um veículo —' && txt !== '— Selecione um condutor —' && txt !== '— Selecione —'; });
+  }
+
+  function syncManualToSelect(inputId, selectId) {
+    var input = document.getElementById(inputId);
+    var select = document.getElementById(selectId);
+    if (!input || !select) return;
+
+    var typed = normalizeText(input.value);
+    if (!typed) return;
+
+    var matched = null;
+    Array.from(select.options).some(function(opt) {
+      if (!opt.value) return false;
+      var optionText = normalizeText(opt.textContent || '');
+      if (optionText === typed) {
+        matched = opt;
+        return true;
+      }
+      return false;
+    });
+
+    if (matched) {
+      select.value = matched.value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function ensureDatalist(id) {
+    var dl = document.getElementById(id);
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = id;
+      document.body.appendChild(dl);
+    }
+    return dl;
+  }
+
+  function fillDatalist(dl, values) {
+    if (!dl) return;
+    var uniq = Array.from(new Set((values || []).filter(Boolean)));
+    dl.innerHTML = uniq.map(function(v) {
+      return '<option value="' + String(v).replace(/"/g, '&quot;') + '"></option>';
+    }).join('');
+  }
+
+  function initNativeAutocompleteFallback(inputId, selectId, datalistId, endpoint) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+
+    var dl = ensureDatalist(datalistId);
+    input.setAttribute('list', datalistId);
+
+    var baseValues = optionsToSource(selectId);
+    fillDatalist(dl, baseValues.slice(0, 80));
+
+    input.addEventListener('change', function() { syncManualToSelect(inputId, selectId); });
+    input.addEventListener('blur', function() { syncManualToSelect(inputId, selectId); });
+
+    var debounceId = null;
+    input.addEventListener('input', function() {
+      var termo = (input.value || '').trim();
+      clearTimeout(debounceId);
+      debounceId = setTimeout(function() {
+        if (termo.length < 2) {
+          fillDatalist(dl, baseValues.slice(0, 80));
+          return;
+        }
+        fetch(endpoint + encodeURIComponent(termo))
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var resultados = (data && data.resultados) ? data.resultados : [];
+            var ajaxVals = resultados.map(function(item) {
+              return item.nome || item.patrimonio || item.placa || '';
+            }).filter(Boolean);
+            fillDatalist(dl, ajaxVals.length ? ajaxVals : baseValues.slice(0, 80));
+          })
+          .catch(function() {
+            fillDatalist(dl, baseValues.slice(0, 80));
+          });
+      }, 180);
+    });
+  }
+
+  function initAutocompleteAjax(inputId, endpoint, fallbackSource, selectId) {
+    if (typeof jQuery === 'undefined' || typeof jQuery.fn.autocomplete !== 'function') {
+      return;
+    }
+
+    var $input = jQuery('#' + inputId);
+    if (!$input.length) return;
+
+    $input.autocomplete({
+      minLength: 0,
+      appendTo: 'body',
+      source: function(request, response) {
+        var termo = request.term || '';
+        var fallback = (fallbackSource || []);
+        var termoNorm = termo.toLowerCase();
+        var fallbackFiltrado = fallback.filter(function(item) {
+          return String(item || '').toLowerCase().indexOf(termoNorm) >= 0;
+        });
+
+        if (termo.length < 2) {
+          response(fallback.slice(0, 10));
+          return;
+        }
+
+        jQuery.getJSON(endpoint + encodeURIComponent(termo), function(data) {
+          var resultados = (data && data.resultados) ? data.resultados : [];
+          var ajaxLista = resultados.map(function(item) {
+            return item.nome || item.patrimonio || item.placa || '';
+          }).filter(Boolean);
+          var unicos = Array.from(new Set(ajaxLista.concat(fallbackFiltrado))).slice(0, 12);
+          response(unicos.length ? unicos : fallback.slice(0, 10));
+        }).fail(function() {
+          response((fallbackFiltrado.length ? fallbackFiltrado : fallback).slice(0, 10));
+        });
+      },
+      select: function(event, ui) {
+        var valor = (ui && ui.item && ui.item.value) ? ui.item.value : '';
+        if (valor) this.value = valor;
+        syncManualToSelect(inputId, selectId);
+        return false;
+      }
+    }).on('focus click', function() {
+      jQuery(this).autocomplete('search', this.value || '');
+    }).on('autocompleteopen', function() {
+      jQuery('.ui-autocomplete').css('z-index', 3000);
+    }).on('change blur', function() {
+      syncManualToSelect(inputId, selectId);
+    });
+  }
+
   // Autocomplete AJAX para cada campo de clínica manual
   if (typeof jQuery !== 'undefined' && typeof jQuery.fn.autocomplete === 'function') {
     document.querySelectorAll('.input-clinica-manual-lote').forEach(function(inp) {
@@ -1061,6 +1208,15 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   }
+
+  // Autocomplete unificado para campos manuais dos dados comuns
+  initNativeAutocompleteFallback('id_veiculo_livre_lote', 'id_veiculo_lote', 'dl-veiculo-livre-lote', '/api/veiculos/sugestoes/?q=');
+  initNativeAutocompleteFallback('id_condutor_manual_lote', 'id_condutor_lote', 'dl-condutor-livre-lote', '/api/condutores/sugestoes/?q=');
+  initNativeAutocompleteFallback('id_enfermagem_manual_lote', 'id_enfermagem_lote', 'dl-enfermagem-livre-lote', '/api/enfermagem/sugestoes/?q=');
+
+  initAutocompleteAjax('id_veiculo_livre_lote', '/api/veiculos/sugestoes/?q=', optionsToSource('id_veiculo_lote'), 'id_veiculo_lote');
+  initAutocompleteAjax('id_condutor_manual_lote', '/api/condutores/sugestoes/?q=', optionsToSource('id_condutor_lote'), 'id_condutor_lote');
+  initAutocompleteAjax('id_enfermagem_manual_lote', '/api/enfermagem/sugestoes/?q=', optionsToSource('id_enfermagem_lote'), 'id_enfermagem_lote');
 
   // Confirmação antes de salvar, com checagem de todos os campos obrigatórios
   document.getElementById('form-lote').addEventListener('submit', function(e) {
