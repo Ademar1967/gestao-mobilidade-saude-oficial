@@ -622,6 +622,8 @@ def cadastrar_clinica(request):
 	from .models import Clinica
 	from django import forms
 	from django.contrib import messages
+	if request.method != 'POST':
+		_seed_master_data_if_empty(Clinica, 'importar_clinicas')
 	class ClinicaForm(forms.ModelForm):
 		class Meta:
 			model = Clinica
@@ -644,6 +646,8 @@ def cadastrar_condutor(request):
 	from .forms import CondutorForm
 	from .models import Condutor
 	from django.contrib import messages
+	if request.method != 'POST':
+		_seed_master_data_if_empty(Condutor, 'importar_condutores')
 	focar_nome_condutor = bool(request.session.pop('focar_nome_condutor', False))
 	if request.method == 'POST':
 		form = CondutorForm(request.POST)
@@ -663,6 +667,8 @@ def cadastrar_veiculo(request):
 	from .forms import VeiculoForm
 	from .models import Veiculo
 	from django.contrib import messages
+	if request.method != 'POST':
+		_seed_master_data_if_empty(Veiculo, 'importar_viaturas')
 	if request.method == 'POST':
 		form = VeiculoForm(request.POST)
 		if form.is_valid():
@@ -1036,6 +1042,23 @@ from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
+
+
+def _seed_master_data_if_empty(model_class, command_name):
+	"""Reidrata cadastro base via comando de importacao quando a tabela estiver vazia."""
+	try:
+		if model_class.objects.exists():
+			return
+		from django.core.management import call_command
+		call_command(command_name, verbosity=0)
+	except Exception as exc:
+		try:
+			audit_logger.warning(
+				'Falha ao reidratar cadastro base',
+				extra={'model': model_class.__name__, 'command': command_name, 'erro': str(exc)},
+			)
+		except Exception:
+			pass
 # --- AUTOCOMPLETE DE VEÍCULOS (AMBULÂNCIA POR PATRIMÔNIO, VAN POR PLACA) ---
 @require_GET
 def buscar_veiculos_sugestoes(request):
@@ -1043,6 +1066,7 @@ def buscar_veiculos_sugestoes(request):
 	termo = (request.GET.get('q') or '').strip()
 	if len(termo) < 2:
 		return JsonResponse({'sucesso': True, 'resultados': []})
+	_seed_master_data_if_empty(Veiculo, 'importar_viaturas')
 	queryset = (
 		Veiculo.objects.only('id', 'patrimonio', 'placa', 'tipo_veiculo')
 		.annotate(
@@ -1320,6 +1344,7 @@ def buscar_condutores_sugestoes(request):
 	termo = (request.GET.get('q') or '').strip()
 	if len(termo) < 2:
 		return JsonResponse({'sucesso': True, 'resultados': []})
+	_seed_master_data_if_empty(Condutor, 'importar_condutores')
 
 	queryset = (
 		Condutor.objects
@@ -1349,6 +1374,7 @@ def buscar_enfermagem_sugestoes(request):
 	termo = (request.GET.get('q') or '').strip()
 	if len(termo) < 2:
 		return JsonResponse({'sucesso': True, 'resultados': []})
+	_seed_master_data_if_empty(Enfermagem, 'importar_enfermagem')
 
 	queryset = (
 		Enfermagem.objects.only('id', 'nome')
@@ -1736,6 +1762,8 @@ def cadastrar_enfermagem(request):
 	from django.shortcuts import redirect, render
 	from .forms import EnfermagemForm
 	from .models import Enfermagem
+	if request.method != 'POST':
+		_seed_master_data_if_empty(Enfermagem, 'importar_enfermagem')
 
 	if request.method == 'POST':
 		form = EnfermagemForm(request.POST)

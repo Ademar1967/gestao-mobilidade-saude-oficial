@@ -125,6 +125,9 @@ WSGI_APPLICATION = 'transporte_django.wsgi.application'
 import dj_database_url
 
 _db_url = os.environ.get('DATABASE_URL', '').strip()
+_strict_database_url = strtobool(os.environ.get('STRICT_DATABASE_URL', '0'))
+if _strict_database_url and not DEBUG and not _db_url:
+    raise ImproperlyConfigured('Defina DATABASE_URL em produção para usar banco persistente.')
 if _db_url:
     _db_config = dj_database_url.config(default=_db_url)
 else:
