@@ -31,6 +31,7 @@ urlpatterns = [
     path('pacientes/cadastrar/', views.cadastrar_paciente, name='cadastrar_paciente'),
     path('pacientes/arquivos-recebidos/', views.arquivos_recebidos_pacientes, name='arquivos_recebidos_pacientes'),
     path('veiculos/cadastrar/', views.cadastrar_veiculo, name='cadastrar_veiculo'),
+    path('veiculos/editar/<int:veiculo_id>/', views.editar_veiculo, name='editar_veiculo'),
     path('condutores/cadastrar/', views.cadastrar_condutor, name='cadastrar_condutor'),
     path('condutores/editar/<int:condutor_id>/', views.editar_condutor, name='editar_condutor'),
     path('condutores/excluir/<int:condutor_id>/', views_condutor_delete.excluir_condutor, name='excluir_condutor'),

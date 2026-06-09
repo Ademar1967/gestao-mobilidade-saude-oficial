@@ -448,3 +448,81 @@ class MasterDataSyncTestCase(TestCase):
 			self.assertTrue(csv_path.exists())
 			conteudo = csv_path.read_text(encoding='utf-8')
 			self.assertIn('ENFERMAGEM CSV TESTE', conteudo)
+
+	def test_fluxo_salvar_e_recarregar_condutor(self):
+		nome = 'CONDUTOR PERSISTENCIA E2E'
+		response = self.client.post(
+			reverse('transporte_pacientes:cadastrar_condutor'),
+			{'nome': nome},
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(response.status_code, 302)
+		self.assertTrue(Condutor.objects.filter(nome=nome).exists())
+
+		get_response = self.client.get(
+			reverse('transporte_pacientes:cadastrar_condutor'),
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(get_response.status_code, 200)
+		self.assertContains(get_response, nome)
+
+	def test_fluxo_salvar_e_recarregar_enfermagem(self):
+		nome = 'ENFERMAGEM PERSISTENCIA E2E'
+		response = self.client.post(
+			reverse('transporte_pacientes:cadastrar_enfermagem'),
+			{'nome': nome},
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(response.status_code, 302)
+		self.assertTrue(Enfermagem.objects.filter(nome=nome).exists())
+
+		get_response = self.client.get(
+			reverse('transporte_pacientes:cadastrar_enfermagem'),
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(get_response.status_code, 200)
+		self.assertContains(get_response, nome)
+
+	def test_fluxo_salvar_e_recarregar_clinica(self):
+		nome = 'CLINICA PERSISTENCIA E2E'
+		response = self.client.post(
+			reverse('transporte_pacientes:cadastrar_clinica'),
+			{
+				'nome': nome,
+				'endereco': 'Rua Persistencia, 123',
+				'bairro': 'Centro',
+				'cidade': 'Sao Paulo',
+			},
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(response.status_code, 302)
+		self.assertTrue(Clinica.objects.filter(nome=nome).exists())
+
+		get_response = self.client.get(
+			reverse('transporte_pacientes:cadastrar_clinica'),
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(get_response.status_code, 200)
+		self.assertContains(get_response, nome)
+
+	def test_fluxo_salvar_e_recarregar_veiculo(self):
+		patrimonio = 'VT-PERSIST-001'
+		response = self.client.post(
+			reverse('transporte_pacientes:cadastrar_veiculo'),
+			{
+				'tipo_veiculo': 'ambulancia',
+				'patrimonio': patrimonio,
+				'placa': 'ABC1D23',
+				'lotacao': 1,
+			},
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(response.status_code, 302)
+		self.assertTrue(Veiculo.objects.filter(patrimonio=patrimonio).exists())
+
+		get_response = self.client.get(
+			reverse('transporte_pacientes:cadastrar_veiculo'),
+			**_secure_request_kwargs(),
+		)
+		self.assertEqual(get_response.status_code, 200)
+		self.assertContains(get_response, patrimonio)
