@@ -190,16 +190,22 @@
     <div class="col-lg-10 col-md-12 col-12">
       <div class="card mb-4">
         <div class="card-header bg-info text-white">
-          <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
+          <h4 class="mb-0 titulo-impressao">
+            {% if request.GET.modo == 'impressao' %}Pré-impressão de Transportes{% else %}Lista de Transportes Agendados{% endif %}
+          </h4>
         </div>
         <div class="card-body">
           {% if request.GET.modo == 'impressao' %}
             <div class="alert alert-warning no-print" role="alert">
-              Modo de impressão ativado: revise os dados e clique em Imprimir.
+              Modo de impressão ativado: revise os dados e clique em Imprimir. Este modo é exclusivo para conferência e impressão.
             </div>
           {% endif %}
-          <button type="button" class="btn-print no-print" onclick="window.print()">Imprimir</button>
-          <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo no-print">Novo Transporte</a>
+          <button type="button" class="btn-print no-print" onclick="window.print()">{% if request.GET.modo == 'impressao' %}Imprimir Agora{% else %}Imprimir{% endif %}</button>
+          {% if request.GET.modo == 'impressao' %}
+            <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-outline-secondary no-print mb-3">Voltar para Transportes</a>
+          {% else %}
+            <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo no-print">Novo Transporte</a>
+          {% endif %}
           {% if transportes %}
             <div class="table-responsive">
               <table class="table table-striped table-bordered align-middle">
@@ -241,6 +247,15 @@
     </div>
   </div>
 </div>
+{% if request.GET.modo == 'impressao' and request.GET.auto == '1' %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      window.print();
+    }, 180);
+  });
+</script>
+{% endif %}
 {% endblock %}
               </select>
             </div>
