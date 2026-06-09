@@ -193,6 +193,11 @@
           <h4 class="mb-0 titulo-impressao">Lista de Transportes Agendados</h4>
         </div>
         <div class="card-body">
+          {% if request.GET.modo == 'impressao' %}
+            <div class="alert alert-warning no-print" role="alert">
+              Modo de impressão ativado: revise os dados e clique em Imprimir.
+            </div>
+          {% endif %}
           <button type="button" class="btn-print no-print" onclick="window.print()">Imprimir</button>
           <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}" class="btn-novo no-print">Novo Transporte</a>
           {% if transportes %}
