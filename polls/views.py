@@ -782,6 +782,27 @@ from django.http import HttpResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count
 
+
+def _obter_filtros_periodo_estatistica(request):
+	from django.utils.dateparse import parse_date
+
+	data_inicio = (request.GET.get('data_inicio') or '').strip()
+	data_fim = (request.GET.get('data_fim') or '').strip()
+	return {
+		'data_inicio': data_inicio,
+		'data_fim': data_fim,
+		'data_inicio_parsed': parse_date(data_inicio) if data_inicio else None,
+		'data_fim_parsed': parse_date(data_fim) if data_fim else None,
+	}
+
+
+def _aplicar_filtro_periodo_estatistica(qs, filtros):
+	if filtros.get('data_inicio_parsed'):
+		qs = qs.filter(data_transporte__gte=filtros['data_inicio_parsed'])
+	if filtros.get('data_fim_parsed'):
+		qs = qs.filter(data_transporte__lte=filtros['data_fim_parsed'])
+	return qs
+
 @staff_member_required
 def listar_clinicas(request):
 	from .models import Clinica
@@ -801,8 +822,10 @@ def contar_ambulancias(request):
 @staff_member_required
 def estatistica_transportes_veiculo(request):
 	from .models import Transporte, Veiculo
+	filtros = _obter_filtros_periodo_estatistica(request)
+	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
 	qs = (
-		Transporte.objects.values('veiculo__patrimonio', 'veiculo__placa')
+		base_qs.values('veiculo__patrimonio', 'veiculo__placa')
 		.annotate(total=Count('id'))
 		.order_by('-total')
 	)
@@ -810,14 +833,16 @@ def estatistica_transportes_veiculo(request):
 		{'veiculo': (row['veiculo__patrimonio'] or row['veiculo__placa'] or 'Não informado'), 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_veiculo.html', {'dados': dados})
+	return render(request, 'transporte_pacientes/estatistica_veiculo.html', {'dados': dados, 'filtros': filtros})
 
 # --- ESTATÍSTICA: Transportes por motorista (condutor) ---
 @staff_member_required
 def estatistica_transportes_condutor(request):
 	from .models import Transporte, Condutor
+	filtros = _obter_filtros_periodo_estatistica(request)
+	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
 	qs = (
-		Transporte.objects.values('condutor__nome')
+		base_qs.values('condutor__nome')
 		.annotate(total=Count('id'))
 		.order_by('-total')
 	)
@@ -825,15 +850,17 @@ def estatistica_transportes_condutor(request):
 		{'condutor': row['condutor__nome'] or 'Não informado', 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_condutor.html', {'dados': dados})
+	return render(request, 'transporte_pacientes/estatistica_condutor.html', {'dados': dados, 'filtros': filtros})
 
 # --- ESTATÍSTICA: Transportes por mês/ano ---
 @staff_member_required
 def estatistica_transportes_periodo(request):
 	from .models import Transporte
 	from django.db.models.functions import TruncMonth
+	filtros = _obter_filtros_periodo_estatistica(request)
+	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
 	qs = (
-		Transporte.objects.annotate(mes=TruncMonth('data_transporte'))
+		base_qs.annotate(mes=TruncMonth('data_transporte'))
 		.values('mes')
 		.annotate(total=Count('id'))
 		.order_by('mes')
@@ -842,14 +869,16 @@ def estatistica_transportes_periodo(request):
 		{'mes': row['mes'].strftime('%m/%Y') if row['mes'] else 'Sem data', 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_periodo.html', {'dados': dados})
+	return render(request, 'transporte_pacientes/estatistica_periodo.html', {'dados': dados, 'filtros': filtros})
 
 # --- ESTATÍSTICA: Transportes por clínica ---
 @staff_member_required
 def estatistica_transportes_clinica(request):
 	from .models import Transporte, Clinica
+	filtros = _obter_filtros_periodo_estatistica(request)
+	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
 	qs = (
-		Transporte.objects.values('clinica__id')
+		base_qs.values('clinica__id')
 		.annotate(total=Count('id'))
 		.order_by('-total')
 	)
@@ -859,14 +888,16 @@ def estatistica_transportes_clinica(request):
 		{'clinica': (clinicas_map.get(row['clinica__id'], 'Não informado').upper() if clinicas_map.get(row['clinica__id']) else 'Não informado'), 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_clinica.html', {'dados': dados})
+	return render(request, 'transporte_pacientes/estatistica_clinica.html', {'dados': dados, 'filtros': filtros})
 
 # --- ESTATÍSTICA: Transportes por tipo ---
 @staff_member_required
 def estatistica_transportes_tipo(request):
 	from .models import Transporte
+	filtros = _obter_filtros_periodo_estatistica(request)
+	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
 	tipos = dict(Transporte._meta.get_field('tipo_transporte').choices)
-	qs = Transporte.objects.values('tipo_transporte').annotate(total=Count('id')).order_by('tipo_transporte')
+	qs = base_qs.values('tipo_transporte').annotate(total=Count('id')).order_by('tipo_transporte')
 	dados = [
 		{'tipo': tipos.get(row['tipo_transporte'], row['tipo_transporte']), 'total': row['total']}
 		for row in qs
@@ -876,13 +907,13 @@ def estatistica_transportes_tipo(request):
 	# Considera que a classificação está em observacoes (ajuste se houver campo dedicado)
 	cores = ["amarelo", "verde", "vermelho"]
 	for cor in cores:
-		total = Transporte.objects.filter(tipo_transporte__icontains="TRANSFER", observacoes__icontains=cor).count()
+		total = base_qs.filter(tipo_transporte__icontains="TRANSFER", observacoes__icontains=cor).count()
 		dados.append({
 			"tipo": f"Transferência Classificada {cor.capitalize()}",
 			"total": total
 		})
 
-	return render(request, 'transporte_pacientes/estatistica_tipo.html', {'dados': dados})
+	return render(request, 'transporte_pacientes/estatistica_tipo.html', {'dados': dados, 'filtros': filtros})
 from django.http import JsonResponse
 # Endpoint para sugerir dados de retorno invertidos
 def retorno_sugestao_api(request):

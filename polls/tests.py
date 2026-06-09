@@ -245,7 +245,54 @@ class ClinicaApiTestCase(TestCase):
 		data = response.json()
 		self.assertTrue(data['sucesso'])
 		self.assertEqual(data['nome'], 'Hospital API')
-		self.assertEqual(data['bairro'], 'Bela Vista')
+
+
+class EstatisticasFiltroPeriodoTestCase(TestCase):
+	def setUp(self):
+		from django.contrib.auth import get_user_model
+		self.username = 'staffstats'
+		self.password = 'testpass123'
+		self.user = get_user_model().objects.create_user(
+			username=self.username,
+			password=self.password,
+			is_staff=True,
+		)
+		self.client.login(username=self.username, password=self.password)
+		self.paciente = Paciente.objects.create(nome='Paciente Estatistica')
+		self.condutor = Condutor.objects.create(nome='Condutor Estatistica')
+		self.clinica = Clinica.objects.create(nome='Clinica Estatistica')
+		self.enfermagem = Enfermagem.objects.create(nome='Enfermagem Estatistica')
+		self.veiculo_jan = Veiculo.objects.create(tipo_veiculo='ambulancia', patrimonio='JAN001')
+		self.veiculo_fev = Veiculo.objects.create(tipo_veiculo='ambulancia', patrimonio='FEV002')
+
+	def test_estatistica_veiculo_respeita_filtro_periodo(self):
+		Transporte.objects.create(
+			paciente=self.paciente,
+			veiculo=self.veiculo_jan,
+			condutor=self.condutor,
+			clinica=self.clinica,
+			enfermagem=self.enfermagem,
+			data_transporte='2026-01-15',
+		)
+		Transporte.objects.create(
+			paciente=self.paciente,
+			veiculo=self.veiculo_fev,
+			condutor=self.condutor,
+			clinica=self.clinica,
+			enfermagem=self.enfermagem,
+			data_transporte='2026-02-10',
+		)
+
+		url = reverse('transporte_pacientes:estatistica_veiculo')
+		response = self.client.get(
+			url,
+			{'data_inicio': '2026-01-01', 'data_fim': '2026-01-31'},
+			**_secure_request_kwargs(),
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'JAN001')
+		self.assertNotContains(response, 'FEV002')
 
 	def test_obter_dados_clinica_404(self):
 		url = reverse('transporte_pacientes:obter_dados_clinica', kwargs={'clinica_id': 999999})

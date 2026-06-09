@@ -2,6 +2,20 @@
 {% block content %}
 <div class="container mt-4">
   <h2 class="mb-4"><i class="bi bi-truck"></i> Estatística de Transportes por Veículo</h2>
+  <form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-md-3 col-12">
+      <label for="data_inicio" class="form-label mb-1">Data inicial</label>
+      <input type="date" id="data_inicio" name="data_inicio" class="form-control" value="{{ filtros.data_inicio }}">
+    </div>
+    <div class="col-md-3 col-12">
+      <label for="data_fim" class="form-label mb-1">Data final</label>
+      <input type="date" id="data_fim" name="data_fim" class="form-control" value="{{ filtros.data_fim }}">
+    </div>
+    <div class="col-md-6 col-12 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+      <a href="{% url 'transporte_pacientes:estatistica_veiculo' %}" class="btn btn-outline-secondary">Limpar</a>
+    </div>
+  </form>
   <table class="table table-bordered table-striped mb-4">
     <thead class="table-warning">
       <tr>
