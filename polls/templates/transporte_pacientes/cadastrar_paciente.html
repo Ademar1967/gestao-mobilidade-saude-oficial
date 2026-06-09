@@ -1708,6 +1708,11 @@ if (inputNome) {
   var HISTORICO_PACIENTES_STORAGE_KEY = 'historicoPacientesVisivel';
   var PACIENTE_DRAFT_STORAGE_KEY = 'rascunhoCadastroPacienteV1';
 
+  window.addEventListener('pageshow', function(event) {
+    if (!event.persisted) return;
+    window.location.reload();
+  });
+
   function toggleHistorico() {
     var historico = document.getElementById('historicoPacientes');
     var btnText = document.getElementById('toggleHistoricoText');
