@@ -218,7 +218,7 @@
                     <th>Condutor</th>
                     <th>Enfermagem</th>
                     <th>Saída</th>
-                    <th>Chegada</th>
+                    <th>Horário da Consulta</th>
                     <th>Observações</th>
                   </tr>
                 </thead>
@@ -232,7 +232,7 @@
                     <td>{{ t.condutor }}</td>
                     <td>{{ t.enfermagem }}</td>
                     <td>{{ t.hora_saida|default:'-' }}</td>
-                    <td>{{ t.hora_chegada|default:'-' }}</td>
+                    <td>{{ t.paciente.horario_consulta|time:'H:i'|default:'-' }}</td>
                     <td>{{ t.observacoes|default:'-' }}</td>
                   </tr>
                   {% endfor %}

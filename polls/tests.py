@@ -1,4 +1,5 @@
 from django.test import TestCase
+from datetime import time
 import tempfile
 from pathlib import Path
 from django.test import override_settings
@@ -266,6 +267,25 @@ class ArquivosRecebidosViewTestCase(TestCase):
 		response = self.client.get(url, **_secure_request_kwargs())
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'Transporte')
+
+	def test_listar_transportes_coluna_consulta_usa_horario_consulta_do_paciente(self):
+		self.paciente.horario_consulta = time(22, 58)
+		self.paciente.save(update_fields=['horario_consulta'])
+
+		Transporte.objects.create(
+			paciente=self.paciente,
+			veiculo=self.veiculo,
+			condutor=self.condutor,
+			clinica=self.clinica,
+			enfermagem=self.enfermagem,
+			data_transporte='2026-06-10',
+			hora_saida='20:00',
+			hora_chegada='21:45',
+		)
+		url = reverse('transporte_pacientes:listar_transportes')
+		response = self.client.get(url, **_secure_request_kwargs())
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, '22:58')
 
 
 class ClinicaApiTestCase(TestCase):
