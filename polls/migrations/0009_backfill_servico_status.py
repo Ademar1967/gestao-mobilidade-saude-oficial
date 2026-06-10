@@ -3,30 +3,32 @@ from django.db import migrations
 
 def backfill_servico_status(apps, schema_editor):
     table_name = 'polls_paciente'
+    connection = schema_editor.connection
+    introspection = connection.introspection
 
-    with schema_editor.connection.cursor() as cursor:
-        columns = {
-            row[1]
-            for row in cursor.execute(f"PRAGMA table_info({table_name})").fetchall()
+    def _get_columns(cursor):
+        return {
+            col.name
+            for col in introspection.get_table_description(cursor, table_name)
         }
+
+    with connection.cursor() as cursor:
+        columns = _get_columns(cursor)
 
         # Em algumas bases legadas a coluna existe fisicamente; em outras não.
         if 'servico_ativo' not in columns:
             cursor.execute(
-                f"ALTER TABLE {table_name} ADD COLUMN servico_ativo bool NOT NULL DEFAULT 1"
+                f"ALTER TABLE {table_name} ADD COLUMN servico_ativo bool NOT NULL DEFAULT TRUE"
             )
 
-        columns = {
-            row[1]
-            for row in cursor.execute(f"PRAGMA table_info({table_name})").fetchall()
-        }
+        columns = _get_columns(cursor)
 
         if 'servico_ativo' in columns:
             cursor.execute(
-                f"UPDATE {table_name} SET servico_status='ativo' WHERE servico_ativo=1"
+                f"UPDATE {table_name} SET servico_status='ativo' WHERE servico_ativo IS TRUE"
             )
             cursor.execute(
-                f"UPDATE {table_name} SET servico_status='encerrado' WHERE servico_ativo=0"
+                f"UPDATE {table_name} SET servico_status='encerrado' WHERE servico_ativo IS FALSE"
             )
 
         cursor.execute(
