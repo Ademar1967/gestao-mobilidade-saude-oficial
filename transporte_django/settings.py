@@ -125,7 +125,12 @@ WSGI_APPLICATION = 'transporte_django.wsgi.application'
 import dj_database_url
 
 _db_url = os.environ.get('DATABASE_URL', '').strip()
-_strict_database_url = strtobool(os.environ.get('STRICT_DATABASE_URL', '0'))
+# Em ambiente Render, falha explicitamente se DATABASE_URL nao estiver definido,
+# evitando fallback silencioso para SQLite efemero.
+_is_render = str(os.environ.get('RENDER', '')).lower() == 'true'
+_strict_database_url = strtobool(
+    os.environ.get('STRICT_DATABASE_URL', '1' if _is_render else '0')
+)
 if _strict_database_url and not DEBUG and not _db_url:
     raise ImproperlyConfigured('Defina DATABASE_URL em produção para usar banco persistente.')
 if _db_url:
