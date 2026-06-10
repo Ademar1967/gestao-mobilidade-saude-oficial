@@ -32,10 +32,10 @@ def backfill_servico_status(apps, schema_editor):
             )
 
         cursor.execute(
-            f"UPDATE {table_name} SET servico_ativo=0 WHERE servico_status IN ('suspenso', 'encerrado')"
+            f"UPDATE {table_name} SET servico_ativo=FALSE WHERE servico_status IN ('suspenso', 'encerrado')"
         )
         cursor.execute(
-            f"UPDATE {table_name} SET servico_ativo=1 WHERE servico_status='ativo'"
+            f"UPDATE {table_name} SET servico_ativo=TRUE WHERE servico_status='ativo'"
         )
 
 
