@@ -1638,6 +1638,12 @@ if (inputNome) {
   </button>
 </div>
 <div id="historicoPacientes" style="display: block;">
+  {% if not usa_postgres %}
+  <div class="alert alert-danger py-2 mb-2" style="border-left:4px solid #c62828;">
+    <strong>Diagnóstico de persistência:</strong> o sistema está usando banco não persistente ({{ db_engine|default:'desconhecido' }}).
+    Cadastros podem não permanecer após reinício/deploy. No Render, configure corretamente o DATABASE_URL do Postgres.
+  </div>
+  {% endif %}
   <div class="alert alert-success py-2 mb-2" style="border-left:4px solid #2b8a3e;">
     Histórico ativo: pacientes cadastrados ficam salvos no banco de dados e continuam disponíveis após fechar/reabrir a página.
   </div>

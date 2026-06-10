@@ -815,6 +815,8 @@ def cadastrar_paciente(request):
 	total_pacientes = pacientes.count()
 	total_acompanhantes = sum([p.acompanhantes for p in pacientes])
 	total_geral = total_pacientes + total_acompanhantes
+	db_engine = str(settings.DATABASES.get('default', {}).get('ENGINE', ''))
+	usa_postgres = 'postgresql' in db_engine
 	return render(request, 'transporte_pacientes/cadastrar_paciente.html', {
 		'form': form,
 		'pacientes': pacientes,
@@ -822,6 +824,8 @@ def cadastrar_paciente(request):
 		'total_acompanhantes': total_acompanhantes,
 		'total_geral': total_geral,
 		'limpar_rascunho_paciente': limpar_rascunho_paciente,
+		'db_engine': db_engine,
+		'usa_postgres': usa_postgres,
 	})
 def excluir_selecionadas_enfermagem(request):
 	"""Exclui os membros de enfermagem marcados via checkbox na listagem."""
