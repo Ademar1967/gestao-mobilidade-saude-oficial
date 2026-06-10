@@ -70,7 +70,7 @@ class Command(BaseCommand):
         ok_lote, detail_lote = self._check_route_contains(
             client=client,
             route_name="cadastrar_transporte_lote",
-            expected_strings=["Horário Saída", "(opcional)", "Horário Consulta"],
+            expected_strings=["Horário Saída", "(opcional)", "Horário Chegada"],
             request_kwargs=request_kwargs,
             allowed_statuses=(200, 302),
         )

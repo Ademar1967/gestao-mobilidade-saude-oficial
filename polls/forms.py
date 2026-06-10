@@ -85,9 +85,11 @@ class TransporteForm(forms.ModelForm):
             self.fields['clinica'].label_from_instance = self._formatar_opcao_clinica
         if 'veiculo' in self.fields:
             self.fields['veiculo'].label_from_instance = self._formatar_opcao_veiculo
-        # Corrige o label do campo hora_saida
+        # Horarios do transporte devem ser independentes do horario de consulta do paciente.
         if 'hora_saida' in self.fields:
-            self.fields['hora_saida'].label = 'Horário da Consulta'
+            self.fields['hora_saida'].label = 'Horário de Saída'
+        if 'hora_chegada' in self.fields:
+            self.fields['hora_chegada'].label = 'Horário de Chegada'
 
     @staticmethod
     def _formatar_opcao_veiculo(veiculo):
