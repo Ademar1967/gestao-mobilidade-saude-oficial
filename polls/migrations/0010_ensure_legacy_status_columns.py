@@ -16,7 +16,7 @@ def ensure_legacy_status_columns(apps, schema_editor):
         columns = _get_columns(cursor)
 
         if 'data_inativacao' not in columns:
-            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN data_inativacao datetime NULL")
+            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN data_inativacao timestamp NULL")
 
         if 'motivo_inativacao' not in columns:
             cursor.execute(
