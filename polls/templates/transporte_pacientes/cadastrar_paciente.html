@@ -350,6 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <span style="font-size:1.08em;">Total de pessoas cadastradas hoje:</span>
     <span id="total-geral-pessoas" class="total-geral">{{ total_geral }}</span>
     <span class="detalhes">(Pacientes: <strong id="total-pacientes">{{ total_pacientes }}</strong>  |  Acompanhantes: <strong id="total-acompanhantes">{{ total_acompanhantes }}</strong>)</span>
+    <span class="detalhes d-block mt-1">Pacientes no banco agora: <strong id="total-pacientes-banco">{{ total_pacientes }}</strong></span>
   </span>
 </div>
 
@@ -358,9 +359,30 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
   function atualizarContador(novos) {
     if (!novos) return;
-    document.getElementById('total-pacientes').textContent = novos.pacientes;
-    document.getElementById('total-acompanhantes').textContent = novos.acompanhantes;
-    document.getElementById('total-geral-pessoas').textContent = novos.geral;
+    var totalPacientesEl = document.getElementById('total-pacientes');
+    var totalAcompanhantesEl = document.getElementById('total-acompanhantes');
+    var totalGeralEl = document.getElementById('total-geral-pessoas');
+    var totalBancoEl = document.getElementById('total-pacientes-banco');
+
+    if (typeof novos.count === 'number') {
+      if (totalPacientesEl) totalPacientesEl.textContent = String(novos.count);
+      if (totalBancoEl) totalBancoEl.textContent = String(novos.count);
+      var acompanhantesAtuais = parseInt((totalAcompanhantesEl && totalAcompanhantesEl.textContent) || '0', 10);
+      if (!Number.isFinite(acompanhantesAtuais)) acompanhantesAtuais = 0;
+      if (totalGeralEl) totalGeralEl.textContent = String(novos.count + acompanhantesAtuais);
+      return;
+    }
+
+    if (typeof novos.pacientes === 'number' && totalPacientesEl) {
+      totalPacientesEl.textContent = String(novos.pacientes);
+      if (totalBancoEl) totalBancoEl.textContent = String(novos.pacientes);
+    }
+    if (typeof novos.acompanhantes === 'number' && totalAcompanhantesEl) {
+      totalAcompanhantesEl.textContent = String(novos.acompanhantes);
+    }
+    if (typeof novos.geral === 'number' && totalGeralEl) {
+      totalGeralEl.textContent = String(novos.geral);
+    }
   }
   // Exemplo: escute eventos customizados para atualizar contador
   window.atualizarContadorPacientes = atualizarContador;
@@ -371,6 +393,8 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(r => r.json())
       .then(data => atualizarContador(data));
   }
+
+  fetchContador();
 
   // Atualiza contador após exclusão via AJAX
   document.body.addEventListener('ajax:pacienteExcluido', function() {
