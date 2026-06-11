@@ -735,6 +735,8 @@ def cadastrar_paciente(request):
 	from django.contrib import messages
 	from django.urls import reverse
 	from django.utils.html import format_html
+	if request.method != 'POST':
+		_seed_patient_data_if_empty_safe()
 	if request.method == 'POST':
 		   paciente_existente_id = (request.POST.get('paciente_existente_id') or '').strip()
 		   paciente_existente = None
@@ -757,11 +759,13 @@ def cadastrar_paciente(request):
 		   form = PacienteForm(request.POST, instance=paciente_existente)
 		   if form.is_valid():
 			   paciente = form.save()
+			   _sync_patient_data_csv_safe()
 			   paciente_reativado = False
 			   if not getattr(paciente, 'servico_ativo', True):
 				   # No fluxo de cadastro/reaproveitamento, o paciente deve ficar ativo.
 				   paciente.reativar()
 				   paciente.save(update_fields=['servico_ativo', 'data_inativacao', 'motivo_inativacao', 'observacao_inativacao'])
+				   _sync_patient_data_csv_safe()
 				   paciente_reativado = True
 			   nome = getattr(paciente, 'nome', None)
 			   acao = 'atualizado' if paciente_existente else 'cadastrado'
@@ -1124,6 +1128,28 @@ def _sync_master_data_csvs_safe():
 	except Exception as exc:
 		try:
 			audit_logger.warning('Falha ao sincronizar CSVs-base', extra={'erro': str(exc)})
+		except Exception:
+			pass
+
+
+def _seed_patient_data_if_empty_safe():
+	try:
+		from .patient_data_sync import seed_patients_from_csv_if_empty
+		seed_patients_from_csv_if_empty()
+	except Exception as exc:
+		try:
+			audit_logger.warning('Falha ao reidratar pacientes via CSV', extra={'erro': str(exc)})
+		except Exception:
+			pass
+
+
+def _sync_patient_data_csv_safe():
+	try:
+		from .patient_data_sync import sync_patient_data_csv
+		sync_patient_data_csv()
+	except Exception as exc:
+		try:
+			audit_logger.warning('Falha ao sincronizar pacientes no CSV', extra={'erro': str(exc)})
 		except Exception:
 			pass
 # --- AUTOCOMPLETE DE VEÍCULOS (AMBULÂNCIA POR PATRIMÔNIO, VAN POR PLACA) ---
@@ -1924,6 +1950,7 @@ def excluir_todos_pacientes(request):
 
 	total = Paciente.objects.count()
 	Paciente.objects.all().delete()
+	_sync_patient_data_csv_safe()
 	messages.success(request, f'Todos os {total} pacientes foram excluidos.')
 	return redirect('transporte_pacientes:cadastrar_paciente')
 
@@ -1983,6 +2010,7 @@ def excluir_paciente_ajax(request):
 	if not ids:
 		return JsonResponse({'success': False, 'error': 'Nenhum id recebido.'}, status=400)
 	Paciente.objects.filter(id__in=ids).delete()
+	_sync_patient_data_csv_safe()
 	return JsonResponse({'success': True})
 
 
@@ -2008,6 +2036,7 @@ def inativar_paciente_ajax(request):
 
 	paciente.inativar(motivo=motivo, observacao=observacao)
 	paciente.save(update_fields=['servico_ativo', 'data_inativacao', 'motivo_inativacao', 'observacao_inativacao'])
+	_sync_patient_data_csv_safe()
 	return JsonResponse({'success': True})
 
 
@@ -2030,6 +2059,7 @@ def reativar_paciente_ajax(request):
 
 	paciente.reativar()
 	paciente.save(update_fields=['servico_ativo', 'data_inativacao', 'motivo_inativacao', 'observacao_inativacao'])
+	_sync_patient_data_csv_safe()
 	return JsonResponse({'success': True})
 
 
@@ -2177,6 +2207,7 @@ def editar_paciente(request, pk):
 		form = PacienteForm(request.POST, instance=paciente)
 		if form.is_valid():
 			form.save()
+			_sync_patient_data_csv_safe()
 			return redirect('transporte_pacientes:cadastrar_paciente')
 	else:
 		form = PacienteForm(instance=paciente)

@@ -591,3 +591,52 @@ class MasterDataSyncTestCase(TestCase):
 		)
 		self.assertEqual(get_response.status_code, 200)
 		self.assertContains(get_response, patrimonio)
+
+	def test_cadastro_paciente_atualiza_dados_pacientes_csv(self):
+		with tempfile.TemporaryDirectory() as temp_dir:
+			base_dir = Path(temp_dir)
+			with override_settings(BASE_DIR=base_dir):
+				response = self.client.post(
+					reverse('transporte_pacientes:cadastrar_paciente'),
+					{
+						'nome': 'PACIENTE CSV FUTURO',
+						'rua': 'Rua Persistencia',
+						'numero': '100',
+						'bairro': 'Centro',
+						'cidade': 'Sao Paulo',
+						'estado': 'SP',
+						'cep': '01000-000',
+						'ddd': '11',
+						'telefone': '99999-1111',
+						'consentimento_lgpd': 'on',
+						'acompanhantes': 0,
+						'servico_status': 'ativo',
+					},
+					**_secure_request_kwargs(),
+				)
+
+			self.assertEqual(response.status_code, 302)
+			csv_path = base_dir / 'dados_pacientes.csv'
+			self.assertTrue(csv_path.exists())
+			conteudo = csv_path.read_text(encoding='utf-8')
+			self.assertIn('PACIENTE CSV FUTURO', conteudo)
+
+	def test_reidrata_pacientes_do_csv_quando_banco_vazio(self):
+		with tempfile.TemporaryDirectory() as temp_dir:
+			base_dir = Path(temp_dir)
+			csv_path = base_dir / 'dados_pacientes.csv'
+			csv_path.write_text(
+				'nome,ddd,telefone,rua,numero,bairro,cidade,estado,cep,consentimento_lgpd,servico_status,servico_ativo,acompanhantes\n'
+				'PACIENTE REIDRATADO,11,988887777,Rua Volta,200,Centro,Sao Paulo,SP,02000-000,1,ativo,1,0\n',
+				encoding='utf-8',
+			)
+
+			self.assertFalse(Paciente.objects.filter(nome='PACIENTE REIDRATADO').exists())
+			with override_settings(BASE_DIR=base_dir):
+				response = self.client.get(
+					reverse('transporte_pacientes:cadastrar_paciente'),
+					**_secure_request_kwargs(),
+				)
+
+			self.assertEqual(response.status_code, 200)
+			self.assertTrue(Paciente.objects.filter(nome='PACIENTE REIDRATADO').exists())
