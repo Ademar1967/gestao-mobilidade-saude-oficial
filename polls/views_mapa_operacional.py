@@ -1,6 +1,6 @@
 """
-Módulo: Mapa Operacional de Viagem
-Gera a escala de transporte no formato frente/verso inspirado no modelo físico da CASEM.
+Modulo: Mapa Operacional de Viagem
+Gera escala no formato frente/verso inspirado no modelo fisico da CASEM.
 """
 from __future__ import annotations
 
@@ -8,26 +8,20 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
 
-
 NUMERO_MAXIMO_VIAGENS = 10
+LINHAS_POR_BLOCO = 20
+CAPACIDADE_LOTE_PADRAO = 10
 
 
 @login_required
 def mapa_operacional(request):
-    """
-    Tela de seleção do mapa:
-    - data da viagem
-    - empresa prestadora (padrão: NEM, editável)
-    - motorista (lista dos condutores cadastrados)
-    - número da viagem (1ª, 2ª, … até o limite configurado)
-    """
-    from .models import Condutor, Veiculo
     from django.utils import timezone
+    from .models import Condutor, Veiculo
 
     condutores = Condutor.objects.order_by('nome')
     veiculos = Veiculo.objects.order_by('tipo_veiculo', 'patrimonio', 'placa')
     hoje = timezone.localdate().isoformat()
-    numeros_viagem = [f"{i}ª Viagem" for i in range(1, NUMERO_MAXIMO_VIAGENS + 1)]
+    numeros_viagem = [f"{i}a Viagem" for i in range(1, NUMERO_MAXIMO_VIAGENS + 1)]
 
     return render(request, 'transporte_pacientes/mapa_operacional_selecao.html', {
         'condutores': condutores,
@@ -37,20 +31,64 @@ def mapa_operacional(request):
     })
 
 
+def _capacidade_lote(veiculo_obj) -> int:
+    if not veiculo_obj or not getattr(veiculo_obj, 'lotacao', None):
+        return CAPACIDADE_LOTE_PADRAO
+    try:
+        lotacao_total = int(veiculo_obj.lotacao)
+        return max(1, lotacao_total - 1)  # reserva 1 para motorista
+    except Exception:
+        return CAPACIDADE_LOTE_PADRAO
+
+
+def _blocos_espelhados(linhas: list[dict], capacidade_lote: int) -> list[dict]:
+    """
+    Separa em lotes operacionais pela capacidade e depois em blocos de impressao.
+    Inclui linhas separadoras para iniciar novo lote sem perder alinhamento frente/verso.
+    """
+    linhas_com_lote = []
+    lote_atual = 1
+    ocupacao_atual = 0
+
+    for linha in linhas:
+        acompanhantes = int(linha.get('acompanhantes') or 0)
+        ocupacao_item = 1 + max(0, acompanhantes)
+
+        if ocupacao_atual > 0 and (ocupacao_atual + ocupacao_item) > capacidade_lote:
+            lote_atual += 1
+            linhas_com_lote.append({
+                'separador': True,
+                'lote_num': lote_atual,
+            })
+            ocupacao_atual = 0
+
+        linha['lote_num'] = lote_atual
+        linhas_com_lote.append(linha)
+        ocupacao_atual += ocupacao_item
+
+    blocos = []
+    if not linhas_com_lote:
+        return [{'linhas': [], 'vazios': range(0)}]
+
+    for i in range(0, len(linhas_com_lote), LINHAS_POR_BLOCO):
+        trecho = linhas_com_lote[i:i + LINHAS_POR_BLOCO]
+        blocos.append({
+            'linhas': trecho,
+            'vazios': range(max(0, LINHAS_POR_BLOCO - len(trecho))),
+        })
+
+    return blocos
+
+
 @login_required
 def mapa_operacional_imprimir(request):
-    """
-    Gera o mapa imprimível (frente + verso na mesma página):
-    - Filtra transportes pelo conjunto data + empresa + condutor + número da viagem
-    - Monta lista numerada com espelhamento frente/verso
-    """
     from .models import Transporte, Condutor, Veiculo
 
     data_str = (request.GET.get('data') or '').strip()
     origem = (request.GET.get('origem') or 'nem').strip().lower()
     empresa = (request.GET.get('empresa') or '').strip().upper()
     condutor_id = (request.GET.get('condutor') or '').strip()
-    numero_viagem = (request.GET.get('numero_viagem') or '1ª Viagem').strip()
+    numero_viagem = (request.GET.get('numero_viagem') or '1a Viagem').strip()
     veiculo_id = (request.GET.get('veiculo') or '').strip()
     hora_saida_base = (request.GET.get('hora_saida') or '').strip()
 
@@ -60,54 +98,47 @@ def mapa_operacional_imprimir(request):
     data_filtro = parse_date(data_str) if data_str else None
 
     qs = Transporte.objects.select_related('paciente', 'clinica', 'condutor', 'veiculo')
-
     if data_filtro:
         qs = qs.filter(data_transporte=data_filtro)
-
     if condutor_id:
         qs = qs.filter(condutor_id=condutor_id)
-
     if veiculo_id:
         qs = qs.filter(veiculo_id=veiculo_id)
 
-    qs = qs.order_by('paciente__nome')
+    qs = qs.order_by('paciente__nome', 'id')
 
-    # Montar linhas numeradas: cada linha carrega dados da frente E do verso
     linhas = []
     for ordem, t in enumerate(qs, start=1):
         p = t.paciente
         c = t.clinica
 
-        # ---- FRENTE ----
         nome_paciente = (p.nome if p else '') or ''
         paciente_id = p.id if p else ''
+        acompanhantes = (getattr(p, 'acompanhantes', 0) if p else 0) or 0
+
         endereco_paciente = ''
         if p:
-            partes = [p.rua, p.numero]
-            endereco_paciente = ', '.join(x for x in partes if x)
+            endereco_paciente = ', '.join(x for x in [p.rua, p.numero] if x)
+
         bairro_paciente = (p.bairro if p else '') or ''
+
         horario = ''
         if p and p.horario_consulta:
             horario = p.horario_consulta.strftime('%H:%M')
         elif t.hora_saida:
             horario = t.hora_saida.strftime('%H:%M') if hasattr(t.hora_saida, 'strftime') else str(t.hora_saida)[:5]
 
-        # Marcador de acompanhante (X = acompanha, SÓ = vai sozinho)
-        acompanhante_marca = 'X' if (p and p.acompanhantes and p.acompanhantes > 0) else 'SÓ'
+        acompanhante_marca = 'X' if acompanhantes > 0 else 'SO'
 
-        # ---- VERSO ----
         destino_nome = (c.nome if c else '') or ''
 
-        # Telefone: preferência pelo da clínica, depois do paciente
         telefone = ''
         if c and c.telefone:
             telefone = c.telefone
         elif p and p.telefone:
             ddd = p.ddd or ''
-            fone = p.telefone or ''
-            telefone = f"{ddd} {fone}".strip() if ddd else fone
+            telefone = f"{ddd} {p.telefone}".strip() if ddd else (p.telefone or '')
 
-        # Observação/referência do paciente
         observacao = ''
         if p:
             partes_obs = []
@@ -118,72 +149,49 @@ def mapa_operacional_imprimir(request):
             observacao = ' / '.join(partes_obs)
 
         linhas.append({
-            # frente
             'ordem': ordem,
             'nome': nome_paciente,
             'paciente_id': paciente_id,
+            'acompanhantes': acompanhantes,
             'endereco': endereco_paciente,
             'bairro': bairro_paciente,
             'horario': horario,
             'acompanhante_marca': acompanhante_marca,
-            # verso
             'destino': destino_nome,
             'telefone': telefone,
             'observacao': observacao,
         })
 
-    # Modo operacional estrito: quebra em blocos fixos para manter
-    # frente/verso espelhados mesmo com alto volume (ex.: 30+ pacientes).
-    linhas_por_bloco = 20
-    blocos = []
-    if linhas:
-        for i in range(0, len(linhas), linhas_por_bloco):
-            trecho = linhas[i:i + linhas_por_bloco]
-            blocos.append({
-                'linhas': trecho,
-                'vazios': range(max(0, linhas_por_bloco - len(trecho))),
-            })
-    else:
-        blocos.append({'linhas': [], 'vazios': range(0)})
-
-    condutor_obj = None
-    if condutor_id:
-        try:
-            condutor_obj = Condutor.objects.get(id=condutor_id)
-        except Condutor.DoesNotExist:
-            pass
-
-    veiculo_obj = None
-    if veiculo_id:
-        try:
-            veiculo_obj = Veiculo.objects.get(id=veiculo_id)
-        except Veiculo.DoesNotExist:
-            pass
+    condutor_obj = Condutor.objects.filter(id=condutor_id).first() if condutor_id else None
+    veiculo_obj = Veiculo.objects.filter(id=veiculo_id).first() if veiculo_id else None
 
     frota_label = ''
     if veiculo_obj:
         if veiculo_obj.patrimonio:
-            frota_label = f"Patrimônio {veiculo_obj.patrimonio}"
+            frota_label = f"Patrimonio {veiculo_obj.patrimonio}"
         elif veiculo_obj.placa:
             frota_label = f"Placa {veiculo_obj.placa}"
 
-    hoje_fmt = ''
+    capacidade_lote = _capacidade_lote(veiculo_obj)
+    blocos = _blocos_espelhados(linhas, capacidade_lote)
+
+    data_fmt = ''
     if data_filtro:
-        # formata como 01/06/2026 - SEG
         dias_semana = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
-        hoje_fmt = f"{data_filtro.strftime('%d/%m/%Y')} - {dias_semana[data_filtro.weekday()]}"
+        data_fmt = f"{data_filtro.strftime('%d/%m/%Y')} - {dias_semana[data_filtro.weekday()]}"
 
     return render(request, 'transporte_pacientes/mapa_operacional_impressao.html', {
         'linhas': linhas,
         'blocos': blocos,
-        'linhas_por_bloco': linhas_por_bloco,
+        'linhas_por_bloco': LINHAS_POR_BLOCO,
         'origem': origem,
         'empresa': empresa,
-        'data_fmt': hoje_fmt,
+        'data_fmt': data_fmt,
         'numero_viagem': numero_viagem,
         'condutor': condutor_obj,
         'veiculo': veiculo_obj,
         'frota_label': frota_label,
+        'capacidade_lote': capacidade_lote,
         'hora_saida_base': hora_saida_base,
         'total': len(linhas),
     })

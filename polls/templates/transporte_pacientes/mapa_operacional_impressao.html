@@ -184,6 +184,13 @@
     <tbody>
       {% if bloco.linhas %}
         {% for l in bloco.linhas %}
+        {% if l.separador %}
+        <tr class="linha-vazia">
+          <td colspan="6" style="text-align:center; font-weight:bold; color:#555; background:#f7f7f7;">
+            --- INICIO DO LOTE {{ l.lote_num }} ---
+          </td>
+        </tr>
+        {% else %}
         <tr>
           <td class="num">{{ l.ordem }}</td>
           <td>{{ l.nome }}</td>
@@ -192,6 +199,7 @@
           <td>{{ l.bairro }}</td>
           <td class="hor">{{ l.horario }}</td>
         </tr>
+        {% endif %}
         {% endfor %}
         {% for _ in bloco.vazios %}
         <tr class="linha-vazia">
@@ -239,6 +247,13 @@
     <tbody>
       {% if bloco.linhas %}
         {% for l in bloco.linhas %}
+        {% if l.separador %}
+        <tr class="linha-vazia">
+          <td colspan="5" style="text-align:center; font-weight:bold; color:#555; background:#f7f7f7;">
+            --- INICIO DO LOTE {{ l.lote_num }} ---
+          </td>
+        </tr>
+        {% else %}
         <tr>
           <td class="num">{{ l.ordem }}</td>
           <td>{{ l.destino }}</td>
@@ -246,6 +261,7 @@
           <td>{{ l.telefone }}</td>
           <td class="obs">{{ l.observacao }}</td>
         </tr>
+        {% endif %}
         {% endfor %}
         {% for _ in bloco.vazios %}
         <tr class="linha-vazia">
