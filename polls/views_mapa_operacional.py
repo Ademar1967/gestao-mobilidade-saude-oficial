@@ -47,11 +47,15 @@ def mapa_operacional_imprimir(request):
     from .models import Transporte, Condutor, Veiculo
 
     data_str = (request.GET.get('data') or '').strip()
-    empresa = (request.GET.get('empresa') or 'NEM').strip().upper()
+    origem = (request.GET.get('origem') or 'nem').strip().lower()
+    empresa = (request.GET.get('empresa') or '').strip().upper()
     condutor_id = (request.GET.get('condutor') or '').strip()
     numero_viagem = (request.GET.get('numero_viagem') or '1ª Viagem').strip()
     veiculo_id = (request.GET.get('veiculo') or '').strip()
     hora_saida_base = (request.GET.get('hora_saida') or '').strip()
+
+    if not empresa:
+        empresa = 'NEM' if origem == 'nem' else 'PREFEITURA'
 
     data_filtro = parse_date(data_str) if data_str else None
 
@@ -142,7 +146,13 @@ def mapa_operacional_imprimir(request):
         except Veiculo.DoesNotExist:
             pass
 
-    from django.utils import timezone
+    frota_label = ''
+    if veiculo_obj:
+        if veiculo_obj.patrimonio:
+            frota_label = f"Patrimônio {veiculo_obj.patrimonio}"
+        elif veiculo_obj.placa:
+            frota_label = f"Placa {veiculo_obj.placa}"
+
     hoje_fmt = ''
     if data_filtro:
         # formata como 01/06/2026 - SEG
@@ -151,11 +161,13 @@ def mapa_operacional_imprimir(request):
 
     return render(request, 'transporte_pacientes/mapa_operacional_impressao.html', {
         'linhas': linhas,
+        'origem': origem,
         'empresa': empresa,
         'data_fmt': hoje_fmt,
         'numero_viagem': numero_viagem,
         'condutor': condutor_obj,
         'veiculo': veiculo_obj,
+        'frota_label': frota_label,
         'hora_saida_base': hora_saida_base,
         'total': len(linhas),
     })

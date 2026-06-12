@@ -7,12 +7,39 @@
       <span class="fw-bold fs-5">Gerar Mapa de Viagem</span>
     </div>
     <div class="card-body">
-      <form method="get" action="{% url 'transporte_pacientes:mapa_operacional_imprimir' %}" id="formMapa">
+      <div class="mb-3">
+        <button type="button" id="btnToggleInstrucoes" class="btn btn-outline-primary btn-sm fw-bold">
+          Exibir instruções de uso
+        </button>
+      </div>
+
+      <div id="boxInstrucoes" class="alert alert-info" style="display:none;">
+        <h6 class="fw-bold mb-2">Como usar este módulo</h6>
+        <ol class="mb-2 ps-3">
+          <li>Preencha empresa, data, viagem e motorista (quando desejar filtrar).</li>
+          <li>Clique em <strong>Abrir Prévia do Mapa</strong> para gerar a folha frente/verso em nova aba.</li>
+          <li>Na tela de prévia, use o botão <strong>Prévia/Imprimir</strong> para abrir a impressão do navegador.</li>
+          <li>Para economia de papel e tinta, configure sua impressora em frente e verso.</li>
+        </ol>
+        <small class="text-muted">A abreviação da empresa (ex: NEM) é livre e pode ser alterada a qualquer momento.</small>
+      </div>
+
+      <form method="get" action="{% url 'transporte_pacientes:mapa_operacional_imprimir' %}" id="formMapa" target="_blank">
+
+        <!-- Origem do transporte -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">Origem do Transporte</label>
+          <select class="form-select" name="origem" id="origemTransporte">
+            <option value="nem" {% if form_values.origem|default:'nem' == 'nem' %}selected{% endif %}>Terceirizada (NEM)</option>
+            <option value="prefeitura" {% if form_values.origem == 'prefeitura' %}selected{% endif %}>Frota Própria da Prefeitura (por patrimônio)</option>
+          </select>
+          <div class="form-text">Use Prefeitura quando a rota for feita com veículos próprios cadastrados por patrimônio.</div>
+        </div>
 
         <!-- Empresa prestadora -->
         <div class="mb-3">
           <label class="form-label fw-bold">Empresa Prestadora</label>
-          <input type="text" class="form-control" name="empresa" value="NEM"
+          <input type="text" class="form-control" name="empresa" id="empresaPrestadora" value="{{ form_values.empresa|default:'NEM' }}"
                  placeholder="Ex: NEM, CASEM…"
                  title="Nome da empresa que aparece na escala. Pode ser alterado livremente."
                  maxlength="30">
@@ -30,7 +57,7 @@
           <label class="form-label fw-bold">Número da Viagem</label>
           <select class="form-select" name="numero_viagem" required>
             {% for nv in numeros_viagem %}
-            <option value="{{ nv }}">{{ nv }}</option>
+            <option value="{{ nv }}" {% if form_values.numero_viagem|default:'1ª Viagem' == nv %}selected{% endif %}>{{ nv }}</option>
             {% endfor %}
           </select>
           <div class="form-text">Selecione quantas viagens serão impressas nesta escala.</div>
@@ -42,18 +69,18 @@
           <select class="form-select" name="condutor">
             <option value="">— Todos os motoristas —</option>
             {% for c in condutores %}
-            <option value="{{ c.id }}">{{ c.nome }}</option>
+            <option value="{{ c.id }}" {% if form_values.condutor == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
             {% endfor %}
           </select>
         </div>
 
         <!-- Veículo -->
         <div class="mb-3">
-          <label class="form-label fw-bold">Veículo / Ambulância</label>
-          <select class="form-select" name="veiculo">
+          <label class="form-label fw-bold">Veículo / Ambulância <span id="hintPatrimonio" class="text-muted fw-normal">(se frota própria, selecione o patrimônio)</span></label>
+          <select class="form-select" name="veiculo" id="campoVeiculo">
             <option value="">— Todos os veículos —</option>
             {% for v in veiculos %}
-            <option value="{{ v.id }}">
+            <option value="{{ v.id }}" {% if form_values.veiculo == v.id|stringformat:'s' %}selected{% endif %}>
               {% if v.tipo_veiculo == 'ambulancia' %}AMB {{ v.patrimonio }}{% else %}VAN {{ v.placa }}{% endif %}
             </option>
             {% endfor %}
@@ -63,13 +90,13 @@
         <!-- Hora base de saída -->
         <div class="mb-4">
           <label class="form-label fw-bold">Hora Base de Saída <span class="text-muted fw-normal">(opcional)</span></label>
-          <input type="time" class="form-control" name="hora_saida" style="max-width:140px;">
+          <input type="time" class="form-control" name="hora_saida" value="{{ form_values.hora_saida|default:'' }}" style="max-width:140px;">
           <div class="form-text">Aparece no cabeçalho do mapa. Ex: 06:00</div>
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
           <button type="submit" class="btn btn-primary fw-bold px-4">
-            <i class="bi bi-printer"></i> Gerar Mapa
+            <i class="bi bi-eye"></i> Abrir Prévia do Mapa
           </button>
           <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-outline-secondary">
             Voltar
@@ -80,4 +107,36 @@
     </div>
   </div>
 </div>
+<script>
+  (function() {
+    var btn = document.getElementById('btnToggleInstrucoes');
+    var box = document.getElementById('boxInstrucoes');
+    var origem = document.getElementById('origemTransporte');
+    var empresa = document.getElementById('empresaPrestadora');
+    var hintPatrimonio = document.getElementById('hintPatrimonio');
+    if (!btn || !box) return;
+
+    btn.addEventListener('click', function() {
+      var oculto = box.style.display === 'none';
+      box.style.display = oculto ? 'block' : 'none';
+      btn.textContent = oculto ? 'Ocultar instruções de uso' : 'Exibir instruções de uso';
+    });
+
+    if (origem && empresa) {
+      origem.addEventListener('change', function() {
+        if (origem.value === 'prefeitura' && (empresa.value || '').trim().toUpperCase() === 'NEM') {
+          empresa.value = 'PREFEITURA';
+        }
+        if (origem.value === 'nem' && (empresa.value || '').trim().toUpperCase() === 'PREFEITURA') {
+          empresa.value = 'NEM';
+        }
+        if (hintPatrimonio) {
+          hintPatrimonio.textContent = origem.value === 'prefeitura'
+            ? '(opcional: informe o patrimônio quando for frota própria)'
+            : '(opcional)';
+        }
+      });
+    }
+  })();
+</script>
 {% endblock %}
