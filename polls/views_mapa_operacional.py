@@ -132,6 +132,20 @@ def mapa_operacional_imprimir(request):
             'observacao': observacao,
         })
 
+    # Modo operacional estrito: quebra em blocos fixos para manter
+    # frente/verso espelhados mesmo com alto volume (ex.: 30+ pacientes).
+    linhas_por_bloco = 20
+    blocos = []
+    if linhas:
+        for i in range(0, len(linhas), linhas_por_bloco):
+            trecho = linhas[i:i + linhas_por_bloco]
+            blocos.append({
+                'linhas': trecho,
+                'vazios': range(max(0, linhas_por_bloco - len(trecho))),
+            })
+    else:
+        blocos.append({'linhas': [], 'vazios': range(0)})
+
     condutor_obj = None
     if condutor_id:
         try:
@@ -161,6 +175,8 @@ def mapa_operacional_imprimir(request):
 
     return render(request, 'transporte_pacientes/mapa_operacional_impressao.html', {
         'linhas': linhas,
+        'blocos': blocos,
+        'linhas_por_bloco': linhas_por_bloco,
         'origem': origem,
         'empresa': empresa,
         'data_fmt': hoje_fmt,

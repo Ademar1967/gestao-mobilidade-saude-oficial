@@ -126,12 +126,14 @@
       body { font-size: 7.5pt; }
       .folha {
         width: 100%;
+        min-height: auto;
         margin: 0;
-        padding: 5mm 7mm;
+        padding: 3mm 5mm;
         border: none;
-        page-break-after: avoid;
+        page-break-after: always;
       }
-      .folha.verso { page-break-before: always; }
+      .folha:last-of-type { page-break-after: auto; }
+      .folha.verso { page-break-before: auto; }
     }
   </style>
 </head>
@@ -141,24 +143,29 @@
      BOTÕES VISÍVEIS APENAS NA TELA
 ============================================================ -->
 <div class="acoes-tela">
-  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Frente e Verso</button>
+  <button class="btn-imprimir" onclick="window.print()">👁️ Prévia/Imprimir Frente e Verso</button>
   <a class="btn-voltar" href="{% url 'transporte_pacientes:mapa_operacional' %}">← Voltar</a>
   <span style="font-size:11px; color:#555;">
-    Imprima frente e verso na mesma folha para economizar papel.
+    Modo operacional estrito: cada bloco sai em par frente/verso com numeração espelhada.
   </span>
 </div>
 
+{% for bloco in blocos %}
 <!-- ============================================================
-     FOLHA FRENTE
+     FOLHA FRENTE - BLOCO {{ forloop.counter }}
 ============================================================ -->
 <div class="folha frente">
 
   <div class="cabecalho">
     <div class="cel-data">{{ data_fmt }}</div>
     <div class="cel-empresa">{{ empresa }}</div>
-    <div class="cel-viagem">{{ numero_viagem }}</div>
+    <div class="cel-viagem">{{ numero_viagem }} — BLOCO {{ forloop.counter }}</div>
     <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
-    <div class="cel-veiculo">{% if veiculo %}{% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% if hora_saida_base %} — {{ hora_saida_base }}{% endif %}{% else %}{% if hora_saida_base %}{{ hora_saida_base }}{% endif %}{% endif %}</div>
+    <div class="cel-veiculo">
+      {% if origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
+      {% if frota_label %} — {{ frota_label }}{% elif veiculo %} — {% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}
+      {% if hora_saida_base %} — {{ hora_saida_base }}{% endif %}
+    </div>
   </div>
 
   <div class="titulo-secao">PACIENTE &nbsp;|&nbsp; ENDEREÇO &nbsp;|&nbsp; BAIRRO &nbsp;|&nbsp; HOR</div>
@@ -175,8 +182,8 @@
       </tr>
     </thead>
     <tbody>
-      {% if linhas %}
-        {% for l in linhas %}
+      {% if bloco.linhas %}
+        {% for l in bloco.linhas %}
         <tr>
           <td class="num">{{ l.ordem }}</td>
           <td>{{ l.nome }}</td>
@@ -186,8 +193,7 @@
           <td class="hor">{{ l.horario }}</td>
         </tr>
         {% endfor %}
-        <!-- Linhas em branco para preencher espaço e facilitar anotações à mão -->
-        {% for i in "   " %}
+        {% for _ in bloco.vazios %}
         <tr class="linha-vazia">
           <td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
@@ -206,16 +212,16 @@
 
 
 <!-- ============================================================
-     FOLHA VERSO  (mesma numeração — espelhamento linha a linha)
+  FOLHA VERSO - BLOCO {{ forloop.counter }}
 ============================================================ -->
 <div class="folha verso">
 
   <div class="cabecalho">
     <div class="cel-data">{{ data_fmt }}</div>
     <div class="cel-empresa">{{ empresa }}</div>
-    <div class="cel-viagem">{{ numero_viagem }} — VERSO</div>
+    <div class="cel-viagem">{{ numero_viagem }} — VERSO BLOCO {{ forloop.counter }}</div>
     <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
-    <div class="cel-veiculo">{% if veiculo %}{% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}</div>
+    <div class="cel-veiculo">{% if origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}{% if frota_label %} — {{ frota_label }}{% endif %}</div>
   </div>
 
   <div class="titulo-secao">DESTINO &nbsp;|&nbsp; AC &nbsp;|&nbsp; TELEFONE &nbsp;|&nbsp; OBSERVAÇÃO / REFERÊNCIA</div>
@@ -231,8 +237,8 @@
       </tr>
     </thead>
     <tbody>
-      {% if linhas %}
-        {% for l in linhas %}
+      {% if bloco.linhas %}
+        {% for l in bloco.linhas %}
         <tr>
           <td class="num">{{ l.ordem }}</td>
           <td>{{ l.destino }}</td>
@@ -241,7 +247,7 @@
           <td class="obs">{{ l.observacao }}</td>
         </tr>
         {% endfor %}
-        {% for i in "   " %}
+        {% for _ in bloco.vazios %}
         <tr class="linha-vazia">
           <td></td><td></td><td></td><td></td><td></td>
         </tr>
@@ -257,6 +263,7 @@
   </table>
 
 </div><!-- /folha verso -->
+{% endfor %}
 
 </body>
 </html>
