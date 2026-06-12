@@ -13,6 +13,19 @@
         </button>
       </div>
 
+      <div class="alert alert-secondary" role="alert">
+        <h6 class="fw-bold mb-2">Fluxo do sistema em 3 etapas</h6>
+        <ol class="mb-2 ps-3">
+          <li><strong>Pacientes:</strong> cadastre os dados do paciente (nome, endereço, bairro, telefone).</li>
+          <li><strong>Transportes:</strong> vincule o paciente à viagem (data, destino/clínica, motorista e veículo).</li>
+          <li><strong>Mapas de Viagem:</strong> gere a folha frente/verso pronta para impressão.</li>
+        </ol>
+        <div class="d-flex gap-2 flex-wrap mt-2">
+          <a href="{% url 'transporte_pacientes:cadastrar_paciente' %}" class="btn btn-sm btn-outline-primary">Ir para Pacientes</a>
+          <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-sm btn-outline-primary">Ir para Transportes</a>
+        </div>
+      </div>
+
       <div id="boxInstrucoes" class="alert alert-info" style="display:none;">
         <h6 class="fw-bold mb-2">Como usar este módulo</h6>
         <ol class="mb-2 ps-3">
