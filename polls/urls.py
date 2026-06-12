@@ -3,6 +3,7 @@ from . import views
 from . import views_condutor_delete
 from . import views_condutor_delete_lote
 from .views import editar_paciente, login_view
+from .views_mapa_operacional import mapa_operacional, mapa_operacional_imprimir
 
 app_name = 'transporte_pacientes'
 urlpatterns = [
@@ -68,4 +69,6 @@ urlpatterns = [
     path('estatisticas/veiculo/', views.estatistica_transportes_veiculo, name='estatistica_veiculo'),
     path('estatisticas/condutor/', views.estatistica_transportes_condutor, name='estatistica_condutor'),
     path('transportes/excluir/<int:transporte_id>/', views.excluir_transporte, name='excluir_transporte'),
+    path('mapas-viagem/', mapa_operacional, name='mapa_operacional'),
+    path('mapas-viagem/imprimir/', mapa_operacional_imprimir, name='mapa_operacional_imprimir'),
 ]

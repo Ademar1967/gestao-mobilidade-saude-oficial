@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa de Viagem — {{ data_fmt }}</title>
+  <style>
+    /* ============================================================
+       RESET E BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8pt;
+      color: #000;
+      background: #fff;
+    }
+
+    /* ============================================================
+       BOTÕES DE AÇÃO — visíveis apenas na tela
+    ============================================================ */
+    .acoes-tela {
+      padding: 10px 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: #f0f4f8;
+      border-bottom: 1px solid #ccc;
+    }
+    .acoes-tela button, .acoes-tela a {
+      padding: 7px 22px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+    }
+    .btn-imprimir  { background: #1565c0; color: #fff; }
+    .btn-voltar    { background: #e0e0e0; color: #333; }
+
+    /* ============================================================
+       FOLHA — simula A4 em tela
+    ============================================================ */
+    .folha {
+      width: 210mm;
+      min-height: 148mm;   /* meia A4 por "face" */
+      margin: 10px auto;
+      padding: 6mm 8mm;
+      background: #fff;
+      border: 1px solid #aaa;
+    }
+
+    /* ============================================================
+       CABEÇALHO DA FOLHA
+    ============================================================ */
+    .cabecalho {
+      display: flex;
+      align-items: center;
+      border: 1px solid #000;
+      margin-bottom: 3px;
+    }
+    .cabecalho .cel-data  { padding: 3px 6px; font-weight: bold; white-space: nowrap; border-right: 1px solid #000; font-size: 8pt; }
+    .cabecalho .cel-empresa { padding: 3px 8px; font-weight: bold; font-size: 8pt; min-width: 60px; border-right: 1px solid #000; text-align: center; }
+    .cabecalho .cel-viagem  { padding: 3px 8px; font-weight: bold; font-size: 8pt; border-right: 1px solid #000; white-space: nowrap; }
+    .cabecalho .cel-motorista { padding: 3px 8px; font-size: 8pt; flex: 1; border-right: 1px solid #000; }
+    .cabecalho .cel-veiculo   { padding: 3px 8px; font-size: 8pt; white-space: nowrap; }
+
+    /* ============================================================
+       TABELA FRENTE
+    ============================================================ */
+    .titulo-secao {
+      font-weight: bold;
+      font-size: 7.5pt;
+      text-align: center;
+      border: 1px solid #000;
+      border-bottom: none;
+      padding: 2px;
+      background: #e8e8e8;
+      letter-spacing: 0.5px;
+    }
+    table.mapa {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.5pt;
+    }
+    table.mapa th {
+      background: #d0d0d0;
+      border: 1px solid #000;
+      padding: 2px 3px;
+      text-align: center;
+      font-size: 7pt;
+    }
+    table.mapa td {
+      border: 1px solid #000;
+      padding: 2px 3px;
+      vertical-align: middle;
+    }
+    table.mapa td.num    { text-align: center; width: 18px; }
+    table.mapa td.ac     { text-align: center; width: 22px; }
+    table.mapa td.hor    { text-align: center; width: 34px; white-space: nowrap; }
+    table.mapa td.ident  { text-align: center; width: 24px; }
+    table.mapa td.obs    { font-size: 6.5pt; color: #222; }
+
+    /* linha vazia para margem extra */
+    tr.linha-vazia td { height: 11px; background: #fff; }
+
+    /* ============================================================
+       SEPARADOR FRENTE/VERSO
+    ============================================================ */
+    .separador {
+      text-align: center;
+      font-size: 7.5pt;
+      color: #555;
+      margin: 8px 0 4px;
+      border-top: 1px dashed #888;
+      padding-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ============================================================
+       IMPRESSÃO
+    ============================================================ */
+    @media print {
+      .acoes-tela { display: none !important; }
+      body { font-size: 7.5pt; }
+      .folha {
+        width: 100%;
+        margin: 0;
+        padding: 5mm 7mm;
+        border: none;
+        page-break-after: avoid;
+      }
+      .folha.verso { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     BOTÕES VISÍVEIS APENAS NA TELA
+============================================================ -->
+<div class="acoes-tela">
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir Frente e Verso</button>
+  <a class="btn-voltar" href="{% url 'transporte_pacientes:mapa_operacional' %}">← Voltar</a>
+  <span style="font-size:11px; color:#555;">
+    Imprima frente e verso na mesma folha para economizar papel.
+  </span>
+</div>
+
+<!-- ============================================================
+     FOLHA FRENTE
+============================================================ -->
+<div class="folha frente">
+
+  <div class="cabecalho">
+    <div class="cel-data">{{ data_fmt }}</div>
+    <div class="cel-empresa">{{ empresa }}</div>
+    <div class="cel-viagem">{{ numero_viagem }}</div>
+    <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
+    <div class="cel-veiculo">{% if veiculo %}{% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% if hora_saida_base %} — {{ hora_saida_base }}{% endif %}{% else %}{% if hora_saida_base %}{{ hora_saida_base }}{% endif %}{% endif %}</div>
+  </div>
+
+  <div class="titulo-secao">PACIENTE &nbsp;|&nbsp; ENDEREÇO &nbsp;|&nbsp; BAIRRO &nbsp;|&nbsp; HOR</div>
+
+  <table class="mapa">
+    <thead>
+      <tr>
+        <th style="width:18px;">#</th>
+        <th>PACIENTE</th>
+        <th style="width:24px;">ID</th>
+        <th>ENDEREÇO</th>
+        <th style="width:70px;">BAIRRO</th>
+        <th style="width:34px;">HOR</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if linhas %}
+        {% for l in linhas %}
+        <tr>
+          <td class="num">{{ l.ordem }}</td>
+          <td>{{ l.nome }}</td>
+          <td class="ident">{{ l.paciente_id }}</td>
+          <td>{{ l.endereco }}</td>
+          <td>{{ l.bairro }}</td>
+          <td class="hor">{{ l.horario }}</td>
+        </tr>
+        {% endfor %}
+        <!-- Linhas em branco para preencher espaço e facilitar anotações à mão -->
+        {% for i in "   " %}
+        <tr class="linha-vazia">
+          <td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center; padding:10px; color:#777;">
+            Nenhum transporte encontrado para os filtros selecionados.
+          </td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+</div><!-- /folha frente -->
+
+
+<!-- ============================================================
+     FOLHA VERSO  (mesma numeração — espelhamento linha a linha)
+============================================================ -->
+<div class="folha verso">
+
+  <div class="cabecalho">
+    <div class="cel-data">{{ data_fmt }}</div>
+    <div class="cel-empresa">{{ empresa }}</div>
+    <div class="cel-viagem">{{ numero_viagem }} — VERSO</div>
+    <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
+    <div class="cel-veiculo">{% if veiculo %}{% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}</div>
+  </div>
+
+  <div class="titulo-secao">DESTINO &nbsp;|&nbsp; AC &nbsp;|&nbsp; TELEFONE &nbsp;|&nbsp; OBSERVAÇÃO / REFERÊNCIA</div>
+
+  <table class="mapa">
+    <thead>
+      <tr>
+        <th style="width:18px;">#</th>
+        <th>DESTINO</th>
+        <th style="width:22px;">AC</th>
+        <th style="width:80px;">TEL</th>
+        <th>OBSERVAÇÃO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if linhas %}
+        {% for l in linhas %}
+        <tr>
+          <td class="num">{{ l.ordem }}</td>
+          <td>{{ l.destino }}</td>
+          <td class="ac">{{ l.acompanhante_marca }}</td>
+          <td>{{ l.telefone }}</td>
+          <td class="obs">{{ l.observacao }}</td>
+        </tr>
+        {% endfor %}
+        {% for i in "   " %}
+        <tr class="linha-vazia">
+          <td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center; padding:10px; color:#777;">
+            Nenhum dado para o verso.
+          </td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+</div><!-- /folha verso -->
+
+</body>
+</html>
