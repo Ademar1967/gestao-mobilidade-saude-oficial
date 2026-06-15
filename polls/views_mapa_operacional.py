@@ -10,7 +10,7 @@ from django.utils.dateparse import parse_date
 
 NUMERO_MAXIMO_VIAGENS = 10
 LINHAS_POR_BLOCO = 20
-CAPACIDADE_LOTE_PADRAO = 10
+CAPACIDADE_LOTE_PADRAO = 30
 
 
 @login_required
@@ -31,8 +31,22 @@ def mapa_operacional(request):
     })
 
 
-def _capacidade_lote(veiculo_obj) -> int:
+def _capacidade_lote(veiculo_obj, qs=None) -> int:
     if not veiculo_obj or not getattr(veiculo_obj, 'lotacao', None):
+        # Sem veículo específico, usa a maior lotação real dos veículos
+        # presentes no filtro para não limitar artificialmente em 10.
+        if qs is not None:
+            lotacoes = []
+            for t in qs:
+                v = getattr(t, 'veiculo', None)
+                lot = getattr(v, 'lotacao', None) if v else None
+                if lot:
+                    try:
+                        lotacoes.append(int(lot))
+                    except Exception:
+                        pass
+            if lotacoes:
+                return max(1, max(lotacoes) - 1)
         return CAPACIDADE_LOTE_PADRAO
     try:
         lotacao_total = int(veiculo_obj.lotacao)
@@ -78,6 +92,32 @@ def _blocos_espelhados(linhas: list[dict], capacidade_lote: int) -> list[dict]:
         })
 
     return blocos
+
+
+def _condicoes_especiais(paciente) -> str:
+    if not paciente:
+        return ''
+
+    condicoes = []
+    if getattr(paciente, 'cadeirante', False):
+        condicoes.append('CADEIRANTE')
+    if getattr(paciente, 'maca', False):
+        condicoes.append('MACA')
+    if getattr(paciente, 'oxigenio', False):
+        litros = getattr(paciente, 'oxigenio_litros_min', None)
+        if litros is not None and str(litros).strip():
+            condicoes.append(f'O2 {litros}L/min')
+        else:
+            condicoes.append('O2')
+
+    acompanhantes = int(getattr(paciente, 'acompanhantes', 0) or 0)
+    if acompanhantes > 0:
+        condicoes.append(f'{acompanhantes} AC')
+
+    if getattr(paciente, 'servico_status', '') and paciente.servico_status != 'ativo':
+        condicoes.append(paciente.servico_status.upper())
+
+    return ' | '.join(condicoes)
 
 
 @login_required
@@ -148,6 +188,8 @@ def mapa_operacional_imprimir(request):
                 partes_obs.append(p.observacoes)
             observacao = ' / '.join(partes_obs)
 
+        condicoes_especiais = _condicoes_especiais(p)
+
         linhas.append({
             'ordem': ordem,
             'nome': nome_paciente,
@@ -157,6 +199,7 @@ def mapa_operacional_imprimir(request):
             'bairro': bairro_paciente,
             'horario': horario,
             'acompanhante_marca': acompanhante_marca,
+            'condicoes_especiais': condicoes_especiais,
             'destino': destino_nome,
             'telefone': telefone,
             'observacao': observacao,
@@ -172,7 +215,7 @@ def mapa_operacional_imprimir(request):
         elif veiculo_obj.placa:
             frota_label = f"Placa {veiculo_obj.placa}"
 
-    capacidade_lote = _capacidade_lote(veiculo_obj)
+    capacidade_lote = _capacidade_lote(veiculo_obj, qs)
     blocos = _blocos_espelhados(linhas, capacidade_lote)
 
     data_fmt = ''

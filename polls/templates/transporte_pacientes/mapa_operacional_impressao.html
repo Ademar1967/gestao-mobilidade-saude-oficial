@@ -101,6 +101,14 @@
     table.mapa td.hor    { text-align: center; width: 34px; white-space: nowrap; }
     table.mapa td.ident  { text-align: center; width: 24px; }
     table.mapa td.obs    { font-size: 6.5pt; color: #222; }
+    .condicoes-inline {
+      display: block;
+      margin-top: 1px;
+      font-size: 6.4pt;
+      color: #0d47a1;
+      font-weight: bold;
+      line-height: 1.1;
+    }
 
     /* linha vazia para margem extra */
     tr.linha-vazia td { height: 11px; background: #fff; }
@@ -193,7 +201,12 @@
         {% else %}
         <tr>
           <td class="num">{{ l.ordem }}</td>
-          <td>{{ l.nome }}</td>
+          <td>
+            {{ l.nome }}
+            {% if l.condicoes_especiais %}
+            <span class="condicoes-inline">{{ l.condicoes_especiais }}</span>
+            {% endif %}
+          </td>
           <td class="ident">{{ l.paciente_id }}</td>
           <td>{{ l.endereco }}</td>
           <td>{{ l.bairro }}</td>
@@ -256,7 +269,12 @@
         {% else %}
         <tr>
           <td class="num">{{ l.ordem }}</td>
-          <td>{{ l.destino }}</td>
+          <td>
+            {{ l.destino }}
+            {% if l.condicoes_especiais %}
+            <span class="condicoes-inline">{{ l.condicoes_especiais }}</span>
+            {% endif %}
+          </td>
           <td class="ac">{{ l.acompanhante_marca }}</td>
           <td>{{ l.telefone }}</td>
           <td class="obs">{{ l.observacao }}</td>
