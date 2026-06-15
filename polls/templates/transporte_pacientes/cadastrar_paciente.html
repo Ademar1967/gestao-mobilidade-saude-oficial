@@ -1042,6 +1042,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="submit" class="btn btn-success btn-lg btn-afunda">
           Salvar Paciente
         </button>
+        <a href="{% url 'transporte_pacientes:mapa_operacional' %}" class="btn btn-warning btn-lg btn-afunda" target="_blank" rel="noopener">
+          <i class="bi bi-map me-1"></i>
+          Ir para Mapas de Viagem
+        </a>
         <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
       </div>
     <script>
