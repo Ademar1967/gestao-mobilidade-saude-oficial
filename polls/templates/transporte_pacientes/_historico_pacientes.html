@@ -80,6 +80,9 @@
           </tfoot>
         </table>
       <div class="d-flex flex-wrap gap-2 m-2">
+        <a href="{% url 'transporte_pacientes:mapa_pacientes' %}" class="btn btn-success btn-lg btn-afunda" style="border:none;">
+          <i class="bi bi-geo-alt-fill me-1"></i> Mapa de Pacientes
+        </a>
         <form id="formTransportarSelecionados" method="post" action="{% url 'transporte_pacientes:preparar_cadastro_transporte_lote' %}" class="d-inline">
           {% csrf_token %}
           <input type="hidden" name="paciente_ids" id="pacientesSelecionadosTransporte">
