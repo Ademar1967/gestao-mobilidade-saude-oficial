@@ -593,11 +593,17 @@ def cadastrar_transporte_lote(request):
 def autocomplete_field(request):
 	"""Endpoint genérico para autocomplete de campos. Deve ser ajustado conforme necessidade."""
 	termo = request.GET.get('q', '').strip()
+	limite_raw = (request.GET.get('limit') or '').strip()
+	try:
+		limite = int(limite_raw) if limite_raw else 30
+	except Exception:
+		limite = 30
+	limite = max(1, min(limite, 100))
 	resultados = []
 	# Exemplo: retornar sugestões de clínicas
 	from .models import Clinica
 	if termo:
-		resultados = list(Clinica.objects.filter(nome__icontains=termo).values_list('nome', flat=True)[:10])
+		resultados = list(Clinica.objects.filter(nome__icontains=termo).values_list('nome', flat=True)[:limite])
 	return JsonResponse({'resultados': resultados})
 def preview_veiculos(request):
 	"""Exibe uma prévia dos veículos cadastrados."""
@@ -1523,6 +1529,12 @@ def buscar_clinicas_sugestoes(request):
 	from django.http import JsonResponse
 	from .models import Clinica
 	termo = (request.GET.get('q') or '').strip()
+	limite_raw = (request.GET.get('limit') or '').strip()
+	try:
+		limite = int(limite_raw) if limite_raw else 30
+	except Exception:
+		limite = 30
+	limite = max(5, min(limite, 100))
 	if len(termo) < 2:
 		return JsonResponse({'sucesso': True, 'resultados': []})
 
@@ -1535,7 +1547,7 @@ def buscar_clinicas_sugestoes(request):
 			ultima_data=models.Max('transportes__data_transporte')
 		)
 		.filter(nome__icontains=termo)
-		.order_by('-uso_count', '-ultima_data', 'nome')[:10]
+		.order_by('-uso_count', '-ultima_data', 'nome')[:limite]
 	)
 	resultados = [
 		{
@@ -1551,8 +1563,8 @@ def buscar_clinicas_sugestoes(request):
 		for c in queryset
 	]
 
-	# 2) Complementa com CNES se ainda há espaço (até 10 total)
-	vagas = 10 - len(resultados)
+	# 2) Complementa com CNES se ainda há espaço (até o limite total)
+	vagas = limite - len(resultados)
 	if vagas > 0:
 		# Garante cache carregado
 		global _AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM
@@ -1565,7 +1577,7 @@ def buscar_clinicas_sugestoes(request):
 			nomes_norm = df_cnes['nome'].apply(_normalize)
 			mask = nomes_norm.str.contains(termo_norm, regex=False)
 			for _, row in df_cnes[mask].head(vagas * 2).iterrows():
-				if len(resultados) >= 10:
+				if len(resultados) >= limite:
 					break
 				# Não duplicar o que já está no banco
 				if row['nome'].lower() in nomes_banco:
