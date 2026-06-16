@@ -38,6 +38,9 @@
       </div>
 
       <form method="get" action="{% url 'transporte_pacientes:mapa_operacional_imprimir' %}" id="formMapa" target="_blank">
+        {% if form_values.paciente_ids %}
+        <input type="hidden" name="paciente_ids" value="{{ form_values.paciente_ids }}">
+        {% endif %}
 
         <!-- Origem do transporte -->
         <div class="mb-3">
@@ -100,11 +103,11 @@
           </select>
         </div>
 
-        <!-- Hora base de saída -->
+        <!-- Horário da consulta -->
         <div class="mb-4">
-          <label class="form-label fw-bold">Hora Base de Saída <span class="text-muted fw-normal">(opcional)</span></label>
-          <input type="time" class="form-control" name="hora_saida" value="{{ form_values.hora_saida|default:'' }}" style="max-width:140px;">
-          <div class="form-text">Aparece no cabeçalho do mapa. Ex: 06:00</div>
+          <label class="form-label fw-bold">Horário da Consulta <span class="text-muted fw-normal">(opcional)</span></label>
+          <input type="time" class="form-control" name="horario_consulta" value="{{ form_values.horario_consulta|default:'' }}" style="max-width:140px;">
+          <div class="form-text">Se informado, será usado na coluna da consulta no mapa. Ex: 06:00</div>
         </div>
 
         <div class="d-flex gap-2 flex-wrap">

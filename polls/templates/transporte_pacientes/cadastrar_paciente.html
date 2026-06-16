@@ -26,6 +26,7 @@ function preencherPacienteForm(paciente) {
     idade: 'id_idade',
     peso: 'id_peso',
     cartao_sis: 'id_cartao_sis',
+    destino_preferencial: 'id_destino_preferencial',
     ddd: 'id_ddd',
     telefone: 'id_telefone',
     rua: 'id_rua',
@@ -117,6 +118,7 @@ function exibirModalConfirmarPreencher(paciente) {
   html += '<div class="mb-2"><strong>Peso:</strong> ' + (paciente.peso || '') + '</div>';
   html += '<div class="mb-2"><strong>Telefone:</strong> ' + (paciente.ddd ? '('+paciente.ddd+') ' : '') + (paciente.telefone || '') + '</div>';
   html += '<div class="mb-2"><strong>Cartão SUS:</strong> ' + (paciente.cartao_sis || '') + '</div>';
+  html += '<div class="mb-2"><strong>Destino preferencial:</strong> ' + (paciente.destino_preferencial_label || '') + '</div>';
   html += '<div class="mb-2"><strong>Endereço:</strong> ' + [paciente.rua, paciente.numero, paciente.bairro, paciente.cidade, paciente.estado, paciente.cep].filter(Boolean).join(', ') + '</div>';
   html += '<div class="mb-2"><strong>Referência:</strong> ' + (paciente.referencia || '') + '</div>';
   html += '<div class="mb-2"><strong>O2:</strong> ' + (paciente.oxigenio ? 'Sim' : 'Não') + (paciente.oxigenio_litros_min ? ' ('+paciente.oxigenio_litros_min+' L/min)' : '') + '</div>';
@@ -797,6 +799,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="text-danger small">{{ form.horario_consulta.errors }}</div>
               {% endif %}
             </div>
+            <div class="col-md-3 mb-2">
+              {{ form.destino_preferencial.label_tag }}
+              {{ form.destino_preferencial }}
+              <small class="form-text text-muted">{{ form.destino_preferencial.help_text }}</small>
+              {% if form.destino_preferencial.errors %}
+                <div class="text-danger small">{{ form.destino_preferencial.errors }}</div>
+              {% endif %}
+            </div>
             <div class="col-md-1 mb-2">
               {{ form.idade.label_tag }}<span class="text-danger">*</span> 
               {{ form.idade }}
@@ -1042,10 +1052,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="submit" class="btn btn-success btn-lg btn-afunda">
           Salvar Paciente
         </button>
-        <a href="{% url 'transporte_pacientes:mapa_operacional' %}" class="btn btn-warning btn-lg btn-afunda" target="_blank" rel="noopener">
-          <i class="bi bi-map me-1"></i>
-          Ir para Mapas de Viagem
-        </a>
         <a href="/pacientes/" class="btn btn-outline-secondary btn-lg" style="min-width:120px;">Cancelar</a>
       </div>
     <script>
@@ -1637,17 +1643,16 @@ if (inputNome) {
 
 
 <div class="text-center mt-4 mb-2">
-  <button id="toggleHistoricoBtn" class="btn btn-outline-warning btn-sm px-4 py-2 btn-afunda" type="button" onclick="toggleHistorico()" style="color: #fff; background-color: #ff9800; border-color: #ff9800;">
-    <span id="toggleHistoricoText">Ocultar lista de pacientes</span>
-  </button>
+  <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+    <button id="toggleHistoricoBtn" class="btn btn-outline-warning btn-sm px-4 py-2 btn-afunda" type="button" onclick="toggleHistorico()" style="color: #fff; background-color: #ff9800; border-color: #ff9800;">
+      <span id="toggleHistoricoText">Ocultar lista de pacientes</span>
+    </button>
+    <button id="toggleAcoesTopoBtn" class="btn btn-outline-primary btn-sm px-4 py-2 btn-afunda" type="button" onclick="toggleAcoesLista()">
+      <i class="bi bi-eye-slash"></i> Ocultar ações
+    </button>
+  </div>
 </div>
 <div id="historicoPacientes" style="display: block;">
-  {% if not usa_postgres %}
-  <div class="alert alert-danger py-2 mb-2" style="border-left:4px solid #c62828;">
-    <strong>Diagnóstico de persistência:</strong> o sistema está usando banco não persistente ({{ db_engine|default:'desconhecido' }}).
-    Cadastros podem não permanecer após reinício/deploy. No Render, configure corretamente o DATABASE_URL do Postgres.
-  </div>
-  {% endif %}
   <div class="alert alert-success py-2 mb-2" style="border-left:4px solid #2b8a3e;">
     Histórico ativo: pacientes cadastrados ficam salvos no banco de dados e continuam disponíveis após fechar/reabrir a página.
   </div>
@@ -1765,6 +1770,32 @@ if (inputNome) {
     if (!historico || !btnText) return;
     historico.style.display = 'block';
     btnText.textContent = 'Ocultar lista de pacientes';
+  }
+
+  function toggleAcoesLista() {
+    var container = document.getElementById('historicoPacientes');
+    if (!container) return;
+
+    var colunas = container.querySelectorAll('.coluna-acoes');
+    if (!colunas.length) {
+      var tabela = container.querySelector('table');
+      if (tabela) {
+        colunas = tabela.querySelectorAll('thead th:last-child, tbody td:last-child');
+      }
+    }
+    if (!colunas.length) return;
+
+    var ocultar = !colunas[0].classList.contains('d-none');
+    colunas.forEach(function(el) {
+      el.classList.toggle('d-none', ocultar);
+    });
+
+    var btn = document.getElementById('toggleAcoesTopoBtn');
+    if (btn) {
+      btn.innerHTML = ocultar
+        ? '<i class="bi bi-eye"></i> Exibir ações'
+        : '<i class="bi bi-eye-slash"></i> Ocultar ações';
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function() {

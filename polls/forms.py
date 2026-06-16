@@ -249,25 +249,26 @@ class PacienteForm(forms.ModelForm):
             ('nome', 1),
             ('cartao_sis', 2),
             ('horario_consulta', 3),
-            ('idade', 4),
-            ('peso', 5),
-            ('ddd', 6),
-            ('telefone', 7),
-            ('referencia', 8),
-            ('rua', 9),
-            ('numero', 10),
-            ('bairro', 11),
-            ('estado', 12),
-            ('cidade', 13),
-            ('cep', 14),
-            ('oxigenio', 15),
-            ('oxigenio_litros_min', 16),
-            ('maca', 17),
-            ('cadeirante', 18),
-            ('acompanhantes', 19),
-            ('evolucao', 20),
-            ('observacoes', 21),
-            ('consentimento_lgpd', 22),
+            ('destino_preferencial', 4),
+            ('idade', 5),
+            ('peso', 6),
+            ('ddd', 7),
+            ('telefone', 8),
+            ('referencia', 9),
+            ('rua', 10),
+            ('numero', 11),
+            ('bairro', 12),
+            ('estado', 13),
+            ('cidade', 14),
+            ('cep', 15),
+            ('oxigenio', 16),
+            ('oxigenio_litros_min', 17),
+            ('maca', 18),
+            ('cadeirante', 19),
+            ('acompanhantes', 20),
+            ('evolucao', 21),
+            ('observacoes', 22),
+            ('consentimento_lgpd', 23),
         ]
         for field, idx in tabindexes:
             if field in self.fields:
@@ -275,6 +276,10 @@ class PacienteForm(forms.ModelForm):
         if 'horario_consulta' in self.fields:
             self.fields['horario_consulta'].widget.attrs['placeholder'] = 'Ex: 14:30'
             self.fields['horario_consulta'].widget.attrs['aria-label'] = 'Horário da consulta (opcional)'
+        if 'destino_preferencial' in self.fields:
+            self.fields['destino_preferencial'].required = False
+            self.fields['destino_preferencial'].label = 'Destino preferencial'
+            self.fields['destino_preferencial'].help_text = 'Clínica sugerida como destino habitual do paciente (opcional).'
         if 'latitude' in self.fields:
             self.fields['latitude'].required = False
         if 'longitude' in self.fields:

@@ -56,6 +56,14 @@ class Paciente(models.Model):
 
     # Novo campo opcional para horário da consulta
     horario_consulta = models.TimeField(null=True, blank=True, help_text="Horário da consulta do paciente (opcional)")
+    destino_preferencial = models.ForeignKey(
+        'Clinica',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pacientes_destino_preferencial',
+        help_text='Destino preferencial sugerido para este paciente (opcional)'
+    )
     # Ciclo de vida do paciente no serviço
     MOTIVO_INATIVACAO_CHOICES = [
         ("alta", "Alta"),

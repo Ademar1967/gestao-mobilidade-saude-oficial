@@ -1,9 +1,28 @@
+<style>
+  .rodape-acao-btn {
+    width: 280px;
+    height: 52px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0 1rem !important;
+    line-height: 1.1;
+    box-sizing: border-box;
+  }
+</style>
+
 <div class="card mt-4">
   <div class="card-header bg-info text-white d-flex align-items-center justify-content-between">
     <h5 class="mb-0">Lista de Pacientes Cadastrados</h5>
-    <button class="btn btn-success btn-sm btn-afunda" onclick="window.print()" type="button" title="Imprimir esta página direto">
-      <i class="bi bi-printer-fill"></i> Impressão Direta
-    </button>
+    <div class="d-flex align-items-center gap-2">
+      <button id="toggleAcoesBtn" class="btn btn-outline-light btn-sm btn-afunda" type="button" onclick="toggleColunaAcoes()" aria-pressed="false" title="Ocultar ou exibir coluna de ações">
+        <i class="bi bi-eye-slash"></i> Ocultar ações
+      </button>
+      <button class="btn btn-success btn-sm btn-afunda" onclick="window.print()" type="button" title="Imprimir esta página direto">
+        <i class="bi bi-printer-fill"></i> Impressão Direta
+      </button>
+    </div>
   </div>
   <div class="card-body p-0">
 
@@ -34,8 +53,7 @@
               <th>Bairro</th>
               <th>Condições</th>
               <th>Data Cadastro</th>
-                <th>Ações</th>
-              <th>Ações</th>
+              <th class="coluna-acoes">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -55,9 +73,8 @@
                     {% if paciente.cadeirante %}<span class="badge bg-danger">Cadeirante</span>{% endif %}
                     {% if paciente.acompanhante %}<span class="badge bg-success">Acompanhante</span>{% endif %}
                   </td>
-                    <td></td> <!-- Coluna de debug removida -->
-                  <td>{{ paciente.ja_alocado_db }}</td>
-                  <td>
+                  <td>{{ paciente.data_cadastro|date:'d/m/Y H:i'|default:'-' }}</td>
+                  <td class="coluna-acoes">
                     <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}?paciente_id={{ paciente.id }}" class="btn btn-primary btn-sm me-2">
                       <i class="bi bi-truck"></i> Transportar
                     </a>
@@ -73,24 +90,24 @@
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="12" style="text-align:center; padding:14px; background:#1565c0; font-size:1.2em; font-weight:700; color:#fff; border-top:3px solid #0d47a1; letter-spacing:1px;">
+              <td colspan="11" style="text-align:center; padding:14px; background:#1565c0; font-size:1.2em; font-weight:700; color:#fff; border-top:3px solid #0d47a1; letter-spacing:1px;">
                 🚐 TOTAL: <strong>{{ total_pacientes }}</strong> paciente(s) + <strong>{{ total_acompanhantes }}</strong> acompanhante(s) = <strong style="font-size:1.3em;">{{ total_geral }}</strong> PESSOA(S) NO VEÍCULO
               </td>
             </tr>
           </tfoot>
         </table>
       <div class="d-flex flex-wrap gap-2 m-2">
-        <a href="{% url 'transporte_pacientes:mapa_operacional' %}" class="btn btn-success btn-lg btn-afunda" style="border:none;">
+        <a href="{% url 'transporte_pacientes:mapa_operacional' %}" id="btnMapasViagem" class="btn btn-success btn-lg btn-afunda rodape-acao-btn" style="border:none;" onclick="return abrirMapasViagemComSelecao(event);">
           <i class="bi bi-map me-1"></i> Mapas de Viagem
         </a>
         <form id="formTransportarSelecionados" method="post" action="{% url 'transporte_pacientes:preparar_cadastro_transporte_lote' %}" class="d-inline">
           {% csrf_token %}
           <input type="hidden" name="paciente_ids" id="pacientesSelecionadosTransporte">
-          <button class="btn btn-afunda" style="background-color:#0d6efd; color:#fff; border:none;" type="button" onclick="transportarSelecionados()">
+          <button class="btn btn-lg btn-afunda rodape-acao-btn" style="background-color:#0d6efd; color:#fff; border:none;" type="button" onclick="transportarSelecionados()">
             <i class="bi bi-truck"></i> Transportar Selecionados
           </button>
         </form>
-        <button class="btn btn-afunda" style="background-color:#ff9800; color:#fff; border:none;" onclick="excluirSelecionadosPacientes()" type="button">
+        <button class="btn btn-lg btn-afunda rodape-acao-btn" style="background-color:#ff9800; color:#fff; border:none;" onclick="excluirSelecionadosPacientes()" type="button">
           <i class="bi bi-trash"></i> Excluir Selecionados
         </button>
       </div>
@@ -99,6 +116,24 @@
         <button type="button" class="btn-close" onclick="this.parentElement.style.display='none';"></button>
       </div>
       <script>
+      function toggleColunaAcoes() {
+        var colunas = document.querySelectorAll('.coluna-acoes');
+        if (!colunas.length) return;
+
+        var ocultar = !colunas[0].classList.contains('d-none');
+        colunas.forEach(function(el) {
+          el.classList.toggle('d-none', ocultar);
+        });
+
+        var btn = document.getElementById('toggleAcoesBtn');
+        if (btn) {
+          btn.setAttribute('aria-pressed', ocultar ? 'true' : 'false');
+          btn.innerHTML = ocultar
+            ? '<i class="bi bi-eye"></i> Exibir ações'
+            : '<i class="bi bi-eye-slash"></i> Ocultar ações';
+        }
+      }
+
       function excluirPaciente(id, btn) {
         if (!confirm('Tem certeza que deseja excluir este paciente?')) return;
         btn.disabled = true;
@@ -184,6 +219,23 @@
           if (form) {
             form.submit();
           }
+      }
+
+      function abrirMapasViagemComSelecao(event) {
+        var link = document.getElementById('btnMapasViagem');
+        if (!link) return true;
+
+        var checkboxes = document.querySelectorAll('.paciente-checkbox:checked');
+        if (checkboxes.length === 0) return true;
+
+        event.preventDefault();
+        var ids = Array.from(checkboxes).map(function(cb) { return cb.value; }).filter(Boolean);
+        var destino = link.getAttribute('href') || '';
+        if (!destino) return false;
+
+        var separador = destino.indexOf('?') >= 0 ? '&' : '?';
+        window.location.href = destino + separador + 'paciente_ids=' + encodeURIComponent(ids.join(','));
+        return false;
       }
       </script>
       </div>

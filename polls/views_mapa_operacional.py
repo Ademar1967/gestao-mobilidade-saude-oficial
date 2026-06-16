@@ -22,12 +22,22 @@ def mapa_operacional(request):
     veiculos = Veiculo.objects.order_by('tipo_veiculo', 'patrimonio', 'placa')
     hoje = timezone.localdate().isoformat()
     numeros_viagem = [f"{i}a Viagem" for i in range(1, NUMERO_MAXIMO_VIAGENS + 1)]
+    paciente_ids_param = (request.GET.get('paciente_ids') or '').strip()
 
     return render(request, 'transporte_pacientes/mapa_operacional_selecao.html', {
         'condutores': condutores,
         'veiculos': veiculos,
         'hoje': hoje,
         'numeros_viagem': numeros_viagem,
+        'form_values': {
+            'origem': (request.GET.get('origem') or 'nem').strip().lower(),
+            'empresa': (request.GET.get('empresa') or '').strip().upper(),
+            'numero_viagem': (request.GET.get('numero_viagem') or '1a Viagem').strip(),
+            'condutor': (request.GET.get('condutor') or '').strip(),
+            'veiculo': (request.GET.get('veiculo') or '').strip(),
+            'horario_consulta': (request.GET.get('horario_consulta') or '').strip(),
+            'paciente_ids': paciente_ids_param,
+        },
     })
 
 
@@ -122,7 +132,7 @@ def _condicoes_especiais(paciente) -> str:
 
 @login_required
 def mapa_operacional_imprimir(request):
-    from .models import Transporte, Condutor, Veiculo
+    from .models import Transporte, Condutor, Veiculo, Paciente
 
     data_str = (request.GET.get('data') or '').strip()
     origem = (request.GET.get('origem') or 'nem').strip().lower()
@@ -130,7 +140,15 @@ def mapa_operacional_imprimir(request):
     condutor_id = (request.GET.get('condutor') or '').strip()
     numero_viagem = (request.GET.get('numero_viagem') or '1a Viagem').strip()
     veiculo_id = (request.GET.get('veiculo') or '').strip()
-    hora_saida_base = (request.GET.get('hora_saida') or '').strip()
+    horario_consulta_base = (request.GET.get('horario_consulta') or '').strip()
+    paciente_ids_raw = (request.GET.get('paciente_ids') or '').strip()
+
+    paciente_ids = []
+    if paciente_ids_raw:
+        for pid in paciente_ids_raw.split(','):
+            pid = pid.strip()
+            if pid.isdigit():
+                paciente_ids.append(int(pid))
 
     if not empresa:
         empresa = 'NEM' if origem == 'nem' else 'PREFEITURA'
@@ -144,66 +162,67 @@ def mapa_operacional_imprimir(request):
         qs = qs.filter(condutor_id=condutor_id)
     if veiculo_id:
         qs = qs.filter(veiculo_id=veiculo_id)
+    if paciente_ids:
+        qs = qs.filter(paciente_id__in=paciente_ids)
 
     qs = qs.order_by('paciente__nome', 'id')
 
     linhas = []
-    for ordem, t in enumerate(qs, start=1):
-        p = t.paciente
-        c = t.clinica
 
-        nome_paciente = (p.nome if p else '') or ''
-        paciente_id = p.id if p else ''
-        acompanhantes = (getattr(p, 'acompanhantes', 0) if p else 0) or 0
+    def _linha_from_paciente(paciente, ordem, transporte=None):
+        clinica = transporte.clinica if transporte else None
+        acompanhantes = (getattr(paciente, 'acompanhantes', 0) if paciente else 0) or 0
 
         endereco_paciente = ''
-        if p:
-            endereco_paciente = ', '.join(x for x in [p.rua, p.numero] if x)
-
-        bairro_paciente = (p.bairro if p else '') or ''
+        if paciente:
+            endereco_paciente = ', '.join(x for x in [paciente.rua, paciente.numero] if x)
 
         horario = ''
-        if p and p.horario_consulta:
-            horario = p.horario_consulta.strftime('%H:%M')
-        elif t.hora_saida:
-            horario = t.hora_saida.strftime('%H:%M') if hasattr(t.hora_saida, 'strftime') else str(t.hora_saida)[:5]
-
-        acompanhante_marca = 'X' if acompanhantes > 0 else 'SO'
-
-        destino_nome = (c.nome if c else '') or ''
+        if paciente and paciente.horario_consulta:
+            horario = paciente.horario_consulta.strftime('%H:%M')
 
         telefone = ''
-        if c and c.telefone:
-            telefone = c.telefone
-        elif p and p.telefone:
-            ddd = p.ddd or ''
-            telefone = f"{ddd} {p.telefone}".strip() if ddd else (p.telefone or '')
+        if clinica and clinica.telefone:
+            telefone = clinica.telefone
+        elif paciente and paciente.telefone:
+            ddd = paciente.ddd or ''
+            telefone = f"{ddd} {paciente.telefone}".strip() if ddd else (paciente.telefone or '')
 
         observacao = ''
-        if p:
+        if paciente:
             partes_obs = []
-            if p.referencia:
-                partes_obs.append(p.referencia)
-            if p.observacoes:
-                partes_obs.append(p.observacoes)
+            if paciente.referencia:
+                partes_obs.append(paciente.referencia)
+            if paciente.observacoes:
+                partes_obs.append(paciente.observacoes)
             observacao = ' / '.join(partes_obs)
 
-        condicoes_especiais = _condicoes_especiais(p)
-
-        linhas.append({
+        return {
             'ordem': ordem,
-            'nome': nome_paciente,
-            'paciente_id': paciente_id,
+            'nome': (paciente.nome if paciente else '') or '',
+            'paciente_id': paciente.id if paciente else '',
             'acompanhantes': acompanhantes,
             'endereco': endereco_paciente,
-            'bairro': bairro_paciente,
+            'bairro': (paciente.bairro if paciente else '') or '',
             'horario': horario,
-            'acompanhante_marca': acompanhante_marca,
-            'condicoes_especiais': condicoes_especiais,
-            'destino': destino_nome,
+            'acompanhante_marca': 'X' if acompanhantes > 0 else 'SO',
+            'condicoes_especiais': _condicoes_especiais(paciente),
+            'destino': ((clinica.nome if clinica else '') or 'A definir') if paciente else '',
             'telefone': telefone,
             'observacao': observacao,
-        })
+        }
+
+    for ordem, t in enumerate(qs, start=1):
+        linhas.append(_linha_from_paciente(t.paciente, ordem, t))
+
+    # Se vieram pacientes selecionados, mas nenhum transporte ainda foi salvo,
+    # gera o mapa diretamente com os dados operacionais do paciente.
+    if not linhas and paciente_ids:
+        pacientes_qs = Paciente.objects.filter(id__in=paciente_ids)
+        mapa_pacientes = {p.id: p for p in pacientes_qs}
+        pacientes_ordenados = [mapa_pacientes[pid] for pid in paciente_ids if pid in mapa_pacientes]
+        for ordem, paciente in enumerate(pacientes_ordenados, start=1):
+            linhas.append(_linha_from_paciente(paciente, ordem))
 
     condutor_obj = Condutor.objects.filter(id=condutor_id).first() if condutor_id else None
     veiculo_obj = Veiculo.objects.filter(id=veiculo_id).first() if veiculo_id else None
@@ -235,6 +254,6 @@ def mapa_operacional_imprimir(request):
         'veiculo': veiculo_obj,
         'frota_label': frota_label,
         'capacidade_lote': capacidade_lote,
-        'hora_saida_base': hora_saida_base,
+        'horario_consulta_base': horario_consulta_base,
         'total': len(linhas),
     })

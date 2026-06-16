@@ -74,7 +74,7 @@
                       </div>
           </div>
           {% endif %}
-          <form method="post" autocomplete="on" id="form-editar-paciente" data-autosave="true" data-autosave-label="da edição de paciente">
+          <form method="post" autocomplete="on" id="form-editar-paciente" data-autosave="true" data-autosave-label="da edição de paciente" data-autosave-key="editar-paciente-{{ paciente.id }}">
             {% csrf_token %}
             {% for field in form %}
                         <div id="bloco-{{ field.name }}" class="mb-3{% if field.name in campos_pendentes %} campo-pendente-bloco{% endif %}" data-field-name="{{ field.name }}" {% if field.name in campos_pendentes %}style="background:linear-gradient(180deg,#fff5f5 0%,#ffe8e8 100%); border:5px solid #dc3545; box-shadow:0 0 0 4px rgba(220,53,69,.18), 0 10px 24px rgba(220,53,69,.15); border-radius:16px; padding:18px; position:relative; scroll-margin-top:120px;"{% endif %}>
