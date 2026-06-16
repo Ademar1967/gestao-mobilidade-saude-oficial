@@ -800,11 +800,34 @@ document.addEventListener('DOMContentLoaded', function() {
               {% endif %}
             </div>
             <div class="col-md-3 mb-2">
-              {{ form.destino_preferencial.label_tag }}
-              {{ form.destino_preferencial }}
-              <small class="form-text text-muted">{{ form.destino_preferencial.help_text }}</small>
-              {% if form.destino_preferencial.errors %}
-                <div class="text-danger small">{{ form.destino_preferencial.errors }}</div>
+              {% if form.destino_preferencial %}
+                {{ form.destino_preferencial.label_tag }}
+                {{ form.destino_preferencial }}
+                {{ form.destino_preferencial_limpar }}
+                <small class="form-text text-muted">{{ form.destino_preferencial.help_text }}</small>
+                {% if form.destino_preferencial.errors %}
+                  <div class="text-danger small">{{ form.destino_preferencial.errors }}</div>
+                {% endif %}
+                <div class="d-flex gap-2 mt-2 flex-wrap">
+                  <button type="button" id="btnLimparDestinoPreferencial" class="btn btn-outline-secondary btn-sm">Limpar destino</button>
+                </div>
+                <div class="mt-2">
+                  {{ form.destino_preferencial_manual.label_tag }}
+                  {{ form.destino_preferencial_manual }}
+                  <small class="form-text text-muted">{{ form.destino_preferencial_manual.help_text }}</small>
+                  {% if form.destino_preferencial_manual.errors %}
+                    <div class="text-danger small">{{ form.destino_preferencial_manual.errors }}</div>
+                  {% endif %}
+                </div>
+                <div id="avisoSemClinicasDestino" class="alert alert-warning mt-2 py-2 px-2 small d-none" role="alert">
+                  Nenhuma clínica disponível para seleção no destino preferencial.
+                  <a href="{% url 'transporte_pacientes:cadastrar_clinica' %}" class="btn btn-sm btn-outline-warning ms-2" target="_blank" rel="noopener">Cadastrar clínica</a>
+                </div>
+              {% else %}
+                <label class="form-label">Destino preferencial</label>
+                <div class="alert alert-warning py-2 px-2 small" role="alert">
+                  Campo de destino preferencial indisponível nesta versão do formulário.
+                </div>
               {% endif %}
             </div>
             <div class="col-md-1 mb-2">
@@ -1800,6 +1823,43 @@ if (inputNome) {
 
   document.addEventListener('DOMContentLoaded', function() {
     aplicarPreferenciaHistorico();
+
+    var destinoSelect = document.getElementById('id_destino_preferencial');
+    var avisoSemClinicas = document.getElementById('avisoSemClinicasDestino');
+    var destinoLimparInput = document.getElementById('id_destino_preferencial_limpar');
+    var destinoManualInput = document.getElementById('id_destino_preferencial_manual');
+    var btnLimparDestino = document.getElementById('btnLimparDestinoPreferencial');
+    if (destinoSelect && avisoSemClinicas) {
+      var opcoesReais = Array.from(destinoSelect.options || []).filter(function(opt) {
+        return (opt.value || '').trim() !== '';
+      });
+      if (opcoesReais.length === 0) {
+        avisoSemClinicas.classList.remove('d-none');
+      }
+    }
+
+    if (btnLimparDestino && destinoSelect) {
+      btnLimparDestino.addEventListener('click', function() {
+        destinoSelect.value = '';
+        if (destinoLimparInput) destinoLimparInput.checked = true;
+      });
+    }
+
+    if (destinoSelect) {
+      destinoSelect.addEventListener('change', function() {
+        if ((destinoSelect.value || '').trim() !== '' && destinoLimparInput) {
+          destinoLimparInput.checked = false;
+        }
+      });
+    }
+
+    if (destinoManualInput) {
+      destinoManualInput.addEventListener('input', function() {
+        if ((destinoManualInput.value || '').trim() !== '' && destinoLimparInput) {
+          destinoLimparInput.checked = false;
+        }
+      });
+    }
   });
 
   document.addEventListener('DOMContentLoaded', function() {

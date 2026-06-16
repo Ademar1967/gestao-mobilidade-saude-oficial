@@ -243,6 +243,14 @@ class PacienteForm(forms.ModelForm):
     )
     ddd = forms.CharField(label='DDD', max_length=2, required=False, widget=forms.TextInput(attrs={'placeholder': 'DDD', 'style': 'max-width:50px;'}))
     cartao_sis = forms.CharField(label='Cartão SIS', max_length=10, required=False, widget=forms.TextInput(attrs={'placeholder': 'Cartão SIS', 'style': 'max-width:110px;'}))
+    destino_preferencial_manual = forms.CharField(
+        label='Ou digite a clínica manualmente',
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Ex: Hospital Municipal Central'})
+    )
+    destino_preferencial_limpar = forms.BooleanField(required=False, widget=forms.HiddenInput())
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         tabindexes = [
@@ -250,25 +258,26 @@ class PacienteForm(forms.ModelForm):
             ('cartao_sis', 2),
             ('horario_consulta', 3),
             ('destino_preferencial', 4),
-            ('idade', 5),
-            ('peso', 6),
-            ('ddd', 7),
-            ('telefone', 8),
-            ('referencia', 9),
-            ('rua', 10),
-            ('numero', 11),
-            ('bairro', 12),
-            ('estado', 13),
-            ('cidade', 14),
-            ('cep', 15),
-            ('oxigenio', 16),
-            ('oxigenio_litros_min', 17),
-            ('maca', 18),
-            ('cadeirante', 19),
-            ('acompanhantes', 20),
-            ('evolucao', 21),
-            ('observacoes', 22),
-            ('consentimento_lgpd', 23),
+            ('destino_preferencial_manual', 5),
+            ('idade', 6),
+            ('peso', 7),
+            ('ddd', 8),
+            ('telefone', 9),
+            ('referencia', 10),
+            ('rua', 11),
+            ('numero', 12),
+            ('bairro', 13),
+            ('estado', 14),
+            ('cidade', 15),
+            ('cep', 16),
+            ('oxigenio', 17),
+            ('oxigenio_litros_min', 18),
+            ('maca', 19),
+            ('cadeirante', 20),
+            ('acompanhantes', 21),
+            ('evolucao', 22),
+            ('observacoes', 23),
+            ('consentimento_lgpd', 24),
         ]
         for field, idx in tabindexes:
             if field in self.fields:
@@ -280,6 +289,8 @@ class PacienteForm(forms.ModelForm):
             self.fields['destino_preferencial'].required = False
             self.fields['destino_preferencial'].label = 'Destino preferencial'
             self.fields['destino_preferencial'].help_text = 'Clínica sugerida como destino habitual do paciente (opcional).'
+        if 'destino_preferencial_manual' in self.fields:
+            self.fields['destino_preferencial_manual'].help_text = 'Se a clínica não existir na lista, digite aqui para cadastrar automaticamente.'
         if 'latitude' in self.fields:
             self.fields['latitude'].required = False
         if 'longitude' in self.fields:
@@ -374,6 +385,19 @@ class PacienteForm(forms.ModelForm):
         instance.ddd = self.cleaned_data.get('ddd', '')
         # Salva Cartão SIS
         instance.cartao_sis = self.cleaned_data.get('cartao_sis', '')
+
+        # Permite limpar destino selecionado ou cadastrar clínica nova por digitação manual.
+        if self.cleaned_data.get('destino_preferencial_limpar'):
+            instance.destino_preferencial = None
+        else:
+            destino_manual = (self.cleaned_data.get('destino_preferencial_manual') or '').strip()
+            if destino_manual:
+                destino_manual = self._validar_texto_simples(destino_manual, 'Destino preferencial manual')
+                clinica = Clinica.objects.filter(nome__iexact=destino_manual).first()
+                if clinica is None:
+                    clinica = Clinica.objects.create(nome=destino_manual)
+                instance.destino_preferencial = clinica
+
         if commit:
             instance.save()
         return instance
