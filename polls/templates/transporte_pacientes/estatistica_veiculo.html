@@ -2,6 +2,15 @@
 {% block content %}
 <div class="container mt-4">
   <h2 class="mb-4"><i class="bi bi-truck"></i> Estatística de Transportes por Veículo</h2>
+
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{% url 'transporte_pacientes:estatistica_tipo' %}" class="btn btn-sm {% if pagina_estatistica == 'tipo' %}btn-primary{% else %}btn-outline-primary{% endif %}">Tipo</a>
+    <a href="{% url 'transporte_pacientes:estatistica_clinica' %}" class="btn btn-sm {% if pagina_estatistica == 'clinica' %}btn-primary{% else %}btn-outline-primary{% endif %}">Clínica</a>
+    <a href="{% url 'transporte_pacientes:estatistica_periodo' %}" class="btn btn-sm {% if pagina_estatistica == 'periodo' %}btn-primary{% else %}btn-outline-primary{% endif %}">Período</a>
+    <a href="{% url 'transporte_pacientes:estatistica_veiculo' %}" class="btn btn-sm {% if pagina_estatistica == 'veiculo' %}btn-primary{% else %}btn-outline-primary{% endif %}">Veículo</a>
+    <a href="{% url 'transporte_pacientes:estatistica_condutor' %}" class="btn btn-sm {% if pagina_estatistica == 'condutor' %}btn-primary{% else %}btn-outline-primary{% endif %}">Condutor</a>
+  </div>
+
   <form method="get" class="row g-2 align-items-end mb-3">
     <div class="col-md-3 col-12">
       <label for="data_inicio" class="form-label mb-1">Data inicial</label>
@@ -14,24 +23,63 @@
     <div class="col-md-6 col-12 d-flex gap-2">
       <button type="submit" class="btn btn-primary">Filtrar</button>
       <a href="{% url 'transporte_pacientes:estatistica_veiculo' %}" class="btn btn-outline-secondary">Limpar</a>
+      <button type="button" class="btn btn-outline-primary no-print" onclick="window.print()">Imprimir esta estatística</button>
+      <a href="{% url 'transporte_pacientes:estatistica_graficos_impressao' %}?data_inicio={{ filtros.data_inicio|urlencode }}&data_fim={{ filtros.data_fim|urlencode }}" class="btn btn-outline-dark" target="_blank">Imprimir todos os gráficos</a>
     </div>
   </form>
-  <table class="table table-bordered table-striped mb-4">
-    <thead class="table-warning">
-      <tr>
-        <th>Veículo</th>
-        <th>Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in dados %}
-      <tr>
-        <td>{{ row.veiculo }}</td>
-        <td>{{ row.total }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4 col-12">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted d-block">Total de transportes</small>
+          <h4 class="mb-0">{{ resumo.total_geral }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-12">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted d-block">Veículos com viagens</small>
+          <h4 class="mb-0">{{ resumo.categorias_com_dados }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 col-12">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-muted d-block">Veículo com maior volume</small>
+          <h6 class="mb-1">{{ resumo.top_rotulo }}</h6>
+          <span class="badge bg-warning text-dark">{{ resumo.top_total }} transportes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if resumo.sem_dados %}
+  <div class="alert alert-info">Nenhum transporte encontrado no período informado.</div>
+  {% endif %}
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped mb-2">
+      <thead class="table-warning">
+        <tr>
+          <th>Veículo</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in dados %}
+        <tr>
+          <td>{{ row.veiculo }}</td>
+          <td class="text-end">{{ row.total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small mb-3">O gráfico exibe até os 15 veículos com maior volume no período.</p>
   <canvas id="graficoVeiculo" height="120"></canvas>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -40,6 +88,13 @@
     var ctx = document.getElementById('graficoVeiculo').getContext('2d');
     var labels = [{% for row in dados %}'{{ row.veiculo|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
     var data = [{% for row in dados %}{{ row.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    labels = labels.slice(0, 15);
+    data = data.slice(0, 15);
+
+    if (!labels.length) {
+      return;
+    }
+
     new Chart(ctx, {
       type: 'bar',
       data: {
@@ -56,6 +111,9 @@
         responsive: true,
         plugins: {
           legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } }
         }
       }
     });

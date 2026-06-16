@@ -68,6 +68,7 @@ urlpatterns = [
     path('estatisticas/periodo/', views.estatistica_transportes_periodo, name='estatistica_periodo'),
     path('estatisticas/veiculo/', views.estatistica_transportes_veiculo, name='estatistica_veiculo'),
     path('estatisticas/condutor/', views.estatistica_transportes_condutor, name='estatistica_condutor'),
+    path('estatisticas/graficos/impressao/', views.estatistica_graficos_impressao, name='estatistica_graficos_impressao'),
     path('transportes/excluir/<int:transporte_id>/', views.excluir_transporte, name='excluir_transporte'),
     path('mapas-viagem/', mapa_operacional, name='mapa_operacional'),
     path('mapas-viagem/imprimir/', mapa_operacional_imprimir, name='mapa_operacional_imprimir'),

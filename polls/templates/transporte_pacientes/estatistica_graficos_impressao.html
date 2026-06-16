@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 no-print">
+    <h2 class="mb-0"><i class="bi bi-printer"></i> Impressão Consolidada de Gráficos</h2>
+    <div class="d-flex gap-2">
+      <a href="{% url 'transporte_pacientes:estatistica_tipo' %}?data_inicio={{ filtros.data_inicio|urlencode }}&data_fim={{ filtros.data_fim|urlencode }}" class="btn btn-outline-secondary">Voltar</a>
+      <button type="button" class="btn btn-primary" id="btnImprimirSelecionados"><i class="bi bi-printer-fill me-1"></i>Imprimir Selecionados</button>
+    </div>
+  </div>
+
+  <p class="text-muted mb-3">
+    Período selecionado:
+    <strong>{{ filtros.data_inicio|default:'início aberto' }}</strong>
+    até
+    <strong>{{ filtros.data_fim|default:'fim aberto' }}</strong>
+    • Total geral: <strong>{{ total_geral }}</strong>
+  </p>
+
+  <div class="card border-0 shadow-sm mb-3 no-print">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h6 class="mb-0">Escolha o que imprimir</h6>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btnSelecionarTudo">Selecionar tudo</button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="btnLimparSelecao">Limpar</button>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-3">
+        <label class="form-check-label"><input class="form-check-input me-1 seletor-impressao" type="checkbox" data-target="tipo" checked> Tipo</label>
+        <label class="form-check-label"><input class="form-check-input me-1 seletor-impressao" type="checkbox" data-target="clinica" checked> Clínica</label>
+        <label class="form-check-label"><input class="form-check-input me-1 seletor-impressao" type="checkbox" data-target="veiculo" checked> Veículo</label>
+        <label class="form-check-label"><input class="form-check-input me-1 seletor-impressao" type="checkbox" data-target="condutor" checked> Condutor</label>
+        <label class="form-check-label"><input class="form-check-input me-1 seletor-impressao" type="checkbox" data-target="periodo" checked> Período</label>
+      </div>
+      <small class="text-muted d-block mt-2">Somente os itens marcados serão impressos.</small>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 secao-grafico" data-print-section="tipo">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Transportes por Tipo</h5>
+          <canvas id="graficoTipo" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 secao-grafico" data-print-section="clinica">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Transportes por Clínica (Top 15)</h5>
+          <canvas id="graficoClinica" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 secao-grafico" data-print-section="veiculo">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Transportes por Veículo (Top 15)</h5>
+          <canvas id="graficoVeiculo" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 secao-grafico" data-print-section="condutor">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Transportes por Condutor (Top 15)</h5>
+          <canvas id="graficoCondutor" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 secao-grafico" data-print-section="periodo">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Transportes por Mês/Ano</h5>
+          <canvas id="graficoPeriodo" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-hide {
+    display: none !important;
+  }
+  .card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const seletores = Array.from(document.querySelectorAll('.seletor-impressao'));
+  const secoes = Array.from(document.querySelectorAll('.secao-grafico'));
+
+  function aplicarSelecaoVisual() {
+    const selecionados = new Set(
+      seletores.filter(s => s.checked).map(s => s.getAttribute('data-target'))
+    );
+    secoes.forEach(secao => {
+      const chave = secao.getAttribute('data-print-section');
+      secao.classList.toggle('print-hide', !selecionados.has(chave));
+    });
+    return selecionados;
+  }
+
+  const btnSelecionarTudo = document.getElementById('btnSelecionarTudo');
+  const btnLimparSelecao = document.getElementById('btnLimparSelecao');
+  const btnImprimirSelecionados = document.getElementById('btnImprimirSelecionados');
+
+  if (btnSelecionarTudo) {
+    btnSelecionarTudo.addEventListener('click', function () {
+      seletores.forEach(s => { s.checked = true; });
+      aplicarSelecaoVisual();
+    });
+  }
+
+  if (btnLimparSelecao) {
+    btnLimparSelecao.addEventListener('click', function () {
+      seletores.forEach(s => { s.checked = false; });
+      aplicarSelecaoVisual();
+    });
+  }
+
+  seletores.forEach(s => s.addEventListener('change', aplicarSelecaoVisual));
+
+  if (btnImprimirSelecionados) {
+    btnImprimirSelecionados.addEventListener('click', function () {
+      const selecionados = aplicarSelecaoVisual();
+      if (!selecionados.size) {
+        alert('Selecione ao menos um gráfico para imprimir.');
+        return;
+      }
+      window.print();
+    });
+  }
+
+  aplicarSelecaoVisual();
+
+  const dadosTipo = [
+    {% for row in dados_tipo %}
+    { label: '{{ row.tipo|escapejs }}', total: {{ row.total }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const dadosClinica = [
+    {% for row in dados_clinica %}
+    { label: '{{ row.clinica|escapejs }}', total: {{ row.total }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ].slice(0, 15);
+
+  const dadosVeiculo = [
+    {% for row in dados_veiculo %}
+    { label: '{{ row.veiculo|escapejs }}', total: {{ row.total }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ].slice(0, 15);
+
+  const dadosCondutor = [
+    {% for row in dados_condutor %}
+    { label: '{{ row.condutor|escapejs }}', total: {{ row.total }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ].slice(0, 15);
+
+  const dadosPeriodo = [
+    {% for row in dados_periodo %}
+    { label: '{{ row.mes|escapejs }}', total: {{ row.total }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function chartBar(id, dados, cor) {
+    if (!dados.length) return;
+    new Chart(document.getElementById(id).getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: dados.map(d => d.label),
+        datasets: [{
+          data: dados.map(d => d.total),
+          backgroundColor: cor,
+          borderColor: '#334155',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  }
+
+  function chartLine(id, dados) {
+    if (!dados.length) return;
+    new Chart(document.getElementById(id).getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: dados.map(d => d.label),
+        datasets: [{
+          data: dados.map(d => d.total),
+          fill: true,
+          borderColor: '#0ea5e9',
+          backgroundColor: 'rgba(14, 165, 233, 0.2)',
+          tension: 0.25,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  }
+
+  chartBar('graficoTipo', dadosTipo, 'rgba(59, 130, 246, 0.55)');
+  chartBar('graficoClinica', dadosClinica, 'rgba(37, 99, 235, 0.55)');
+  chartBar('graficoVeiculo', dadosVeiculo, 'rgba(245, 158, 11, 0.55)');
+  chartBar('graficoCondutor', dadosCondutor, 'rgba(22, 163, 74, 0.55)');
+  chartLine('graficoPeriodo', dadosPeriodo);
+});
+</script>
+{% endblock %}

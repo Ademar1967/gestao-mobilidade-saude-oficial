@@ -871,6 +871,30 @@ def _aplicar_filtro_periodo_estatistica(qs, filtros):
 		qs = qs.filter(data_transporte__lte=filtros['data_fim_parsed'])
 	return qs
 
+
+def _montar_contexto_estatistica(dados, filtros, chave_rotulo, pagina_estatistica):
+	total_geral = sum((row.get('total') or 0) for row in dados)
+	categorias_com_dados = sum(1 for row in dados if (row.get('total') or 0) > 0)
+	item_top = max(dados, key=lambda row: row.get('total') or 0, default=None)
+	if item_top and (item_top.get('total') or 0) > 0:
+		top_rotulo = item_top.get(chave_rotulo) or 'Não informado'
+		top_total = item_top.get('total') or 0
+	else:
+		top_rotulo = 'Sem dados no período'
+		top_total = 0
+	return {
+		'dados': dados,
+		'filtros': filtros,
+		'resumo': {
+			'total_geral': total_geral,
+			'categorias_com_dados': categorias_com_dados,
+			'top_rotulo': top_rotulo,
+			'top_total': top_total,
+			'sem_dados': total_geral == 0,
+		},
+		'pagina_estatistica': pagina_estatistica,
+	}
+
 @staff_member_required
 def listar_clinicas(request):
 	from .models import Clinica
@@ -901,7 +925,8 @@ def estatistica_transportes_veiculo(request):
 		{'veiculo': (row['veiculo__patrimonio'] or row['veiculo__placa'] or 'Não informado'), 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_veiculo.html', {'dados': dados, 'filtros': filtros})
+	contexto = _montar_contexto_estatistica(dados, filtros, 'veiculo', 'veiculo')
+	return render(request, 'transporte_pacientes/estatistica_veiculo.html', contexto)
 
 # --- ESTATÍSTICA: Transportes por motorista (condutor) ---
 @staff_member_required
@@ -918,7 +943,8 @@ def estatistica_transportes_condutor(request):
 		{'condutor': row['condutor__nome'] or 'Não informado', 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_condutor.html', {'dados': dados, 'filtros': filtros})
+	contexto = _montar_contexto_estatistica(dados, filtros, 'condutor', 'condutor')
+	return render(request, 'transporte_pacientes/estatistica_condutor.html', contexto)
 
 # --- ESTATÍSTICA: Transportes por mês/ano ---
 @staff_member_required
@@ -937,7 +963,8 @@ def estatistica_transportes_periodo(request):
 		{'mes': row['mes'].strftime('%m/%Y') if row['mes'] else 'Sem data', 'total': row['total']}
 		for row in qs
 	]
-	return render(request, 'transporte_pacientes/estatistica_periodo.html', {'dados': dados, 'filtros': filtros})
+	contexto = _montar_contexto_estatistica(dados, filtros, 'mes', 'periodo')
+	return render(request, 'transporte_pacientes/estatistica_periodo.html', contexto)
 
 # --- ESTATÍSTICA: Transportes por clínica ---
 @staff_member_required
@@ -950,13 +977,47 @@ def estatistica_transportes_clinica(request):
 		.annotate(total=Count('id'))
 		.order_by('-total')
 	)
-	# Buscar só o nome da clínica, sem endereço
+	# Buscar só o nome da clínica, sem endereço.
 	clinicas_map = {c.id: c.nome for c in Clinica.objects.filter(id__in=[row['clinica__id'] for row in qs])}
-	dados = [
-		{'clinica': (clinicas_map.get(row['clinica__id'], 'Não informado').upper() if clinicas_map.get(row['clinica__id']) else 'Não informado'), 'total': row['total']}
-		for row in qs
-	]
-	return render(request, 'transporte_pacientes/estatistica_clinica.html', {'dados': dados, 'filtros': filtros})
+
+	def _harmonizar_nome_clinica(nome):
+		nome = (nome or '').strip()
+		if not nome:
+			return 'Não informado'
+		# Remove espaços duplicados e aplica capitalização legível com preservação de siglas comuns.
+		nome = ' '.join(nome.split())
+		siglas_forcar_maiusculo = {
+			'UBS', 'UPA', 'CAPS', 'AMA', 'SAMU', 'PS', 'PA', 'UTI', 'CEO',
+			'HC', 'SUS', 'HCFMUSP', 'HM', 'UBSF'
+		}
+		conectivos_minusculos = {'da', 'de', 'do', 'das', 'dos', 'e'}
+		partes_formatadas = []
+		for i, parte in enumerate(nome.split(' ')):
+			parte_limpa = parte.strip()
+			if not parte_limpa:
+				continue
+			parte_upper = parte_limpa.upper()
+			if parte_upper in siglas_forcar_maiusculo:
+				partes_formatadas.append(parte_upper)
+			elif i > 0 and parte_limpa.lower() in conectivos_minusculos:
+				partes_formatadas.append(parte_limpa.lower())
+			else:
+				partes_formatadas.append(parte_limpa.capitalize())
+		return ' '.join(partes_formatadas)
+
+	# Consolida variações do mesmo nome (maiúsculas/minúsculas/espaçamento) em uma única linha.
+	agregados = {}
+	for row in qs:
+		nome_bruto = clinicas_map.get(row['clinica__id'])
+		nome_harmonizado = _harmonizar_nome_clinica(nome_bruto)
+		chave = nome_harmonizado.casefold()
+		if chave not in agregados:
+			agregados[chave] = {'clinica': nome_harmonizado, 'total': 0}
+		agregados[chave]['total'] += row['total']
+
+	dados = sorted(agregados.values(), key=lambda item: (-item['total'], item['clinica']))
+	contexto = _montar_contexto_estatistica(dados, filtros, 'clinica', 'clinica')
+	return render(request, 'transporte_pacientes/estatistica_clinica.html', contexto)
 
 # --- ESTATÍSTICA: Transportes por tipo ---
 @staff_member_required
@@ -964,11 +1025,12 @@ def estatistica_transportes_tipo(request):
 	from .models import Transporte
 	filtros = _obter_filtros_periodo_estatistica(request)
 	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
-	tipos = dict(Transporte._meta.get_field('tipo_transporte').choices)
+	tipo_choices = list(Transporte._meta.get_field('tipo_transporte').choices)
 	qs = base_qs.values('tipo_transporte').annotate(total=Count('id')).order_by('tipo_transporte')
+	totais_por_tipo = {row['tipo_transporte']: row['total'] for row in qs}
 	dados = [
-		{'tipo': tipos.get(row['tipo_transporte'], row['tipo_transporte']), 'total': row['total']}
-		for row in qs
+		{'tipo': rotulo, 'total': totais_por_tipo.get(valor, 0)}
+		for valor, rotulo in tipo_choices
 	]
 
 	# Novas categorias: Transferências classificadas
@@ -980,8 +1042,115 @@ def estatistica_transportes_tipo(request):
 			"tipo": f"Transferência Classificada {cor.capitalize()}",
 			"total": total
 		})
+	contexto = _montar_contexto_estatistica(dados, filtros, 'tipo', 'tipo')
+	return render(request, 'transporte_pacientes/estatistica_tipo.html', contexto)
 
-	return render(request, 'transporte_pacientes/estatistica_tipo.html', {'dados': dados, 'filtros': filtros})
+
+@staff_member_required
+def estatistica_graficos_impressao(request):
+	from .models import Transporte, Clinica
+	from django.db.models.functions import TruncMonth
+
+	filtros = _obter_filtros_periodo_estatistica(request)
+	base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
+
+	# Veículo
+	qs_veiculo = (
+		base_qs.values('veiculo__patrimonio', 'veiculo__placa')
+		.annotate(total=Count('id'))
+		.order_by('-total')
+	)
+	dados_veiculo = [
+		{'veiculo': (row['veiculo__patrimonio'] or row['veiculo__placa'] or 'Não informado'), 'total': row['total']}
+		for row in qs_veiculo
+	]
+
+	# Condutor
+	qs_condutor = (
+		base_qs.values('condutor__nome')
+		.annotate(total=Count('id'))
+		.order_by('-total')
+	)
+	dados_condutor = [
+		{'condutor': row['condutor__nome'] or 'Não informado', 'total': row['total']}
+		for row in qs_condutor
+	]
+
+	# Período
+	qs_periodo = (
+		base_qs.annotate(mes=TruncMonth('data_transporte'))
+		.values('mes')
+		.annotate(total=Count('id'))
+		.order_by('mes')
+	)
+	dados_periodo = [
+		{'mes': row['mes'].strftime('%m/%Y') if row['mes'] else 'Sem data', 'total': row['total']}
+		for row in qs_periodo
+	]
+
+	# Clínica
+	qs_clinica = (
+		base_qs.values('clinica__id')
+		.annotate(total=Count('id'))
+		.order_by('-total')
+	)
+	clinicas_map = {c.id: c.nome for c in Clinica.objects.filter(id__in=[row['clinica__id'] for row in qs_clinica])}
+
+	def _harmonizar_nome_clinica(nome):
+		nome = (nome or '').strip()
+		if not nome:
+			return 'Não informado'
+		nome = ' '.join(nome.split())
+		siglas_forcar_maiusculo = {
+			'UBS', 'UPA', 'CAPS', 'AMA', 'SAMU', 'PS', 'PA', 'UTI', 'CEO',
+			'HC', 'SUS', 'HCFMUSP', 'HM', 'UBSF'
+		}
+		conectivos_minusculos = {'da', 'de', 'do', 'das', 'dos', 'e'}
+		partes_formatadas = []
+		for i, parte in enumerate(nome.split(' ')):
+			parte_limpa = parte.strip()
+			if not parte_limpa:
+				continue
+			parte_upper = parte_limpa.upper()
+			if parte_upper in siglas_forcar_maiusculo:
+				partes_formatadas.append(parte_upper)
+			elif i > 0 and parte_limpa.lower() in conectivos_minusculos:
+				partes_formatadas.append(parte_limpa.lower())
+			else:
+				partes_formatadas.append(parte_limpa.capitalize())
+		return ' '.join(partes_formatadas)
+
+	agregados_clinica = {}
+	for row in qs_clinica:
+		nome_harmonizado = _harmonizar_nome_clinica(clinicas_map.get(row['clinica__id']))
+		chave = nome_harmonizado.casefold()
+		if chave not in agregados_clinica:
+			agregados_clinica[chave] = {'clinica': nome_harmonizado, 'total': 0}
+		agregados_clinica[chave]['total'] += row['total']
+	dados_clinica = sorted(agregados_clinica.values(), key=lambda item: (-item['total'], item['clinica']))
+
+	# Tipo
+	tipo_choices = list(Transporte._meta.get_field('tipo_transporte').choices)
+	qs_tipo = base_qs.values('tipo_transporte').annotate(total=Count('id')).order_by('tipo_transporte')
+	totais_por_tipo = {row['tipo_transporte']: row['total'] for row in qs_tipo}
+	dados_tipo = [
+		{'tipo': rotulo, 'total': totais_por_tipo.get(valor, 0)}
+		for valor, rotulo in tipo_choices
+	]
+	for cor in ["amarelo", "verde", "vermelho"]:
+		total = base_qs.filter(tipo_transporte__icontains="TRANSFER", observacoes__icontains=cor).count()
+		dados_tipo.append({"tipo": f"Transferência Classificada {cor.capitalize()}", "total": total})
+
+	contexto = {
+		'filtros': filtros,
+		'dados_veiculo': dados_veiculo,
+		'dados_condutor': dados_condutor,
+		'dados_periodo': dados_periodo,
+		'dados_clinica': dados_clinica,
+		'dados_tipo': dados_tipo,
+		'total_geral': base_qs.count(),
+	}
+	return render(request, 'transporte_pacientes/estatistica_graficos_impressao.html', contexto)
 from django.http import JsonResponse
 # Endpoint para sugerir dados de retorno invertidos
 def retorno_sugestao_api(request):
