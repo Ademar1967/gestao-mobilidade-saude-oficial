@@ -1464,6 +1464,145 @@ if (inputNome) {
   });
   document.addEventListener('mousedown', function(e) { if (_dropdownNome && !inputNome.contains(e.target) && !_dropdownNome.contains(e.target)) fecharDropdownNome(); });
 }
+
+// Autocomplete direto no campo manual de destino preferencial
+var inputDestino = document.getElementById('id_destino_preferencial_manual');
+var selectDestino = document.getElementById('id_destino_preferencial');
+var _debounceDestino = null;
+var _dropdownDestino = null;
+function criarDropdownDestino() {
+  if (_dropdownDestino) return _dropdownDestino;
+  _dropdownDestino = document.createElement('div');
+  _dropdownDestino.id = 'autocomplete-destino-dropdown';
+  _dropdownDestino.style.cssText = 'position:absolute; z-index:3000; background:#fff; border:1px solid #b0bec5; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,0.13); max-height:320px; overflow-y:auto; width:100%;';
+  inputDestino.parentNode.style.position = 'relative';
+  inputDestino.parentNode.appendChild(_dropdownDestino);
+  return _dropdownDestino;
+}
+function fecharDropdownDestino() {
+  if (_dropdownDestino) {
+    _dropdownDestino.innerHTML = '';
+    _dropdownDestino.style.display = 'none';
+  }
+}
+function normalizarDestino(valor) {
+  return String(valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+function aplicarDestinoSelecionado(item) {
+  if (!item) return;
+  inputDestino.value = item.nome || '';
+  if (selectDestino && item.id) {
+    selectDestino.value = String(item.id);
+  } else if (selectDestino) {
+    selectDestino.value = '';
+  }
+}
+if (inputDestino) {
+  var idxDestinoSelecionado = -1;
+  function carregarSugestoesDestino(termoBusca, mostrarTodas) {
+    var params = new URLSearchParams();
+    params.set('limit', mostrarTodas ? '40' : '30');
+    params.set('preferencia', 'url');
+    if (mostrarTodas) {
+      params.set('mostrar_todas', '1');
+    } else {
+      params.set('q', termoBusca || '');
+    }
+
+    fetch('/api/clinicas/sugestoes/?' + params.toString(), { credentials: 'same-origin' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var lista = (data && data.resultados) ? data.resultados : [];
+        var dd = criarDropdownDestino();
+        if (lista.length === 0) {
+          dd.innerHTML = '<div class="p-2 text-muted">Nenhuma clínica encontrada</div>';
+          dd.style.display = 'block';
+          idxDestinoSelecionado = -1;
+          return;
+        }
+        var html = '';
+        lista.forEach(function(item, idx) {
+          var linha1 = item.nome || '';
+          var linha2 = [item.endereco || '', item.bairro || '', item.cidade || ''].filter(Boolean).join(' · ');
+          html += '<div class="autocomplete-destino-item px-2 py-1" data-idx="' + idx + '" style="cursor:pointer;">';
+          html += '<div>' + linha1 + '</div>';
+          if (linha2) html += '<div class="small text-muted">' + linha2 + '</div>';
+          html += '</div>';
+        });
+        dd.innerHTML = html;
+        dd.style.display = 'block';
+        window._sugestoesDestino = lista;
+        idxDestinoSelecionado = -1;
+        var items = dd.querySelectorAll('.autocomplete-destino-item');
+        items.forEach(function(el) {
+          el.addEventListener('mouseenter', function() { el.style.background = '#e3f2fd'; });
+          el.addEventListener('mouseleave', function() { el.style.background = ''; });
+          el.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            var item = window._sugestoesDestino[parseInt(el.getAttribute('data-idx'))];
+            if (item) {
+              aplicarDestinoSelecionado(item);
+              fecharDropdownDestino();
+            }
+          });
+        });
+      })
+      .catch(function() { fecharDropdownDestino(); });
+  }
+
+  inputDestino.addEventListener('input', function() {
+    clearTimeout(_debounceDestino);
+    var termo = inputDestino.value.trim();
+    if (termo.length > 0 && termo.length < 2) {
+      fecharDropdownDestino();
+      idxDestinoSelecionado = -1;
+      return;
+    }
+    _debounceDestino = setTimeout(function() {
+      carregarSugestoesDestino(termo, termo.length === 0);
+    }, 300);
+  });
+  inputDestino.addEventListener('keydown', function(e) {
+    var dd = _dropdownDestino;
+    var items = dd ? dd.querySelectorAll('.autocomplete-destino-item') : [];
+    if (!items.length || !dd || dd.style.display === 'none') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      idxDestinoSelecionado = (idxDestinoSelecionado + 1) % items.length;
+      items.forEach(function(el, i) { el.style.background = (i === idxDestinoSelecionado) ? '#bbdefb' : ''; });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      idxDestinoSelecionado = (idxDestinoSelecionado - 1 + items.length) % items.length;
+      items.forEach(function(el, i) { el.style.background = (i === idxDestinoSelecionado) ? '#bbdefb' : ''; });
+    } else if (e.key === 'Enter') {
+      if (idxDestinoSelecionado >= 0 && idxDestinoSelecionado < items.length) {
+        e.preventDefault();
+        var item = window._sugestoesDestino[idxDestinoSelecionado];
+        if (item) {
+          aplicarDestinoSelecionado(item);
+          fecharDropdownDestino();
+        }
+      }
+    } else if (e.key === 'Escape') {
+      fecharDropdownDestino();
+    }
+  });
+  inputDestino.addEventListener('focus', function() {
+    inputDestino.dispatchEvent(new Event('input'));
+  });
+  inputDestino.addEventListener('click', function() {
+    inputDestino.dispatchEvent(new Event('input'));
+  });
+  document.addEventListener('mousedown', function(e) {
+    if (_dropdownDestino && !inputDestino.contains(e.target) && !_dropdownDestino.contains(e.target)) {
+      fecharDropdownDestino();
+    }
+  });
+}
 </script>
 {% endblock %}
 

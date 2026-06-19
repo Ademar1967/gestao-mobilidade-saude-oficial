@@ -1528,27 +1528,35 @@ def buscar_clinicas_sugestoes(request):
 	"""Retorna sugestoes de clinicas por nome: primeiro do banco, depois do CNES."""
 	from django.http import JsonResponse
 	from .models import Clinica
+	try:
+		from rapidfuzz import fuzz, process
+	except ImportError:
+		fuzz = None
+		process = None
 	termo = (request.GET.get('q') or '').strip()
+	mostrar_todas_raw = (request.GET.get('mostrar_todas') or '').strip().lower()
+	mostrar_todas = mostrar_todas_raw in ('1', 'true', 'sim', 'yes')
 	limite_raw = (request.GET.get('limit') or '').strip()
 	try:
 		limite = int(limite_raw) if limite_raw else 30
 	except Exception:
 		limite = 30
 	limite = max(5, min(limite, 100))
-	if len(termo) < 2:
+	if len(termo) < 2 and not mostrar_todas:
 		return JsonResponse({'sucesso': True, 'resultados': []})
 
 	# 1) Clínicas já cadastradas no banco (prioridade)
-	queryset = (
+	queryset_base = (
 		Clinica.objects
 		.only('id', 'nome', 'endereco', 'bairro', 'cidade', 'telefone')
 		.annotate(
 			uso_count=models.Count('transportes'),
 			ultima_data=models.Max('transportes__data_transporte')
 		)
-		.filter(nome__icontains=termo)
-		.order_by('-uso_count', '-ultima_data', 'nome')[:limite]
 	)
+	if termo:
+		queryset_base = queryset_base.filter(nome__icontains=termo)
+	queryset = queryset_base.order_by('-uso_count', '-ultima_data', 'nome')[:limite]
 	resultados = [
 		{
 			'id': c.id,
@@ -1575,7 +1583,10 @@ def buscar_clinicas_sugestoes(request):
 			nomes_banco = {r['nome'].lower() for r in resultados}
 			termo_norm = _normalize(termo)
 			nomes_norm = df_cnes['nome'].apply(_normalize)
-			mask = nomes_norm.str.contains(termo_norm, regex=False)
+			if termo_norm:
+				mask = nomes_norm.str.contains(termo_norm, regex=False)
+			else:
+				mask = nomes_norm.notna()
 			for _, row in df_cnes[mask].head(vagas * 2).iterrows():
 				if len(resultados) >= limite:
 					break
@@ -1593,6 +1604,29 @@ def buscar_clinicas_sugestoes(request):
 					'uso_count': 0,
 					'fonte': 'cnes',
 				})
+			# Fuzzy fallback para termos com erro de digitação ou buscas genéricas
+			if termo_norm and len(resultados) < min(limite, 15) and process and fuzz:
+				nomes_lista = nomes_norm.tolist()
+				fuzzy_matches = process.extract(termo_norm, nomes_lista, scorer=fuzz.WRatio, limit=limite)
+				for match in fuzzy_matches:
+					if len(resultados) >= limite:
+						break
+					if match[1] < 72:
+						continue
+					row = df_cnes.iloc[match[2]]
+					if row['nome'].lower() in nomes_banco:
+						continue
+					cidade = row.get('municipio', '')
+					resultados.append({
+						'id': None,
+						'nome': f"{row['nome']} — {cidade}" if cidade else row['nome'],
+						'endereco': f"{row['logradouro']}, {row['numero']}".strip(', '),
+						'bairro': row.get('bairro', ''),
+						'cidade': cidade,
+						'telefone': '',
+						'uso_count': 0,
+						'fonte': 'cnes',
+					})
 	# 2b) Enriquecer resultados do banco que não têm endereço com dados do CSV
 	if _AUTOCOMPLETE_DF is None:
 		_AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM = _load_autocomplete_df()
@@ -1612,7 +1646,7 @@ def buscar_clinicas_sugestoes(request):
 					r['endereco'] = f"{row['logradouro']}, {row['numero']}".strip(', ')
 					r['bairro'] = row.get('bairro', '')
 					r['cidade'] = cidade or r['cidade']
-	audit_logger.info("Sugestoes de clinica consultadas", extra={"termo": termo, "quantidade": len(resultados)})
+	audit_logger.info("Sugestoes de clinica consultadas", extra={"termo": termo, "quantidade": len(resultados), "mostrar_todas": mostrar_todas})
 	return JsonResponse({'sucesso': True, 'resultados': resultados})
 
 
