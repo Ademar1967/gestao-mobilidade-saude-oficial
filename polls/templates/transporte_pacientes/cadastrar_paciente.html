@@ -1505,7 +1505,7 @@ if (inputDestino) {
   var idxDestinoSelecionado = -1;
   function carregarSugestoesDestino(termoBusca, mostrarTodas) {
     var params = new URLSearchParams();
-    params.set('limit', mostrarTodas ? '40' : '30');
+    params.set('limit', mostrarTodas ? '20' : '80');
     params.set('preferencia', 'url');
     if (mostrarTodas) {
       params.set('mostrar_todas', '1');
