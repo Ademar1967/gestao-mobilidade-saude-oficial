@@ -1,0 +1,728 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-3 mb-5">
+  <div class="card border-0 mb-3">
+    <div class="card-body p-3 p-md-4">
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-start mb-3" id="cabecalho-ficha-operacional">
+                <div class="campo-inline-control-wrap">
+                  {{ form.status }}
+                </div>
+              </div>
+              {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors }}</div>{% endif %}
+            </div>
+            <div class="col-md-4 campo-item">
+              <div class="campo-inline">
+
+    .ficha-tabela-dados {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1px solid #bdbdbd;
+    }
+
+    .ficha-tabela-dados td {
+      vertical-align: top;
+      padding: 2px 4px 6px 4px;
+      border-right: 1px solid #d0d0d0;
+    }
+
+    .ficha-tabela-dados tr:not(:last-child) td {
+      border-bottom: 1px solid #d0d0d0;
+    }
+
+    .ficha-tabela-dados td:last-child {
+      border-right: 0;
+    }
+
+    .ficha-campo label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: #222;
+      margin: 0 0 2px 0;
+      white-space: nowrap;
+    }
+
+    .ficha-campo .form-control,
+    .ficha-campo .form-select,
+    .ficha-campo .input-group {
+      width: 100%;
+    }
+
+    .ficha-campo label {
+      white-space: nowrap;
+    }
+
+    .ficha-tabela-dados .ficha-celula {
+      min-width: 0;
+    }
+
+    .ficha-celula-nome { width: 24%; }
+    .ficha-celula-idade { width: 8%; }
+    .ficha-celula-sis { width: 14%; }
+    .ficha-celula-ddd { width: 8%; }
+    .ficha-celula-telefone { width: 18%; }
+    .ficha-celula-peso { width: 12%; }
+    .ficha-celula-tratamento { width: 82%; }
+    .ficha-celula-acompanhantes { width: 18%; }
+
+    .ficha-campo-peso .input-group {
+      flex-wrap: nowrap;
+    }
+                <label for="{{ form.horario_consulta.id_for_label }}" class="campo-inline-label">{{ form.horario_consulta.label }}</label>
+                <div class="campo-inline-control-wrap">
+    .ficha-celula-ddd .form-control,
+    .ficha-celula-peso .form-control,
+    .ficha-celula-acompanhantes .form-control {
+      text-align: center;
+    }
+
+    .ficha-celula-peso .form-control {
+      max-width: 54px;
+    }
+
+    .ficha-celula-acompanhantes .form-control {
+      max-width: 48px;
+    }
+
+    .ficha-celula-telefone .form-control {
+      max-width: 150px;
+    }
+                  </div>
+                  {% if form.nome.errors %}<div class="text-danger small">{{ form.nome.errors }}</div>{% endif %}
+                </td>
+                <td class="ficha-celula ficha-celula-idade">
+                  <div class="ficha-campo">
+                    <label for="{{ form.idade.id_for_label }}">{{ form.idade.label }}</label>
+                    {{ form.idade }}
+                  </div>
+                  {% if form.idade.errors %}<div class="text-danger small">{{ form.idade.errors }}</div>{% endif %}
+                </td>
+                <td class="ficha-celula ficha-celula-sis">
+                  <div class="ficha-campo">
+                    <label for="{{ form.cartao_sis.id_for_label }}">{{ form.cartao_sis.label }}</label>
+                    {{ form.cartao_sis }}
+                  </div>
+                  {% if form.cartao_sis.errors %}<div class="text-danger small">{{ form.cartao_sis.errors }}</div>{% endif %}
+                </td>
+                <td class="ficha-celula ficha-celula-ddd">
+                  <div class="ficha-campo">
+                    <label for="{{ form.ddd.id_for_label }}">{{ form.ddd.label }}</label>
+                    {{ form.ddd }}
+                  </div>
+                  {% if form.ddd.errors %}<div class="text-danger small">{{ form.ddd.errors }}</div>{% endif %}
+                </td>
+                <td class="ficha-celula ficha-celula-telefone">
+                  <div class="ficha-campo">
+                    <label for="{{ form.telefone.id_for_label }}">{{ form.telefone.label }}</label>
+                    {{ form.telefone }}
+                  </div>
+                  {% if form.telefone.errors %}<div class="text-danger small">{{ form.telefone.errors }}</div>{% endif %}
+                </td>
+                <td class="ficha-celula ficha-celula-peso">
+                  <div class="ficha-campo ficha-campo-peso">
+                    <label for="{{ form.peso.id_for_label }}">{{ form.peso.label }}</label>
+                    <div class="input-group input-group-sm">
+                      {{ form.peso }}
+                      <span class="input-group-text">kg</span>
+                    </div>
+                  </div>
+                  {% if form.peso.errors %}<div class="text-danger small">{{ form.peso.errors }}</div>{% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td class="ficha-celula ficha-celula-tratamento" colspan="5">
+                  <div class="ficha-campo">
+                    <label for="{{ form.tratamento.id_for_label }}">{{ form.tratamento.label }}</label>
+                    {{ form.tratamento }}
+                  </div>
+                  {% if form.tratamento.errors %}<div class="text-danger small">{{ form.tratamento.errors }}</div>{% endif %}
+                </td>
+                <td class="ficha-celula ficha-celula-acompanhantes">
+                  <div class="ficha-campo">
+                    <label for="{{ form.acompanhantes.id_for_label }}">{{ form.acompanhantes.label }}</label>
+                    {{ form.acompanhantes }}
+                  </div>
+                  {% if form.acompanhantes.errors %}<div class="text-danger small">{{ form.acompanhantes.errors }}</div>{% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </fieldset>
+
+        <fieldset class="ficha-box p-3 mb-3">
+          <legend class="ficha-legend">Residencia</legend>
+          <div class="residencia-flex">
+            <div class="campo-item campo-rua">
+              <div class="campo-inline">
+                <label for="{{ form.rua.id_for_label }}" class="campo-inline-label">{{ form.rua.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.rua }}
+                </div>
+              </div>
+              {% if form.rua.errors %}<div class="text-danger small">{{ form.rua.errors }}</div>{% endif %}
+            </div>
+            <div class="campo-item campo-numero">
+              <div class="campo-inline">
+                <label for="{{ form.numero.id_for_label }}" class="campo-inline-label">{{ form.numero.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.numero }}
+                </div>
+              </div>
+              {% if form.numero.errors %}<div class="text-danger small">{{ form.numero.errors }}</div>{% endif %}
+            </div>
+            <div class="campo-item campo-bairro">
+              <div class="campo-inline">
+                <label for="{{ form.bairro.id_for_label }}" class="campo-inline-label">{{ form.bairro.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.bairro }}
+                </div>
+              </div>
+              {% if form.bairro.errors %}<div class="text-danger small">{{ form.bairro.errors }}</div>{% endif %}
+            </div>
+            <div class="campo-item campo-cidade">
+              <div class="campo-inline">
+                <label for="{{ form.cidade.id_for_label }}" class="campo-inline-label">{{ form.cidade.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.cidade }}
+                </div>
+              </div>
+              {% if form.cidade.errors %}<div class="text-danger small">{{ form.cidade.errors }}</div>{% endif %}
+            </div>
+            <div class="campo-item campo-estado">
+              <div class="campo-inline">
+                <label for="{{ form.estado.id_for_label }}" class="campo-inline-label">{{ form.estado.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.estado }}
+                </div>
+              </div>
+              {% if form.estado.errors %}<div class="text-danger small">{{ form.estado.errors }}</div>{% endif %}
+            </div>
+            <div class="campo-item campo-cep">
+              <div class="campo-inline">
+                <label for="{{ form.cep.id_for_label }}" class="campo-inline-label">{{ form.cep.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.cep }}
+                </div>
+              </div>
+              {% if form.cep.errors %}<div class="text-danger small">{{ form.cep.errors }}</div>{% endif %}
+            </div>
+            <div class="campo-item campo-referencia">
+              <div class="campo-inline">
+                <label for="{{ form.referencia.id_for_label }}" class="campo-inline-label">{{ form.referencia.label }}</label>
+                <div class="campo-inline-control-wrap">
+                  {{ form.referencia }}
+                </div>
+              </div>
+              {% if form.referencia.errors %}<div class="text-danger small">{{ form.referencia.errors }}</div>{% endif %}
+            </div>
+          </div>
+        </fieldset>
+
+        <div id="bloco-complementar">
+          <fieldset class="ficha-box p-3 mb-3">
+            <legend class="ficha-legend">Horarios</legend>
+            <div class="mb-2 campo-inline" style="max-width:320px;">
+              <label class="campo-inline-label" for="op_data_execucao" style="flex-basis:135px;">Data da execucao</label>
+              <div class="campo-inline-control-wrap">
+                <input type="date" class="form-control form-control-sm" id="op_data_execucao" name="op_data_execucao">
+              </div>
+            </div>
+
+            <div class="quadro-horarios">
+              <div class="quadro-horarios-head">Horario</div>
+              <div class="quadro-horarios-grid quadro-horarios-grid-labels">
+                <div>Transmissao</div>
+                <div>Saida Base</div>
+                <div>Chegada Destino</div>
+                <div>Saida Destino</div>
+                <div>Chegada Base</div>
+                <div>QRV</div>
+              </div>
+              <div class="quadro-horarios-grid">
+                <div><input type="text" class="form-control form-control-sm campo-linha-horario" id="op_transmissao" name="op_transmissao" maxlength="5" inputmode="numeric" placeholder="     "></div>
+                <div><input type="text" class="form-control form-control-sm campo-linha-horario" id="op_saida_base" name="op_saida_base" maxlength="5" inputmode="numeric" placeholder="     "></div>
+                <div><input type="text" class="form-control form-control-sm campo-linha-horario" id="op_chegada_destino" name="op_chegada_destino" maxlength="5" inputmode="numeric" placeholder="     "></div>
+                <div><input type="text" class="form-control form-control-sm campo-linha-horario" id="op_saida_destino" name="op_saida_destino" maxlength="5" inputmode="numeric" placeholder="     "></div>
+                <div><input type="text" class="form-control form-control-sm campo-linha-horario" id="op_chegada_base" name="op_chegada_base" maxlength="5" inputmode="numeric" placeholder="     "></div>
+                <div><input type="text" class="form-control form-control-sm campo-linha-horario" id="op_qrv" name="op_qrv" maxlength="5" inputmode="numeric" placeholder="     "></div>
+              </div>
+            </div>
+
+            <div class="row g-2 mt-2 align-items-end mx-0">
+              <div class="col-md-6 campo-item">
+                <div class="campo-inline">
+                  <label class="campo-inline-label" for="op_solicitante">Solicitante</label>
+                  <div class="campo-inline-control-wrap">
+                    <input type="text" class="form-control form-control-sm" id="op_solicitante" name="op_solicitante" placeholder="Nome do solicitante">
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 campo-item">
+                <div class="campo-inline">
+                  <label class="campo-inline-label" for="op_condutor">Condutor</label>
+                  <div class="campo-inline-control-wrap">
+                    <input type="text" class="form-control form-control-sm" id="op_condutor" name="op_condutor" placeholder="Nome do condutor">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="ficha-box p-3 mb-3">
+            <div class="row g-3 mx-0">
+              <div class="col-12">
+                {{ form.observacoes }}
+                {% if form.observacoes.errors %}<div class="text-danger small">{{ form.observacoes.errors }}</div>{% endif %}
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  {{ form.consentimento_lgpd }}
+                </div>
+                {% if form.consentimento_lgpd.errors %}<div class="text-danger small">{{ form.consentimento_lgpd.errors }}</div>{% endif %}
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="d-flex gap-2 mt-4 flex-wrap align-items-center border-top pt-3">
+          <button type="submit" class="btn btn-success btn-lg btn-afunda">
+            <i class="bi bi-save me-1"></i> Salvar ficha
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border: 1px solid #cdcdcd !important;
+  box-shadow: none !important;
+}
+
+.ficha-box {
+  background: #ffffff;
+  border: 1px solid #c6c6c6 !important;
+  border-radius: 0;
+  overflow-x: visible;
+}
+
+#form-cadastro-rapido,
+#form-cadastro-rapido * {
+  box-sizing: border-box;
+}
+
+#form-cadastro-rapido {
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 0.86rem;
+  color: #1e1e1e;
+}
+
+#form-cadastro-rapido .row {
+  --bs-gutter-x: 0.55rem;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100%;
+  overflow-x: clip;
+}
+
+#form-cadastro-rapido .row > [class*="col-"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#form-cadastro-rapido .form-control,
+#form-cadastro-rapido .form-select,
+#form-cadastro-rapido .input-group,
+#form-cadastro-rapido textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#form-cadastro-rapido .form-control,
+#form-cadastro-rapido .form-select,
+#form-cadastro-rapido textarea {
+  border: 0;
+  border-bottom: 1px solid #8e8e8e;
+  border-radius: 0;
+  background: transparent;
+  min-height: 28px;
+  padding: 0.08rem 0.2rem;
+  box-shadow: none;
+}
+
+#form-cadastro-rapido .form-control:focus,
+#form-cadastro-rapido .form-select:focus,
+#form-cadastro-rapido textarea:focus {
+  border-bottom-color: #4f4f4f;
+  box-shadow: none;
+  outline: none;
+}
+
+#form-cadastro-rapido .input-group-text {
+  border: 0;
+  border-bottom: 1px solid #8e8e8e;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.76rem;
+  padding: 0 0.25rem;
+}
+
+#form-cadastro-rapido .input-group > .form-control {
+  min-width: 0;
+}
+
+.ficha-legend {
+  float: none;
+  width: auto;
+  margin-bottom: 0;
+  padding: 0 8px;
+  font-size: 0.72rem;
+  color: #222;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+.quadro-horarios {
+  border: 1px solid #b7b7b7;
+}
+
+.quadro-horarios-head {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #b7b7b7;
+  padding: 4px 8px;
+  background: #f8f8f8;
+}
+
+.quadro-horarios-grid {
+  display: grid;
+  grid-template-columns: 0.75fr repeat(5, 1fr);
+}
+
+.quadro-horarios-grid > div {
+  border-right: 1px solid #b7b7b7;
+  padding: 4px;
+}
+
+.quadro-horarios-grid > div:last-child {
+  border-right: 0;
+}
+
+.quadro-horarios-grid-labels {
+  border-bottom: 1px solid #b7b7b7;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+  background: #ffffff;
+}
+
+.campo-linha-horario {
+  border: 0 !important;
+  border-bottom: 1px solid #666 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  text-align: center;
+  font-family: "Courier New", monospace;
+  letter-spacing: 1px;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.campo-linha-horario:focus {
+  border-bottom: 1px solid #000 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+legend {
+  letter-spacing: 0.3px;
+}
+
+label {
+  color: #222;
+  font-weight: 600;
+}
+
+#form-cadastro-rapido .campo-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+#form-cadastro-rapido .campo-inline-label {
+  margin: 0;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: #2a2a2a;
+}
+
+#form-cadastro-rapido .campo-inline-control-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#form-cadastro-rapido .campo-inline .form-control,
+#form-cadastro-rapido .campo-inline .form-select,
+#form-cadastro-rapido .campo-inline .input-group {
+  width: 100%;
+}
+
+.dados-pessoais-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.campo-inline-label::after {
+  content: ':';
+}
+
+.dados-row {
+  display: grid;
+  gap: 0.38rem 0.65rem;
+  align-items: end;
+}
+
+.dados-row-1 {
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.9fr) minmax(0, 1.35fr) minmax(0, 0.8fr) minmax(0, 1.45fr) minmax(0, 1fr);
+}
+
+.dados-row-2 {
+  grid-template-columns: minmax(0, 5.5fr) minmax(0, 1fr);
+}
+
+.dados-pessoais-grid .campo-item,
+.dados-row > .campo-item {
+  min-width: 0;
+}
+
+.dados-pessoais-grid .campo-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.dados-pessoais-grid .campo-inline-label {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #222;
+  white-space: nowrap;
+  flex: 0 0 86px;
+}
+
+.dados-pessoais-grid .campo-inline-control-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dados-pessoais-grid .form-control,
+.dados-pessoais-grid .form-select,
+.dados-pessoais-grid .input-group,
+.dados-pessoais-grid .input-group-text {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.dados-pessoais-grid .campo-ddd .form-control,
+.dados-pessoais-grid .campo-idade .form-control,
+.dados-pessoais-grid .campo-acompanhantes .form-control {
+  text-align: center;
+}
+
+.dados-pessoais-grid .campo-peso .input-group {
+  flex-wrap: nowrap;
+  max-width: 86px;
+}
+
+.dados-pessoais-grid .campo-acompanhantes .form-control {
+  max-width: 58px;
+  min-height: 34px;
+}
+
+.dados-pessoais-grid .campo-telefone .campo-inline-control-wrap {
+  max-width: 140px;
+}
+
+.dados-pessoais-grid .campo-peso .campo-inline-control-wrap {
+  max-width: 86px;
+}
+
+.dados-pessoais-grid .campo-acompanhantes .campo-inline-control-wrap {
+  max-width: 58px;
+}
+
+.ficha-celula-peso .form-control {
+  max-width: 54px;
+}
+
+.ficha-celula-acompanhantes .form-control {
+  max-width: 48px;
+}
+
+.ficha-celula-telefone .form-control {
+  max-width: 150px;
+}
+
+.residencia-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.residencia-flex .campo-item {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.residencia-flex .campo-rua,
+.residencia-flex .campo-bairro,
+.residencia-flex .campo-cidade {
+  flex: 1.8 1 260px;
+}
+
+.residencia-flex .campo-numero,
+.residencia-flex .campo-estado {
+  flex: 0.7 1 100px;
+  min-width: 0;
+  max-width: 130px;
+}
+
+.residencia-flex .campo-cep {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+
+.residencia-flex .campo-referencia {
+  flex: 2.3 1 320px;
+}
+
+.residencia-flex .form-label {
+  display: block;
+  min-height: 20px;
+  margin-bottom: 2px;
+}
+
+.residencia-flex .form-control,
+.residencia-flex .form-select {
+  min-height: 34px;
+}
+
+@media (max-width: 768px) {
+  .ficha-tabela-dados,
+  .ficha-tabela-dados tbody,
+  .ficha-tabela-dados tr,
+  .ficha-tabela-dados td {
+    display: block;
+    width: 100%;
+  }
+
+  .ficha-tabela-dados td {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .ficha-celula-peso .form-control,
+  .ficha-celula-acompanhantes .form-control,
+  .ficha-celula-telefone .form-control {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .residencia-flex .campo-item {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  .btn,
+  .alert,
+  .navbar,
+  footer {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #bdbdbd !important;
+  }
+
+  .ficha-box,
+  .quadro-horarios,
+  .quadro-horarios-head,
+  .quadro-horarios-grid > div,
+  .quadro-horarios-grid-labels {
+    border-color: #8a8a8a !important;
+  }
+
+  .campo-linha-horario {
+    border-bottom: 1px solid #555 !important;
+    font-size: 0.86rem;
+    min-height: 22px;
+  }
+
+  #cabecalho-ficha-operacional {
+    margin-bottom: 0.5rem !important;
+  }
+
+  #logo-prefeitura-ficha,
+  #logo-fallback-prefeitura {
+    width: 92px !important;
+    height: 92px !important;
+    padding: 4px !important;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var btnImprimir = document.getElementById('btn-imprimir-ficha');
+  var dataExecucao = document.getElementById('op_data_execucao');
+
+  if (btnImprimir) {
+    btnImprimir.addEventListener('click', function() {
+      window.print();
+    });
+  }
+
+  if (dataExecucao && !dataExecucao.value) {
+    var hoje = new Date();
+    var yyyy = hoje.getFullYear();
+    var mm = String(hoje.getMonth() + 1).padStart(2, '0');
+    var dd = String(hoje.getDate()).padStart(2, '0');
+    dataExecucao.value = yyyy + '-' + mm + '-' + dd;
+  }
+
+  var campoObservacoes = document.getElementById('id_observacoes');
+  if (campoObservacoes) {
+    campoObservacoes.removeAttribute('placeholder');
+  }
+});
+</script>
+{% endblock %}

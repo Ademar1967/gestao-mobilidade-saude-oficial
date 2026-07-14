@@ -6,17 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0005_paciente_horario_consulta'),
+        ("polls", "0005_paciente_horario_consulta"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='paciente',
-            name='acompanhante',
+            model_name="paciente",
+            name="acompanhante",
         ),
         migrations.AddField(
-            model_name='paciente',
-            name='acompanhantes',
-            field=models.PositiveIntegerField(default=0, help_text='Quantidade de acompanhantes (0 se nenhum)'),
+            model_name="paciente",
+            name="acompanhantes",
+            field=models.PositiveIntegerField(
+                default=0, help_text="Quantidade de acompanhantes (0 se nenhum)"
+            ),
         ),
     ]

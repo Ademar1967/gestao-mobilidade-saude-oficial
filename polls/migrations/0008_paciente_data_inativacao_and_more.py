@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0007_transporte_tipo_transporte'),
+        ("polls", "0007_transporte_tipo_transporte"),
     ]
 
     operations = [
@@ -15,54 +15,132 @@ class Migration(migrations.Migration):
             database_operations=[],
             state_operations=[
                 migrations.AddField(
-                    model_name='paciente',
-                    name='data_inativacao',
+                    model_name="paciente",
+                    name="data_inativacao",
                     field=models.DateTimeField(blank=True, null=True),
                 ),
                 migrations.AddField(
-                    model_name='paciente',
-                    name='motivo_inativacao',
-                    field=models.CharField(blank=True, choices=[('alta', 'Alta'), ('obito', 'Obito'), ('mudanca_cidade', 'Mudanca de cidade'), ('nao_precisa', 'Nao necessita mais transporte'), ('suspensao_temporaria', 'Suspensao temporaria'), ('decisao_familiar', 'Decisao familiar'), ('retorno_servico', 'Retorno ao servico'), ('outros', 'Outros')], max_length=30),
+                    model_name="paciente",
+                    name="motivo_inativacao",
+                    field=models.CharField(
+                        blank=True,
+                        choices=[
+                            ("alta", "Alta"),
+                            ("obito", "Obito"),
+                            ("mudanca_cidade", "Mudanca de cidade"),
+                            ("nao_precisa", "Nao necessita mais transporte"),
+                            ("suspensao_temporaria", "Suspensao temporaria"),
+                            ("decisao_familiar", "Decisao familiar"),
+                            ("retorno_servico", "Retorno ao servico"),
+                            ("outros", "Outros"),
+                        ],
+                        max_length=30,
+                    ),
                 ),
                 migrations.AddField(
-                    model_name='paciente',
-                    name='observacao_inativacao',
+                    model_name="paciente",
+                    name="observacao_inativacao",
                     field=models.TextField(blank=True),
                 ),
                 migrations.AddField(
-                    model_name='paciente',
-                    name='servico_ativo',
-                    field=models.BooleanField(db_index=True, default=True, help_text='Paciente apto a usar o servico de transporte'),
+                    model_name="paciente",
+                    name="servico_ativo",
+                    field=models.BooleanField(
+                        db_index=True,
+                        default=True,
+                        help_text="Paciente apto a usar o servico de transporte",
+                    ),
                 ),
             ],
         ),
         migrations.AddField(
-            model_name='paciente',
-            name='data_prevista_retorno',
+            model_name="paciente",
+            name="data_prevista_retorno",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='paciente',
-            name='servico_status',
-            field=models.CharField(choices=[('ativo', 'Ativo'), ('suspenso', 'Suspenso temporariamente'), ('encerrado', 'Encerrado')], db_index=True, default='ativo', help_text='Status operacional do paciente no servico de transporte', max_length=20),
+            model_name="paciente",
+            name="servico_status",
+            field=models.CharField(
+                choices=[
+                    ("ativo", "Ativo"),
+                    ("suspenso", "Suspenso temporariamente"),
+                    ("encerrado", "Encerrado"),
+                ],
+                db_index=True,
+                default="ativo",
+                help_text="Status operacional do paciente no servico de transporte",
+                max_length=20,
+            ),
         ),
         migrations.CreateModel(
-            name='PacienteStatusHistorico',
+            name="PacienteStatusHistorico",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status_anterior', models.CharField(choices=[('ativo', 'Ativo'), ('suspenso', 'Suspenso temporariamente'), ('encerrado', 'Encerrado')], max_length=20)),
-                ('status_novo', models.CharField(choices=[('ativo', 'Ativo'), ('suspenso', 'Suspenso temporariamente'), ('encerrado', 'Encerrado')], max_length=20)),
-                ('motivo', models.CharField(blank=True, choices=[('alta', 'Alta'), ('obito', 'Obito'), ('mudanca_cidade', 'Mudanca de cidade'), ('nao_precisa', 'Nao necessita mais transporte'), ('suspensao_temporaria', 'Suspensao temporaria'), ('decisao_familiar', 'Decisao familiar'), ('retorno_servico', 'Retorno ao servico'), ('outros', 'Outros')], max_length=30)),
-                ('observacao', models.TextField(blank=True)),
-                ('data_prevista_retorno', models.DateField(blank=True, null=True)),
-                ('usuario_responsavel', models.CharField(blank=True, max_length=150)),
-                ('data_evento', models.DateTimeField(auto_now_add=True)),
-                ('paciente', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='historico_status_servico', to='polls.paciente')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "status_anterior",
+                    models.CharField(
+                        choices=[
+                            ("ativo", "Ativo"),
+                            ("suspenso", "Suspenso temporariamente"),
+                            ("encerrado", "Encerrado"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status_novo",
+                    models.CharField(
+                        choices=[
+                            ("ativo", "Ativo"),
+                            ("suspenso", "Suspenso temporariamente"),
+                            ("encerrado", "Encerrado"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "motivo",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("alta", "Alta"),
+                            ("obito", "Obito"),
+                            ("mudanca_cidade", "Mudanca de cidade"),
+                            ("nao_precisa", "Nao necessita mais transporte"),
+                            ("suspensao_temporaria", "Suspensao temporaria"),
+                            ("decisao_familiar", "Decisao familiar"),
+                            ("retorno_servico", "Retorno ao servico"),
+                            ("outros", "Outros"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                ("observacao", models.TextField(blank=True)),
+                ("data_prevista_retorno", models.DateField(blank=True, null=True)),
+                ("usuario_responsavel", models.CharField(blank=True, max_length=150)),
+                ("data_evento", models.DateTimeField(auto_now_add=True)),
+                (
+                    "paciente",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="historico_status_servico",
+                        to="polls.paciente",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Histórico de status do paciente',
-                'verbose_name_plural': 'Históricos de status dos pacientes',
-                'ordering': ['-data_evento'],
+                "verbose_name": "Histórico de status do paciente",
+                "verbose_name_plural": "Históricos de status dos pacientes",
+                "ordering": ["-data_evento"],
             },
         ),
     ]

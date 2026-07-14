@@ -130,6 +130,54 @@ def _condicoes_especiais(paciente) -> str:
     return ' | '.join(condicoes)
 
 
+def _linha_from_paciente(paciente, ordem, transporte=None):
+    """Monta um dict com os dados de um paciente para a tabela do mapa."""
+    clinica = transporte.clinica if transporte else None
+    if not clinica and paciente and paciente.destino_preferencial_id:
+        clinica = paciente.destino_preferencial
+
+    acompanhantes = (getattr(paciente, 'acompanhantes', 0) if paciente else 0) or 0
+
+    endereco_paciente = ''
+    if paciente:
+        endereco_paciente = ', '.join(x for x in [paciente.rua, paciente.numero] if x)
+
+    horario = ''
+    if paciente and paciente.horario_consulta:
+        horario = paciente.horario_consulta.strftime('%H:%M')
+
+    telefone = ''
+    if clinica and clinica.telefone:
+        telefone = clinica.telefone
+    elif paciente and paciente.telefone:
+        ddd = paciente.ddd or ''
+        telefone = f"{ddd} {paciente.telefone}".strip() if ddd else (paciente.telefone or '')
+
+    observacao = ''
+    if paciente:
+        partes_obs = []
+        if paciente.referencia:
+            partes_obs.append(paciente.referencia)
+        if paciente.observacoes:
+            partes_obs.append(paciente.observacoes)
+        observacao = ' / '.join(partes_obs)
+
+    return {
+        'ordem': ordem,
+        'nome': (paciente.nome if paciente else '') or '',
+        'paciente_id': paciente.id if paciente else '',
+        'acompanhantes': acompanhantes,
+        'endereco': endereco_paciente,
+        'bairro': (paciente.bairro if paciente else '') or '',
+        'horario': horario,
+        'acompanhante_marca': 'X' if acompanhantes > 0 else 'SO',
+        'condicoes_especiais': _condicoes_especiais(paciente),
+        'destino': (clinica.nome if clinica else '') if paciente else '',
+        'telefone': telefone,
+        'observacao': observacao,
+    }
+
+
 @login_required
 def mapa_operacional_imprimir(request):
     from .models import Transporte, Condutor, Veiculo, Paciente
@@ -168,49 +216,6 @@ def mapa_operacional_imprimir(request):
     qs = qs.order_by('paciente__nome', 'id')
 
     linhas = []
-
-    def _linha_from_paciente(paciente, ordem, transporte=None):
-        clinica = transporte.clinica if transporte else None
-        acompanhantes = (getattr(paciente, 'acompanhantes', 0) if paciente else 0) or 0
-
-        endereco_paciente = ''
-        if paciente:
-            endereco_paciente = ', '.join(x for x in [paciente.rua, paciente.numero] if x)
-
-        horario = ''
-        if paciente and paciente.horario_consulta:
-            horario = paciente.horario_consulta.strftime('%H:%M')
-
-        telefone = ''
-        if clinica and clinica.telefone:
-            telefone = clinica.telefone
-        elif paciente and paciente.telefone:
-            ddd = paciente.ddd or ''
-            telefone = f"{ddd} {paciente.telefone}".strip() if ddd else (paciente.telefone or '')
-
-        observacao = ''
-        if paciente:
-            partes_obs = []
-            if paciente.referencia:
-                partes_obs.append(paciente.referencia)
-            if paciente.observacoes:
-                partes_obs.append(paciente.observacoes)
-            observacao = ' / '.join(partes_obs)
-
-        return {
-            'ordem': ordem,
-            'nome': (paciente.nome if paciente else '') or '',
-            'paciente_id': paciente.id if paciente else '',
-            'acompanhantes': acompanhantes,
-            'endereco': endereco_paciente,
-            'bairro': (paciente.bairro if paciente else '') or '',
-            'horario': horario,
-            'acompanhante_marca': 'X' if acompanhantes > 0 else 'SO',
-            'condicoes_especiais': _condicoes_especiais(paciente),
-            'destino': ((clinica.nome if clinica else '') or 'A definir') if paciente else '',
-            'telefone': telefone,
-            'observacao': observacao,
-        }
 
     for ordem, t in enumerate(qs, start=1):
         linhas.append(_linha_from_paciente(t.paciente, ordem, t))

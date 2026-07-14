@@ -10,13 +10,16 @@ def _sync_master_data_csvs_safe():
     except Exception:
         pass
 
+
 def excluir_selecionados_condutor(request):
-    if request.method == 'POST':
-        ids = request.POST.getlist('condutor_ids')
+    if request.method == "POST":
+        ids = request.POST.getlist("condutor_ids")
         if ids:
             Condutor.objects.filter(id__in=ids).delete()
             _sync_master_data_csvs_safe()
-            messages.success(request, f'{len(ids)} condutor(es) selecionado(s) foram excluídos.')
+            messages.success(
+                request, f"{len(ids)} condutor(es) selecionado(s) foram excluídos."
+            )
         else:
-            messages.warning(request, 'Nenhum condutor selecionado para exclusão.')
-    return redirect('transporte_pacientes:cadastrar_condutor')
+            messages.warning(request, "Nenhum condutor selecionado para exclusão.")
+    return redirect("transporte_pacientes:cadastrar_condutor")

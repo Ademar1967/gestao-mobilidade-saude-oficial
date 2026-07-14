@@ -26,11 +26,11 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     # Admin isolado por caminho configurável em settings.ADMIN_URL_PATH
-    path(settings.ADMIN_URL_PATH.lstrip('/'), admin.site.urls),
-    path('login/', auth_views.LoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('', include('polls.urls')),
-    path('api/', include('polls.api_urls')),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path(settings.ADMIN_URL_PATH.lstrip("/"), admin.site.urls),
+    path("login/", auth_views.LoginView.as_view(), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("", include("polls.urls")),
+    path("api/", include("polls.api_urls")),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]

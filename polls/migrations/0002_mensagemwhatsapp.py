@@ -6,17 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0001_initial'),
+        ("polls", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MensagemWhatsApp',
+            name="MensagemWhatsApp",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('numero', models.CharField(max_length=30)),
-                ('corpo', models.TextField()),
-                ('data_recebimento', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("numero", models.CharField(max_length=30)),
+                ("corpo", models.TextField()),
+                ("data_recebimento", models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]

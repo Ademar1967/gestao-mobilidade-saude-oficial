@@ -1,7 +1,8 @@
 #!/bin/bash
 # Script de inicialização para Render
-# Aguarda 5 segundos para garantir que serviços externos estejam prontos (ajuste se necessário)
+# Aguarda 5 segundos para garantir que serviços externos estejam prontos
 sleep 5
+
 echo "Aplicando migrações..."
 python manage.py migrate --noinput
 
@@ -9,35 +10,35 @@ echo "Garantindo usuário admin..."
 python manage.py create_admin || true
 
 if [ -f "viaturas.csv" ]; then
-	echo "Importando viaturas de viaturas.csv..."
-	python manage.py importar_viaturas || true
+    echo "Importando viaturas de viaturas.csv..."
+    python manage.py importar_viaturas || true
 else
-	echo "viaturas.csv não encontrado, pulando importação de viaturas."
+    echo "viaturas.csv não encontrado, pulando importação de viaturas."
 fi
 
 if [ -f "clinicas.csv" ]; then
-	echo "Importando clínicas de clinicas.csv..."
-	python manage.py importar_clinicas || true
+    echo "Importando clínicas de clinicas.csv..."
+    python manage.py importar_clinicas || true
 else
-	echo "clinicas.csv não encontrado, pulando importação de clínicas."
+    echo "clinicas.csv não encontrado, pulando importação de clínicas."
 fi
 
 if [ -f "condutores.csv" ]; then
-	echo "Importando condutores de condutores.csv..."
-	python manage.py importar_condutores || true
+    echo "Importando condutores de condutores.csv..."
+    python manage.py importar_condutores || true
 else
-	echo "condutores.csv não encontrado, pulando importação de condutores."
+    echo "condutores.csv não encontrado, pulando importação de condutores."
 fi
 
 if [ -f "enfermagem.csv" ]; then
-	echo "Importando enfermagem de enfermagem.csv..."
-	python manage.py importar_enfermagem || true
+    echo "Importando enfermagem de enfermagem.csv..."
+    python manage.py importar_enfermagem || true
 else
-	echo "enfermagem.csv não encontrado, pulando importação de enfermagem."
+    echo "enfermagem.csv não encontrado, pulando importação de enfermagem."
 fi
 
-# Coleta arquivos estáticos (caso precise)
 echo "Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput
-# Inicia o servidor Gunicorn
-exec gunicorn transporte_django.wsgi
+
+echo "Iniciando Gunicorn na porta $PORT..."
+exec gunicorn transporte_django.wsgi --bind 0.0.0.0:$PORT

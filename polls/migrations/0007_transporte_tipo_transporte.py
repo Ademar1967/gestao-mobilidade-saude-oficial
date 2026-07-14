@@ -6,13 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0006_remove_paciente_acompanhante_paciente_acompanhantes'),
+        ("polls", "0006_remove_paciente_acompanhante_paciente_acompanhantes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='transporte',
-            name='tipo_transporte',
-            field=models.CharField(choices=[('CONSULTA', 'Consulta (ida)'), ('RETORNO', 'Retorno (volta)'), ('OUTRO_MUNICIPIO', 'Outro/Município'), ('OUTRO_FORA', 'Outro/Fora do Município')], default='CONSULTA', help_text='Tipo de transporte: consulta, retorno, etc.', max_length=20),
+            model_name="transporte",
+            name="tipo_transporte",
+            field=models.CharField(
+                choices=[
+                    ("CONSULTA", "Consulta (ida)"),
+                    ("RETORNO", "Retorno (volta)"),
+                    ("OUTRO_MUNICIPIO", "Outro/Município"),
+                    ("OUTRO_FORA", "Outro/Fora do Município"),
+                ],
+                default="CONSULTA",
+                help_text="Tipo de transporte: consulta, retorno, etc.",
+                max_length=20,
+            ),
         ),
     ]

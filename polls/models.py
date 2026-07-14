@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+
 class MensagemWhatsApp(models.Model):
     numero = models.CharField(max_length=30)
     corpo = models.TextField()
@@ -9,11 +10,13 @@ class MensagemWhatsApp(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.data_recebimento:%d/%m/%Y %H:%M}"
 
+
 class Enfermagem(models.Model):
     nome = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.nome
+
 
 class Paciente(models.Model):
     SERVICO_STATUS_CHOICES = [
@@ -22,7 +25,12 @@ class Paciente(models.Model):
         ("encerrado", "Encerrado"),
     ]
     nome = models.CharField(max_length=100)
-    cartao_sis = models.CharField("Cartão SIS", max_length=10, blank=True, help_text="Número do cartão do SUS/SIS de Mogi das Cruzes")
+    cartao_sis = models.CharField(
+        "Cartão SIS",
+        max_length=10,
+        blank=True,
+        help_text="Número do cartão do SUS/SIS de Mogi das Cruzes",
+    )
     idade = models.PositiveIntegerField(null=True, blank=True)
     peso = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     rua = models.CharField(max_length=100, blank=True)
@@ -31,38 +39,67 @@ class Paciente(models.Model):
     cidade = models.CharField(max_length=100, blank=True)
     estado = models.CharField(max_length=2, blank=True, help_text="UF")
     cep = models.CharField(max_length=10, blank=True)
-    endereco = models.CharField(max_length=200, blank=True)  # legado, pode ser removido depois
+    endereco = models.CharField(
+        max_length=200, blank=True
+    )  # legado, pode ser removido depois
     referencia = models.CharField(max_length=200, blank=True)
     ddd = models.CharField(max_length=2, blank=True, help_text="DDD do telefone")
     telefone = models.CharField(max_length=20, blank=True)
     tratamento = models.CharField(max_length=100, blank=True)
     oxigenio = models.BooleanField(default=False)
-    oxigenio_litros_min = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, help_text="Fluxo de O2 em litros por minuto")
+    oxigenio_litros_min = models.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        help_text="Fluxo de O2 em litros por minuto",
+    )
     observacoes = models.TextField(blank=True)
     evolucao = models.TextField(blank=True)
     status = models.CharField(max_length=30, blank=True)
     maca = models.BooleanField(default=False, help_text="Paciente usa maca?")
     cadeirante = models.BooleanField(default=False, help_text="Paciente é cadeirante?")
-    acompanhantes = models.PositiveIntegerField(default=0, help_text="Quantidade de acompanhantes (0 se nenhum)")
-    data_cadastro = models.DateTimeField(auto_now_add=True, null=True, blank=True, help_text="Data/hora do cadastro do paciente")
+    acompanhantes = models.PositiveIntegerField(
+        default=0, help_text="Quantidade de acompanhantes (0 se nenhum)"
+    )
+    data_cadastro = models.DateTimeField(
+        auto_now_add=True,
+        null=True,
+        blank=True,
+        help_text="Data/hora do cadastro do paciente",
+    )
     # Campos de geolocalização
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude do paciente")
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude do paciente")
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Latitude do paciente",
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Longitude do paciente",
+    )
 
     consentimento_lgpd = models.BooleanField(
         default=False,
-        help_text="Paciente ou responsável consentiu com o tratamento de dados pessoais (LGPD)?"
+        help_text="Paciente ou responsável consentiu com o tratamento de dados pessoais (LGPD)?",
     )
 
     # Novo campo opcional para horário da consulta
-    horario_consulta = models.TimeField(null=True, blank=True, help_text="Horário da consulta do paciente (opcional)")
+    horario_consulta = models.TimeField(
+        null=True, blank=True, help_text="Horário da consulta do paciente (opcional)"
+    )
     destino_preferencial = models.ForeignKey(
-        'Clinica',
+        "Clinica",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='pacientes_destino_preferencial',
-        help_text='Destino preferencial sugerido para este paciente (opcional)'
+        related_name="pacientes_destino_preferencial",
+        help_text="Destino preferencial sugerido para este paciente (opcional)",
     )
     # Ciclo de vida do paciente no serviço
     MOTIVO_INATIVACAO_CHOICES = [
@@ -80,11 +117,17 @@ class Paciente(models.Model):
         choices=SERVICO_STATUS_CHOICES,
         default="ativo",
         db_index=True,
-        help_text="Status operacional do paciente no servico de transporte"
+        help_text="Status operacional do paciente no servico de transporte",
     )
-    servico_ativo = models.BooleanField(default=True, db_index=True, help_text="Paciente apto a usar o servico de transporte")
+    servico_ativo = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Paciente apto a usar o servico de transporte",
+    )
     data_inativacao = models.DateTimeField(null=True, blank=True)
-    motivo_inativacao = models.CharField(max_length=30, choices=MOTIVO_INATIVACAO_CHOICES, blank=True)
+    motivo_inativacao = models.CharField(
+        max_length=30, choices=MOTIVO_INATIVACAO_CHOICES, blank=True
+    )
     observacao_inativacao = models.TextField(blank=True)
     data_prevista_retorno = models.DateField(null=True, blank=True)
 
@@ -97,7 +140,9 @@ class Paciente(models.Model):
         usuario_responsavel="",
         save=True,
     ):
-        status_anterior = self.servico_status or ("ativo" if self.servico_ativo else "encerrado")
+        status_anterior = self.servico_status or (
+            "ativo" if self.servico_ativo else "encerrado"
+        )
         motivo = motivo or "outros"
         observacao = observacao or ""
 
@@ -113,7 +158,9 @@ class Paciente(models.Model):
             self.data_inativacao = timezone.now()
             self.motivo_inativacao = motivo
             self.observacao_inativacao = observacao
-            self.data_prevista_retorno = data_prevista_retorno if novo_status == "suspenso" else None
+            self.data_prevista_retorno = (
+                data_prevista_retorno if novo_status == "suspenso" else None
+            )
 
         if save:
             self.save()
@@ -125,13 +172,21 @@ class Paciente(models.Model):
                 status_novo=novo_status,
                 motivo=motivo,
                 observacao=observacao,
-                data_prevista_retorno=data_prevista_retorno if novo_status == "suspenso" else None,
+                data_prevista_retorno=(
+                    data_prevista_retorno if novo_status == "suspenso" else None
+                ),
                 usuario_responsavel=usuario_responsavel or "",
             )
 
         return self
 
-    def suspender(self, motivo="suspensao_temporaria", observacao="", data_prevista_retorno=None, usuario_responsavel=""):
+    def suspender(
+        self,
+        motivo="suspensao_temporaria",
+        observacao="",
+        data_prevista_retorno=None,
+        usuario_responsavel="",
+    ):
         return self.atualizar_status_servico(
             novo_status="suspenso",
             motivo=motivo,
@@ -171,19 +226,19 @@ class Paciente(models.Model):
         """Retorna telefone formatado como '(DDD) Numero', ou apenas o numero se DDD ausente."""
         if self.ddd and self.telefone:
             return f"({self.ddd}) {self.telefone}"
-        return self.telefone or ''
+        return self.telefone or ""
 
     def logradouro_formatado(self):
         """Retorna logradouro resumido no formato 'Rua, Numero'."""
         if self.rua and self.numero:
             return f"{self.rua}, {self.numero}"
-        return self.rua or ''
+        return self.rua or ""
 
     def endereco_formatado(self):
         """Retorna endereco completo formatado, incluindo CEP se disponivel."""
         partes = [self.rua, self.numero, self.bairro, self.cidade, self.estado]
         partes = [p for p in partes if p]
-        endereco = ', '.join(partes)
+        endereco = ", ".join(partes)
         if self.cep:
             endereco = f"{endereco} - {self.cep}" if endereco else self.cep
         return endereco
@@ -196,23 +251,31 @@ class Paciente(models.Model):
     def dados_operacionais_transporte(self):
         """Retorna apenas dados mínimos necessários para operação do transporte."""
         return {
-            'nome': self.nome,
-            'peso_kg': f"{self.peso} kg" if self.peso is not None else '',
-            'oxigenio': self.oxigenio,
-            'oxigenio_litros_min': self.oxigenio_litros_min if self.oxigenio else None,
-            'maca': self.maca,
-            'cadeirante': self.cadeirante,
-            'acompanhantes': self.acompanhantes,
-            'endereco': self.endereco_formatado(),
-            'contato': self.contato_formatado(),
+            "nome": self.nome,
+            "peso_kg": f"{self.peso} kg" if self.peso is not None else "",
+            "oxigenio": self.oxigenio,
+            "oxigenio_litros_min": self.oxigenio_litros_min if self.oxigenio else None,
+            "maca": self.maca,
+            "cadeirante": self.cadeirante,
+            "acompanhantes": self.acompanhantes,
+            "endereco": self.endereco_formatado(),
+            "contato": self.contato_formatado(),
         }
 
 
 class PacienteStatusHistorico(models.Model):
-    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='historico_status_servico')
-    status_anterior = models.CharField(max_length=20, choices=Paciente.SERVICO_STATUS_CHOICES)
-    status_novo = models.CharField(max_length=20, choices=Paciente.SERVICO_STATUS_CHOICES)
-    motivo = models.CharField(max_length=30, choices=Paciente.MOTIVO_INATIVACAO_CHOICES, blank=True)
+    paciente = models.ForeignKey(
+        "Paciente", on_delete=models.CASCADE, related_name="historico_status_servico"
+    )
+    status_anterior = models.CharField(
+        max_length=20, choices=Paciente.SERVICO_STATUS_CHOICES
+    )
+    status_novo = models.CharField(
+        max_length=20, choices=Paciente.SERVICO_STATUS_CHOICES
+    )
+    motivo = models.CharField(
+        max_length=30, choices=Paciente.MOTIVO_INATIVACAO_CHOICES, blank=True
+    )
     observacao = models.TextField(blank=True)
     data_prevista_retorno = models.DateField(null=True, blank=True)
     usuario_responsavel = models.CharField(max_length=150, blank=True)
@@ -226,15 +289,20 @@ class PacienteStatusHistorico(models.Model):
     def __str__(self):
         return f"{self.paciente.nome}: {self.status_anterior} -> {self.status_novo}"
 
+
 class Veiculo(models.Model):
     TIPO_CHOICES = [
         ("ambulancia", "Ambulância Prefeitura"),
         ("van", "Van Terceirizada"),
     ]
-    tipo_veiculo = models.CharField(max_length=20, choices=TIPO_CHOICES, default="ambulancia")
+    tipo_veiculo = models.CharField(
+        max_length=20, choices=TIPO_CHOICES, default="ambulancia"
+    )
     placa = models.CharField(max_length=20, blank=True)
     patrimonio = models.CharField(max_length=30, unique=True, blank=True)
-    lotacao = models.PositiveIntegerField(default=1, help_text="Lotação máxima do veículo")
+    lotacao = models.PositiveIntegerField(
+        default=1, help_text="Lotação máxima do veículo"
+    )
 
     def __str__(self):
         # Exibe primeiro o patrimônio (ou placa, se van), depois o tipo
@@ -249,39 +317,80 @@ class Veiculo(models.Model):
             return f"{self.placa} - {tipo}"
         return f"{tipo} sem identificação"
 
-class Condutor(models.Model):
-	nome = models.CharField(max_length=100)
 
-	def __str__(self):
-		return self.nome
+class Condutor(models.Model):
+    nome = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nome
+
 
 class Clinica(models.Model):
-	nome = models.CharField(max_length=100)
-	endereco = models.CharField(max_length=200, blank=True)
-	bairro = models.CharField(max_length=100, blank=True)
-	cidade = models.CharField(max_length=100, blank=True)
-	telefone = models.CharField(max_length=20, blank=True)
+    nome = models.CharField(max_length=100)
+    endereco = models.CharField(max_length=200, blank=True)
+    bairro = models.CharField(max_length=100, blank=True)
+    cidade = models.CharField(max_length=100, blank=True)
+    telefone = models.CharField(max_length=20, blank=True)
 
-	# Campos de geolocalização
-	latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude da clínica")
-	longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude da clínica")
+    # Campos de geolocalização
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Latitude da clínica",
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Longitude da clínica",
+    )
 
-	def __str__(self):
-		return self.nome
+    def __str__(self):
+        return self.nome
 
-	def endereco_resumido(self):
-		"""Retorna endereco resumido da clinica no formato 'Logradouro - Bairro - Cidade'."""
-		partes = [self.endereco, self.bairro, self.cidade]
-		return ' - '.join([p for p in partes if p])
+    def endereco_resumido(self):
+        """Retorna endereco resumido da clinica no formato 'Logradouro - Bairro - Cidade'."""
+        partes = [self.endereco, self.bairro, self.cidade]
+        return " - ".join([p for p in partes if p])
+
 
 # --- MODELO DE INTEGRAÇÃO: TRANSPORTE ---
 # Este modelo integra todas as entidades principais do app e registra cada transporte realizado.
 class Transporte(models.Model):
-    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='transportes')
-    veiculo = models.ForeignKey('Veiculo', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-    condutor = models.ForeignKey('Condutor', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-    clinica = models.ForeignKey('Clinica', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
-    enfermagem = models.ForeignKey('Enfermagem', on_delete=models.SET_NULL, null=True, blank=True, related_name='transportes')
+    paciente = models.ForeignKey(
+        "Paciente", on_delete=models.CASCADE, related_name="transportes"
+    )
+    veiculo = models.ForeignKey(
+        "Veiculo",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transportes",
+    )
+    condutor = models.ForeignKey(
+        "Condutor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transportes",
+    )
+    clinica = models.ForeignKey(
+        "Clinica",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transportes",
+    )
+    enfermagem = models.ForeignKey(
+        "Enfermagem",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transportes",
+    )
     data_transporte = models.DateField()
     hora_saida = models.TimeField(null=True, blank=True)
     hora_chegada = models.TimeField(null=True, blank=True)
@@ -295,7 +404,7 @@ class Transporte(models.Model):
         max_length=20,
         choices=TIPO_CHOICES,
         default="CONSULTA",
-        help_text="Tipo de transporte: consulta, retorno, etc."
+        help_text="Tipo de transporte: consulta, retorno, etc.",
     )
     observacoes = models.TextField(blank=True)
 
@@ -304,20 +413,24 @@ class Transporte(models.Model):
 
     def resumo_operacional(self):
         """Retorna resumo do transporte no formato 'Data | Paciente -> Clinica | Veiculo'."""
-        paciente_nome = self.paciente.nome if self.paciente else 'Paciente nao informado'
-        clinica_nome = self.clinica.nome if self.clinica else 'Clinica nao informada'
-        veiculo_nome = str(self.veiculo) if self.veiculo else 'Veiculo nao informado'
+        paciente_nome = (
+            self.paciente.nome if self.paciente else "Paciente nao informado"
+        )
+        clinica_nome = self.clinica.nome if self.clinica else "Clinica nao informada"
+        veiculo_nome = str(self.veiculo) if self.veiculo else "Veiculo nao informado"
         return f"{self.data_transporte} | {paciente_nome} -> {clinica_nome} | {veiculo_nome}"
 
     def dados_minimos_r1_r2(self):
         """Pacote simples para tela operacional de condutor (R1/R2)."""
-        paciente_ops = self.paciente.dados_operacionais_transporte() if self.paciente else {}
+        paciente_ops = (
+            self.paciente.dados_operacionais_transporte() if self.paciente else {}
+        )
         return {
-            'perfil': 'R1' if self.enfermagem_id else 'R2',
-            'data_transporte': self.data_transporte,
-            'clinica': self.clinica.nome if self.clinica else '',
-            'veiculo': str(self.veiculo) if self.veiculo else '',
-            'condutor': self.condutor.nome if self.condutor else '',
-            'enfermagem': self.enfermagem.nome if self.enfermagem else '',
-            'paciente': paciente_ops,
+            "perfil": "R1" if self.enfermagem_id else "R2",
+            "data_transporte": self.data_transporte,
+            "clinica": self.clinica.nome if self.clinica else "",
+            "veiculo": str(self.veiculo) if self.veiculo else "",
+            "condutor": self.condutor.nome if self.condutor else "",
+            "enfermagem": self.enfermagem.nome if self.enfermagem else "",
+            "paciente": paciente_ops,
         }

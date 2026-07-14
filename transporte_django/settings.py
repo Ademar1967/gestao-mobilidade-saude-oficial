@@ -24,38 +24,42 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 from importlib.util import find_spec
 
+
 # Função equivalente ao strtobool do distutils (compatível com Python 3.12+)
 def strtobool(val):
     val = str(val).lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+    if val in ("y", "yes", "t", "true", "on", "1"):
         return True
-    if val in ('n', 'no', 'f', 'false', 'off', '0'):
+    if val in ("n", "no", "f", "false", "off", "0"):
         return False
     raise ValueError(f"invalid truth value: {val}")
 
-DEBUG = strtobool(os.environ.get('DJANGO_DEBUG', '1'))
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
+DEBUG = strtobool(os.environ.get("DJANGO_DEBUG", "1"))
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 if not SECRET_KEY:
     if DEBUG:
-        SECRET_KEY = 'django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!'
+        SECRET_KEY = (
+            "django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!"
+        )
     else:
-        raise ImproperlyConfigured('Defina DJANGO_SECRET_KEY em produção.')
+        raise ImproperlyConfigured("Defina DJANGO_SECRET_KEY em produção.")
 
 # ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS.
 _allowed_hosts_env = os.environ.get(
-    'DJANGO_ALLOWED_HOSTS',
-    '127.0.0.1,localhost,transporte-de-enfermos.onrender.com',
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost,transporte-de-enfermos.onrender.com",
 )
-ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
 
 # Corrige validação CSRF atrás de proxy HTTPS (Render)
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-_csrf_env = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').strip()
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+_csrf_env = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").strip()
 if _csrf_env:
-    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(",") if o.strip()]
 else:
-    CSRF_TRUSTED_ORIGINS = ['https://transporte-de-enfermos.onrender.com']
+    CSRF_TRUSTED_ORIGINS = ["https://transporte-de-enfermos.onrender.com"]
 
 
 # Application definition
@@ -63,85 +67,90 @@ else:
 INSTALLED_APPS = [
     # 'admin_interface',
     # 'colorfield',
-    'admin_interface',
-    'colorfield',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'crispy_forms',
-    'crispy_bootstrap5',
-    'polls.apps.TransportePacientesConfig',
-    'transporte_django',
-    'rest_framework',
-    'rest_framework_simplejwt',
+    "admin_interface",
+    "colorfield",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "crispy_forms",
+    "crispy_bootstrap5",
+    "polls.apps.TransportePacientesConfig",
+    "transporte_django",
+    "rest_framework",
+    "rest_framework_simplejwt",
 ]
 
-if find_spec('django_extensions'):
-    INSTALLED_APPS.append('django_extensions')
+if find_spec("django_extensions"):
+    INSTALLED_APPS.append("django_extensions")
 
 # Configuração do crispy-forms para Bootstrap 5
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'transporte_django.middleware.AdminIPAllowlistMiddleware',
-    'transporte_django.middleware.LoginObrigatorioMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "transporte_django.middleware.AdminIPAllowlistMiddleware",
+    "transporte_django.middleware.LoginObrigatorioMiddleware",
 ]
 
-ROOT_URLCONF = 'transporte_django.urls'
+ROOT_URLCONF = "transporte_django.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'transporte_django.wsgi.application'
-
+WSGI_APPLICATION = "transporte_django.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 import dj_database_url
 
-_db_url = os.environ.get('DATABASE_URL', '').strip()
+_db_url = os.environ.get("DATABASE_URL", "").strip()
 # Mantem modo estrito como opt-in para evitar quebra de deploy.
-_strict_database_url = strtobool(os.environ.get('STRICT_DATABASE_URL', '0'))
+_strict_database_url = strtobool(os.environ.get("STRICT_DATABASE_URL", "0"))
 if _strict_database_url and not DEBUG and not _db_url:
-    raise ImproperlyConfigured('Defina DATABASE_URL em produção para usar banco persistente.')
+    raise ImproperlyConfigured(
+        "Defina DATABASE_URL em produção para usar banco persistente."
+    )
 if _db_url:
     _db_config = dj_database_url.config(default=_db_url)
 else:
     _db_config = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 
 DATABASES = {
-    'default': _db_config if _db_config.get('ENGINE') else {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": (
+        _db_config
+        if _db_config.get("ENGINE")
+        else {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    )
 }
 
 
@@ -150,16 +159,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -167,37 +176,37 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'pt-br'
+LANGUAGE_CODE = "pt-br"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
 USE_TZ = True
 
 # Redireciona para a tela de login se não estiver autenticado
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/login/"
 
 # Isolamento do admin: use um caminho não óbvio em produção.
 # Ex.: DJANGO_ADMIN_PATH=/painel-interno-9x7/
-_admin_path = os.environ.get('DJANGO_ADMIN_PATH', '/painel-interno-192/').strip()
-if not _admin_path.startswith('/'):
-    _admin_path = '/' + _admin_path
-if not _admin_path.endswith('/'):
-    _admin_path = _admin_path + '/'
+_admin_path = os.environ.get("DJANGO_ADMIN_PATH", "/painel-interno-192/").strip()
+if not _admin_path.startswith("/"):
+    _admin_path = "/" + _admin_path
+if not _admin_path.endswith("/"):
+    _admin_path = _admin_path + "/"
 ADMIN_URL_PATH = _admin_path
 
 # Lista opcional de IPs permitidos no admin (separados por vírgula).
 # Ex.: DJANGO_ADMIN_ALLOWED_IPS=177.10.10.10,189.55.22.33
-_admin_ips_env = os.environ.get('DJANGO_ADMIN_ALLOWED_IPS', '').strip()
-ADMIN_ALLOWED_IPS = [ip.strip() for ip in _admin_ips_env.split(',') if ip.strip()]
+_admin_ips_env = os.environ.get("DJANGO_ADMIN_ALLOWED_IPS", "").strip()
+ADMIN_ALLOWED_IPS = [ip.strip() for ip in _admin_ips_env.split(",") if ip.strip()]
 
 # Sessão salva no banco de dados — persiste mesmo quando Render reinicia o servidor
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 try:
-    SESSION_COOKIE_AGE = int(os.environ.get('SESSION_COOKIE_AGE', '28800'))  # 8 horas
+    SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", "28800"))  # 8 horas
 except (TypeError, ValueError):
     SESSION_COOKIE_AGE = 28800
 SESSION_SAVE_EVERY_REQUEST = True
@@ -205,64 +214,62 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o 
 
 # Evita conflito de sessão entre múltiplos projetos Django rodando no mesmo host
 # (ex.: localhost:8000 e localhost:8001 compartilham escopo de cookie por domínio).
-SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME', 'tp_sessionid')
-CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME', 'tp_csrftoken')
+SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "tp_sessionid")
+CSRF_COOKIE_NAME = os.environ.get("CSRF_COOKIE_NAME", "tp_csrftoken")
 
 # Segurança condicional por ambiente.
 SESSION_COOKIE_SECURE = not DEBUG
-SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_SSL_REDIRECT = not DEBUG
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
-TEST_RUNNER = 'polls.test_runner.PollsDiscoverRunner'
+TEST_RUNNER = "polls.test_runner.PollsDiscoverRunner"
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'polls.audit': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
+    "loggers": {
+        "polls.audit": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
-        'paciente_form': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
+        "paciente_form": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }

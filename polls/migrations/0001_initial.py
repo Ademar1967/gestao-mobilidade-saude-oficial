@@ -8,91 +8,273 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Clinica',
+            name="Clinica",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
-                ('endereco', models.CharField(blank=True, max_length=200)),
-                ('bairro', models.CharField(blank=True, max_length=100)),
-                ('cidade', models.CharField(blank=True, max_length=100)),
-                ('telefone', models.CharField(blank=True, max_length=20)),
-                ('latitude', models.DecimalField(blank=True, decimal_places=6, help_text='Latitude da clínica', max_digits=9, null=True)),
-                ('longitude', models.DecimalField(blank=True, decimal_places=6, help_text='Longitude da clínica', max_digits=9, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
+                ("endereco", models.CharField(blank=True, max_length=200)),
+                ("bairro", models.CharField(blank=True, max_length=100)),
+                ("cidade", models.CharField(blank=True, max_length=100)),
+                ("telefone", models.CharField(blank=True, max_length=20)),
+                (
+                    "latitude",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=6,
+                        help_text="Latitude da clínica",
+                        max_digits=9,
+                        null=True,
+                    ),
+                ),
+                (
+                    "longitude",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=6,
+                        help_text="Longitude da clínica",
+                        max_digits=9,
+                        null=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Condutor',
+            name="Condutor",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(
-            name='Enfermagem',
+            name="Enfermagem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100, unique=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Paciente',
+            name="Paciente",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=100)),
-                ('cartao_sis', models.CharField(blank=True, help_text='Número do cartão do SUS/SIS de Mogi das Cruzes', max_length=10, verbose_name='Cartão SIS')),
-                ('idade', models.PositiveIntegerField(blank=True, null=True)),
-                ('peso', models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True)),
-                ('rua', models.CharField(blank=True, max_length=100)),
-                ('numero', models.CharField(blank=True, max_length=10)),
-                ('bairro', models.CharField(blank=True, max_length=100)),
-                ('cidade', models.CharField(blank=True, max_length=100)),
-                ('estado', models.CharField(blank=True, help_text='UF', max_length=2)),
-                ('cep', models.CharField(blank=True, max_length=10)),
-                ('endereco', models.CharField(blank=True, max_length=200)),
-                ('referencia', models.CharField(blank=True, max_length=200)),
-                ('ddd', models.CharField(blank=True, help_text='DDD do telefone', max_length=2)),
-                ('telefone', models.CharField(blank=True, max_length=20)),
-                ('tratamento', models.CharField(blank=True, max_length=100)),
-                ('oxigenio', models.BooleanField(default=False)),
-                ('observacoes', models.TextField(blank=True)),
-                ('evolucao', models.TextField(blank=True)),
-                ('status', models.CharField(blank=True, max_length=30)),
-                ('maca', models.BooleanField(default=False, help_text='Paciente usa maca?')),
-                ('cadeirante', models.BooleanField(default=False, help_text='Paciente é cadeirante?')),
-                ('acompanhante', models.BooleanField(default=False, help_text='Paciente tem acompanhante?')),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data/hora do cadastro do paciente', null=True)),
-                ('latitude', models.DecimalField(blank=True, decimal_places=6, help_text='Latitude do paciente', max_digits=9, null=True)),
-                ('longitude', models.DecimalField(blank=True, decimal_places=6, help_text='Longitude do paciente', max_digits=9, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nome", models.CharField(max_length=100)),
+                (
+                    "cartao_sis",
+                    models.CharField(
+                        blank=True,
+                        help_text="Número do cartão do SUS/SIS de Mogi das Cruzes",
+                        max_length=10,
+                        verbose_name="Cartão SIS",
+                    ),
+                ),
+                ("idade", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "peso",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=5, null=True
+                    ),
+                ),
+                ("rua", models.CharField(blank=True, max_length=100)),
+                ("numero", models.CharField(blank=True, max_length=10)),
+                ("bairro", models.CharField(blank=True, max_length=100)),
+                ("cidade", models.CharField(blank=True, max_length=100)),
+                ("estado", models.CharField(blank=True, help_text="UF", max_length=2)),
+                ("cep", models.CharField(blank=True, max_length=10)),
+                ("endereco", models.CharField(blank=True, max_length=200)),
+                ("referencia", models.CharField(blank=True, max_length=200)),
+                (
+                    "ddd",
+                    models.CharField(
+                        blank=True, help_text="DDD do telefone", max_length=2
+                    ),
+                ),
+                ("telefone", models.CharField(blank=True, max_length=20)),
+                ("tratamento", models.CharField(blank=True, max_length=100)),
+                ("oxigenio", models.BooleanField(default=False)),
+                ("observacoes", models.TextField(blank=True)),
+                ("evolucao", models.TextField(blank=True)),
+                ("status", models.CharField(blank=True, max_length=30)),
+                (
+                    "maca",
+                    models.BooleanField(default=False, help_text="Paciente usa maca?"),
+                ),
+                (
+                    "cadeirante",
+                    models.BooleanField(
+                        default=False, help_text="Paciente é cadeirante?"
+                    ),
+                ),
+                (
+                    "acompanhante",
+                    models.BooleanField(
+                        default=False, help_text="Paciente tem acompanhante?"
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data/hora do cadastro do paciente",
+                        null=True,
+                    ),
+                ),
+                (
+                    "latitude",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=6,
+                        help_text="Latitude do paciente",
+                        max_digits=9,
+                        null=True,
+                    ),
+                ),
+                (
+                    "longitude",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=6,
+                        help_text="Longitude do paciente",
+                        max_digits=9,
+                        null=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Veiculo',
+            name="Veiculo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo_veiculo', models.CharField(choices=[('ambulancia', 'Ambulância Prefeitura'), ('van', 'Van Terceirizada')], default='ambulancia', max_length=20)),
-                ('placa', models.CharField(blank=True, max_length=20)),
-                ('patrimonio', models.CharField(blank=True, max_length=30, unique=True)),
-                ('lotacao', models.PositiveIntegerField(default=1, help_text='Lotação máxima do veículo')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo_veiculo",
+                    models.CharField(
+                        choices=[
+                            ("ambulancia", "Ambulância Prefeitura"),
+                            ("van", "Van Terceirizada"),
+                        ],
+                        default="ambulancia",
+                        max_length=20,
+                    ),
+                ),
+                ("placa", models.CharField(blank=True, max_length=20)),
+                (
+                    "patrimonio",
+                    models.CharField(blank=True, max_length=30, unique=True),
+                ),
+                (
+                    "lotacao",
+                    models.PositiveIntegerField(
+                        default=1, help_text="Lotação máxima do veículo"
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Transporte',
+            name="Transporte",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_transporte', models.DateField()),
-                ('hora_saida', models.TimeField(blank=True, null=True)),
-                ('hora_chegada', models.TimeField(blank=True, null=True)),
-                ('observacoes', models.TextField(blank=True)),
-                ('clinica', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transportes', to='polls.clinica')),
-                ('condutor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transportes', to='polls.condutor')),
-                ('enfermagem', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transportes', to='polls.enfermagem')),
-                ('paciente', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='transportes', to='polls.paciente')),
-                ('veiculo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transportes', to='polls.veiculo')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("data_transporte", models.DateField()),
+                ("hora_saida", models.TimeField(blank=True, null=True)),
+                ("hora_chegada", models.TimeField(blank=True, null=True)),
+                ("observacoes", models.TextField(blank=True)),
+                (
+                    "clinica",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="transportes",
+                        to="polls.clinica",
+                    ),
+                ),
+                (
+                    "condutor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="transportes",
+                        to="polls.condutor",
+                    ),
+                ),
+                (
+                    "enfermagem",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="transportes",
+                        to="polls.enfermagem",
+                    ),
+                ),
+                (
+                    "paciente",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="transportes",
+                        to="polls.paciente",
+                    ),
+                ),
+                (
+                    "veiculo",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="transportes",
+                        to="polls.veiculo",
+                    ),
+                ),
             ],
         ),
     ]

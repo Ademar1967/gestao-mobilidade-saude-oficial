@@ -7,13 +7,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0010_ensure_legacy_status_columns'),
+        ("polls", "0010_ensure_legacy_status_columns"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='paciente',
-            name='destino_preferencial',
-            field=models.ForeignKey(blank=True, help_text='Destino preferencial sugerido para este paciente (opcional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='pacientes_destino_preferencial', to='polls.clinica'),
+            model_name="paciente",
+            name="destino_preferencial",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Destino preferencial sugerido para este paciente (opcional)",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="pacientes_destino_preferencial",
+                to="polls.clinica",
+            ),
         ),
     ]

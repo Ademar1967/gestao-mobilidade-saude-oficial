@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0003_paciente_oxigenio_litros_min'),
+        ("polls", "0003_paciente_oxigenio_litros_min"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='paciente',
-            name='consentimento_lgpd',
-            field=models.BooleanField(default=False, help_text='Paciente ou responsável consentiu com o tratamento de dados pessoais (LGPD)?'),
+            model_name="paciente",
+            name="consentimento_lgpd",
+            field=models.BooleanField(
+                default=False,
+                help_text="Paciente ou responsável consentiu com o tratamento de dados pessoais (LGPD)?",
+            ),
         ),
     ]

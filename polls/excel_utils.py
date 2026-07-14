@@ -2,6 +2,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from datetime import date
 
+
 def exportar_excel_profissional(queryset, campos, nome_arquivo):
     """
     Exporta um queryset Django para Excel (.xlsx) com formatação profissional para impressão A4.
@@ -18,7 +19,12 @@ def exportar_excel_profissional(queryset, campos, nome_arquivo):
     header_fill = PatternFill("solid", fgColor="1976D2")
     important_fill = PatternFill("solid", fgColor="FFEB3B")
     normal_fill = PatternFill("solid", fgColor="E3F2FD")
-    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
     align = Alignment(horizontal="center", vertical="center")
 
     # Cabeçalho
@@ -32,12 +38,12 @@ def exportar_excel_profissional(queryset, campos, nome_arquivo):
 
     # Dados
     for obj in queryset:
-        row = [getattr(obj, campo, '') for campo in campos]
+        row = [getattr(obj, campo, "") for campo in campos]
         ws.append(row)
         for col, valor in enumerate(row, 1):
             cell = ws.cell(row=ws.max_row, column=col)
             # Destacar campos importantes (exemplo: nome, status)
-            if campos[col-1].lower() in ["nome", "status", "patrimonio"]:
+            if campos[col - 1].lower() in ["nome", "status", "patrimonio"]:
                 cell.fill = important_fill
             else:
                 cell.fill = normal_fill
@@ -46,7 +52,10 @@ def exportar_excel_profissional(queryset, campos, nome_arquivo):
 
     # Rodapé com data
     ws.append([""] * len(campos))
-    ws.append([f"Planilha gerada em: {date.today().strftime('%d/%m/%Y')}"] + [""] * (len(campos)-1))
+    ws.append(
+        [f"Planilha gerada em: {date.today().strftime('%d/%m/%Y')}"]
+        + [""] * (len(campos) - 1)
+    )
 
     # Ajuste de largura
     for col in ws.columns:

@@ -1,33 +1,9 @@
 services:
   - type: web
-    name: transporte-de-enfermos
+    name: gestao-mobilidade-saude
     runtime: python
-    pythonVersion: 3.10.13
-    repo: https://github.com/Ademar1967/-transporte-de-enfermos
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: bash start.sh
-    healthCheckPath: /login/
-    autoDeploy: true
+    buildCommand: "./start.sh"
+    startCommand: "gunicorn transporte_django.wsgi --bind 0.0.0.0:$PORT"
     envVars:
-      - key: DJANGO_DEBUG
-        value: "0"
-      - key: DJANGO_ALLOWED_HOSTS
-        value: transporte-de-enfermos.onrender.com
-      - key: DJANGO_CSRF_TRUSTED_ORIGINS
-        value: https://transporte-de-enfermos.onrender.com
-      - key: SESSION_COOKIE_AGE
-        value: "28800"
-      - key: DJANGO_SECRET_KEY
-        generateValue: true
-      - key: STRICT_DATABASE_URL
-        value: "1"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: transporte-de-enfermos-db
-          property: connectionString
-
-databases:
-  - name: transporte-de-enfermos-db
-    databaseName: transporte_de_enfermos
-    user: transporte_de_enfermos_user
+      - key: PYTHON_VERSION
+        value: 3.10.13

@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0004_paciente_consentimento_lgpd'),
+        ("polls", "0004_paciente_consentimento_lgpd"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='paciente',
-            name='horario_consulta',
-            field=models.TimeField(blank=True, help_text='Horário da consulta do paciente (opcional)', null=True),
+            model_name="paciente",
+            name="horario_consulta",
+            field=models.TimeField(
+                blank=True,
+                help_text="Horário da consulta do paciente (opcional)",
+                null=True,
+            ),
         ),
     ]

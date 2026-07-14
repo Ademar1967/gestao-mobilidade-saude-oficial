@@ -2,33 +2,34 @@ from django.db import migrations
 
 
 def ensure_legacy_status_columns(apps, schema_editor):
-    table_name = 'polls_paciente'
+    table_name = "polls_paciente"
     connection = schema_editor.connection
     introspection = connection.introspection
 
     def _get_columns(cursor):
         return {
-            col.name
-            for col in introspection.get_table_description(cursor, table_name)
+            col.name for col in introspection.get_table_description(cursor, table_name)
         }
 
     with connection.cursor() as cursor:
         columns = _get_columns(cursor)
 
-        if 'data_inativacao' not in columns:
-            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN data_inativacao timestamp NULL")
+        if "data_inativacao" not in columns:
+            cursor.execute(
+                f"ALTER TABLE {table_name} ADD COLUMN data_inativacao timestamp NULL"
+            )
 
-        if 'motivo_inativacao' not in columns:
+        if "motivo_inativacao" not in columns:
             cursor.execute(
                 f"ALTER TABLE {table_name} ADD COLUMN motivo_inativacao varchar(30) NOT NULL DEFAULT ''"
             )
 
-        if 'observacao_inativacao' not in columns:
+        if "observacao_inativacao" not in columns:
             cursor.execute(
                 f"ALTER TABLE {table_name} ADD COLUMN observacao_inativacao TEXT NOT NULL DEFAULT ''"
             )
 
-        if 'servico_ativo' not in columns:
+        if "servico_ativo" not in columns:
             cursor.execute(
                 f"ALTER TABLE {table_name} ADD COLUMN servico_ativo bool NOT NULL DEFAULT TRUE"
             )
@@ -51,7 +52,7 @@ def noop_reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('polls', '0009_backfill_servico_status'),
+        ("polls", "0009_backfill_servico_status"),
     ]
 
     operations = [

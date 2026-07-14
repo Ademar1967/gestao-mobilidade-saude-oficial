@@ -6,4 +6,6 @@ class PollsDiscoverRunner(DiscoverRunner):
 
     def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
         labels = test_labels or ["polls.tests"]
-        return super().build_suite(test_labels=labels, extra_tests=extra_tests, **kwargs)
+        return super().build_suite(
+            test_labels=labels, extra_tests=extra_tests, **kwargs
+        )

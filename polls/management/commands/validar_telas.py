@@ -44,11 +44,17 @@ class Command(BaseCommand):
         # 2) Login page publica
         login_response = client.get("/login/", **request_kwargs)
         login_ok = login_response.status_code == 200
-        checks.append(("Tela de login", login_ok, f"status={login_response.status_code}"))
+        checks.append(
+            ("Tela de login", login_ok, f"status={login_response.status_code}")
+        )
 
         # 3) Telas principais com aviso de template ativo
         template_routes = [
-            ("cadastrar_paciente", ["Instruções em Português", "Instructions in English"], (200,)),
+            (
+                "cadastrar_paciente",
+                ["Instruções em Português", "Instructions in English"],
+                (200,),
+            ),
             ("cadastrar_transporte", ["Cadastrar Transporte"], (200,)),
             ("cadastrar_transporte_lote", [], (200, 302)),
             ("listar_transportes", ["Transportes", "Imprimir"], (200,)),
@@ -118,12 +124,21 @@ class Command(BaseCommand):
             return {"secure": True}
         return {}
 
-    def _check_route_contains(self, client, route_name, expected_strings, request_kwargs=None, allowed_statuses=(200,)):
+    def _check_route_contains(
+        self,
+        client,
+        route_name,
+        expected_strings,
+        request_kwargs=None,
+        allowed_statuses=(200,),
+    ):
         url = reverse(f"transporte_pacientes:{route_name}")
         request_kwargs = request_kwargs or {}
         try:
             response = client.get(url, **request_kwargs)
-        except Exception as exc:  # pragma: no cover - protecao extra para execucao manual
+        except (
+            Exception
+        ) as exc:  # pragma: no cover - protecao extra para execucao manual
             return False, f"excecao={exc.__class__.__name__} url={url}"
 
         if response.status_code not in allowed_statuses:
