@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from django.utils import timezone
 
@@ -104,12 +105,12 @@ class Paciente(models.Model):
     # Ciclo de vida do paciente no serviço
     MOTIVO_INATIVACAO_CHOICES = [
         ("alta", "Alta"),
-        ("obito", "Obito"),
-        ("mudanca_cidade", "Mudanca de cidade"),
-        ("nao_precisa", "Nao necessita mais transporte"),
-        ("suspensao_temporaria", "Suspensao temporaria"),
-        ("decisao_familiar", "Decisao familiar"),
-        ("retorno_servico", "Retorno ao servico"),
+        ("obito", "Óbito"),
+        ("mudanca_cidade", "Mudança de cidade"),
+        ("nao_precisa", "Não necessita mais transporte"),
+        ("suspensao_temporaria", "Suspensão temporária"),
+        ("decisao_familiar", "Decisão familiar"),
+        ("retorno_servico", "Retorno ao serviço"),
         ("outros", "Outros"),
     ]
     servico_status = models.CharField(
@@ -117,12 +118,12 @@ class Paciente(models.Model):
         choices=SERVICO_STATUS_CHOICES,
         default="ativo",
         db_index=True,
-        help_text="Status operacional do paciente no servico de transporte",
+        help_text="Status operacional do paciente no serviço de transporte",
     )
     servico_ativo = models.BooleanField(
         default=True,
         db_index=True,
-        help_text="Paciente apto a usar o servico de transporte",
+        help_text="Paciente apto a usar o serviço de transporte",
     )
     data_inativacao = models.DateTimeField(null=True, blank=True)
     motivo_inativacao = models.CharField(
@@ -223,19 +224,19 @@ class Paciente(models.Model):
         return self.nome
 
     def contato_formatado(self):
-        """Retorna telefone formatado como '(DDD) Numero', ou apenas o numero se DDD ausente."""
+        """Retorna telefone formatado como '(DDD) Número', ou apenas o número se DDD ausente."""
         if self.ddd and self.telefone:
             return f"({self.ddd}) {self.telefone}"
         return self.telefone or ""
 
     def logradouro_formatado(self):
-        """Retorna logradouro resumido no formato 'Rua, Numero'."""
+        """Retorna logradouro resumido no formato 'Rua, Número'."""
         if self.rua and self.numero:
             return f"{self.rua}, {self.numero}"
         return self.rua or ""
 
     def endereco_formatado(self):
-        """Retorna endereco completo formatado, incluindo CEP se disponivel."""
+        """Retorna endereço completo formatado, incluindo CEP se disponível."""
         partes = [self.rua, self.numero, self.bairro, self.cidade, self.estado]
         partes = [p for p in partes if p]
         endereco = ", ".join(partes)
@@ -352,7 +353,7 @@ class Clinica(models.Model):
         return self.nome
 
     def endereco_resumido(self):
-        """Retorna endereco resumido da clinica no formato 'Logradouro - Bairro - Cidade'."""
+        """Retorna endereço resumido da clínica no formato 'Logradouro - Bairro - Cidade'."""
         partes = [self.endereco, self.bairro, self.cidade]
         return " - ".join([p for p in partes if p])
 
@@ -409,16 +410,22 @@ class Transporte(models.Model):
     observacoes = models.TextField(blank=True)
 
     def __str__(self):
-        return f"Transporte de {self.paciente} para {self.clinica} em {self.data_transporte}"
+        return (
+            f"Transporte de {self.paciente} para {self.clinica} "
+            f"em {self.data_transporte}"
+        )
 
     def resumo_operacional(self):
-        """Retorna resumo do transporte no formato 'Data | Paciente -> Clinica | Veiculo'."""
+        """Retorna resumo do transporte no formato 'Data | Paciente -> Clínica | Veículo'."""
         paciente_nome = (
-            self.paciente.nome if self.paciente else "Paciente nao informado"
+            self.paciente.nome if self.paciente else "Paciente não informado"
         )
-        clinica_nome = self.clinica.nome if self.clinica else "Clinica nao informada"
-        veiculo_nome = str(self.veiculo) if self.veiculo else "Veiculo nao informado"
-        return f"{self.data_transporte} | {paciente_nome} -> {clinica_nome} | {veiculo_nome}"
+        clinica_nome = self.clinica.nome if self.clinica else "Clínica não informada"
+        veiculo_nome = str(self.veiculo) if self.veiculo else "Veículo não informado"
+        return (
+            f"{self.data_transporte} | {paciente_nome} -> "
+            f"{clinica_nome} | {veiculo_nome}"
+        )
 
     def dados_minimos_r1_r2(self):
         """Pacote simples para tela operacional de condutor (R1/R2)."""
