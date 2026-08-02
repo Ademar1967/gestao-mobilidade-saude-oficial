@@ -1,7 +1,10 @@
 from django import forms
 from django.db.models import Q
 from .models import Transporte, Paciente, Veiculo, Condutor, Clinica, Enfermagem
-
+import sys
+import io
+sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 try:
     import requests
 except ImportError:
@@ -268,10 +271,6 @@ class TransporteForm(forms.ModelForm):
         }
 
 
-from django import forms
-from .models import Paciente, Veiculo, Condutor, Clinica, Enfermagem
-
-
 # Formulário para Enfermagem
 class EnfermagemForm(forms.ModelForm):
     class Meta:
@@ -330,12 +329,13 @@ class PacienteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         tabindexes = [
             ("nome", 1),
             ("cartao_sis", 2),
             ("horario_consulta", 3),
-            ("destino_preferencial", 4),
-            ("destino_preferencial_manual", 5),
+            ("destino_preferencial_manual", 4),
+            ("destino_preferencial", 5),
             ("idade", 6),
             ("peso", 7),
             ("ddd", 8),
@@ -354,11 +354,44 @@ class PacienteForm(forms.ModelForm):
             ("acompanhantes", 21),
             ("evolucao", 22),
             ("observacoes", 23),
+            ("servico_status",),
+            ("servico_ativo",),
+            ("data_inativacao",),
+            ("motivo_inativacao",),
+            ("observacao_inativacao",),
+            ("data_prevista_retorno",),
             ("consentimento_lgpd", 24),
         ]
-        for field, idx in tabindexes:
+
+        # Aplica tabindex com fallback automático para itens sem índice explícito
+        current_idx = 0
+        for item in tabindexes:
+            if isinstance(item, tuple):
+                if len(item) == 2:
+                    field, idx = item
+                elif len(item) == 1:
+                    field = item[0]
+                    current_idx += 1
+                    idx = current_idx
+                else:
+                    continue
+            else:
+                field = item
+                current_idx += 1
+                idx = current_idx
+
+            if idx is not None:
+                current_idx = idx
+
             if field in self.fields:
                 self.fields[field].widget.attrs["tabindex"] = str(idx)
+
+        # Widgets customizados
+        widgets = {
+            "observacoes": forms.Textarea(attrs={"rows": 3}),
+            "evolucao": forms.Textarea(attrs={"rows": 3}),
+        }
+
         if "horario_consulta" in self.fields:
             self.fields["horario_consulta"].widget.attrs["placeholder"] = "Ex: 14:30"
             self.fields["horario_consulta"].widget.attrs[
@@ -366,7 +399,7 @@ class PacienteForm(forms.ModelForm):
             ] = "Horário da consulta (opcional)"
         if "destino_preferencial" in self.fields:
             self.fields["destino_preferencial"].required = False
-            self.fields["destino_preferencial"].label = "Destino preferencial"
+            self.fields["destino_preferencial"].label = "Clinica de Destino"
             self.fields["destino_preferencial"].help_text = (
                 "Clínica sugerida como destino habitual do paciente (opcional)."
             )
@@ -428,6 +461,7 @@ class PacienteForm(forms.ModelForm):
             self.fields["referencia"].widget.attrs[
                 "aria-label"
             ] = "Ponto de referência do endereço"
+
         # Esconde o campo cadeira_dobravel se não for cadeirante (feito no template)
 
     def _validar_texto_simples(self, valor, campo):
@@ -765,35 +799,6 @@ class PacienteForm(forms.ModelForm):
 
 class PacienteSimplesForm(PacienteForm):
     """Versao enxuta para cadastro rapido de paciente."""
-
-    class Meta(PacienteForm.Meta):
-        model = Paciente
-        fields = [
-            "status",
-            "nome",
-            "idade",
-            "peso",
-            "cartao_sis",
-            "horario_consulta",
-            "tratamento",
-            "acompanhantes",
-            "destino_preferencial_manual",
-            "ddd",
-            "telefone",
-            "rua",
-            "numero",
-            "bairro",
-            "cidade",
-            "estado",
-            "cep",
-            "referencia",
-            "observacoes",
-            "consentimento_lgpd",
-        ]
-        widgets = {
-            "horario_consulta": forms.TimeInput(attrs={"type": "time"}),
-            "observacoes": forms.Textarea(attrs={"rows": 2, "class": "auto-expand"}),
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

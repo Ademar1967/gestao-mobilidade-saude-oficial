@@ -1,4 +1,4 @@
-﻿import time
+import time
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 from .models import Paciente

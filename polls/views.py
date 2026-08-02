@@ -603,7 +603,7 @@ def cadastrar_transporte_lote(request):
                 erro_msg = (
                     "Alguns pacientes j� possuem transporte para esta data. "
                     'Marque "Cadastrar mesmo assim" para permitir duplicidade quando necess�rio. '
-                    f'Pacientes: {", ".join(pacientes_duplicados)}.'
+                    f"Pacientes: {', '.join(pacientes_duplicados)}."
                 )
             else:
                 if forms_erros and all(
@@ -639,7 +639,7 @@ def cadastrar_transporte_lote(request):
                             f"?pendencias={quote_plus(campos_txt)}&campos={quote_plus(campos_chaves_txt)}&voltar={quote_plus(url_lote_retorno)}"
                         )
                         itens_html.append(
-                            f'<li><strong>{escape(erro["paciente_nome"])}</strong>: verifique {escape(campos_txt)}. '
+                            f"<li><strong>{escape(erro['paciente_nome'])}</strong>: verifique {escape(campos_txt)}. "
                             f'<a href="{escape(url_editar)}" class="btn btn-sm btn-warning ms-2">Corrigir no cadastro</a></li>'
                         )
                     else:

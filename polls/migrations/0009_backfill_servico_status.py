@@ -44,7 +44,6 @@ def noop_reverse(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("polls", "0008_paciente_data_inativacao_and_more"),
     ]

@@ -126,7 +126,8 @@ WSGI_APPLICATION = "transporte_django.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 import dj_database_url
-#---------------------------------------------------------------1
+
+# ---------------------------------------------------------------1
 _db_url = os.environ.get("DATABASE_URL", "").strip()
 # Mantem modo estrito como opt-in para evitar quebra de deploy.
 _strict_database_url = strtobool(os.environ.get("STRICT_DATABASE_URL", "0"))
@@ -155,7 +156,7 @@ DATABASES = {
     )
 }
 
-#---------------------------------------------------------------2
+# ---------------------------------------------------------------2
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

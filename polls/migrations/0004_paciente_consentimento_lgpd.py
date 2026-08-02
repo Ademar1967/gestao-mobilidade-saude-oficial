@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("polls", "0003_paciente_oxigenio_litros_min"),
     ]

@@ -50,7 +50,6 @@ def noop_reverse(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("polls", "0009_backfill_servico_status"),
     ]

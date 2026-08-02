@@ -1,0 +1,33 @@
+﻿============================================
+  MAPA DO PROJETO - Gestao Mobilidade Saude
+============================================
+
+URLs PRINCIPAIS (polls/urls.py):
+- cadastrar_paciente        -> pacientes/cadastrar/
+- cadastrar_paciente_simples -> pacientes/cadastrar-simples/
+- listar_clinicas           -> clinicas/listar_todas/
+- cadastrar_clinica         -> clinicas/cadastrar/
+- buscar_clinicas_sugestoes -> api/clinicas/sugestoes/
+- excluir_selecionadas_clinicas -> clinicas/excluir_selecionadas/
+- excluir_todas_clinicas    -> clinicas/excluir_todas/
+- exportar_clinicas_excel   -> clinicas/exportar_excel/
+- preview_clinicas          -> clinicas/preview/
+
+NAMESPACE: transporte_pacientes
+
+ARQUIVOS PRINCIPAIS:
+- polls/views.py            -> Views (linhas 1020=cadastrar_paciente, 1300=listar_clinicas, 2103=buscar_clinicas_sugestoes)
+- polls/urls.py             -> Rotas
+- polls/templates/transporte_pacientes/cadastrar_paciente.html -> Template cadastro
+- polls/templates/transporte_pacientes/cadastrar_paciente_simples.html -> Template simples
+- polls/models.py           -> Modelos
+- transporte_django/settings.py -> Configuracoes
+- transporte_django/urls.py -> URLs raiz
+
+COMANDOS RAPIDOS (use .\referencia\ver.ps1):
+  .\referencia\ver.ps1 urls
+  .\referencia\ver.ps1 views
+  .\referencia\ver.ps1 template
+  .\referencia\ver.ps1 models
+  .\referencia\ver.ps1 settings
+  .\referencia\ver.ps1 simples

@@ -257,7 +257,6 @@ class TransporteTestCase(TestCase):
 
 
 class ArquivosRecebidosViewTestCase(TestCase):
-
     def setUp(self):
         from django.contrib.auth import get_user_model
 

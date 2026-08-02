@@ -66,15 +66,15 @@ pre-commit
 ### Correção 2: middleware.py
 ```python
 URLS_PUBLICAS = [
-    '/static/',
-    '/media/',
-    '/login/',
-    '/logout/',
-    '/admin/',
-    '/api/whatsapp/webhook/',
-    '/api/token/',
-    '/api/token/refresh/',
-    '/autocomplete_endereco_unidade/',  # ← ADICIONADO
+    "/static/",
+    "/media/",
+    "/login/",
+    "/logout/",
+    "/admin/",
+    "/api/whatsapp/webhook/",
+    "/api/token/",
+    "/api/token/refresh/",
+    "/autocomplete_endereco_unidade/",  # ← ADICIONADO
 ]
 ```
 

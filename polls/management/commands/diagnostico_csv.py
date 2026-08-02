@@ -27,7 +27,7 @@ class Command(BaseCommand):
                         reader = csv.reader(f)
                         linhas = list(reader)
                         self.stdout.write(
-                            f'  Cabeçalho: {linhas[0] if linhas else "(vazio)"}'
+                            f"  Cabeçalho: {linhas[0] if linhas else '(vazio)'}"
                         )
                         for i, linha in enumerate(linhas[1:4], 1):
                             self.stdout.write(f"  Linha {i}: {linha}")

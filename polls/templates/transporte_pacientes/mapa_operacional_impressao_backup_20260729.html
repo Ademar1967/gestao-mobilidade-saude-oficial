@@ -44,7 +44,7 @@
     ============================================================ */
     .folha {
       width: 210mm;
-      min-height: 148mm;
+      min-height: 148mm;   /* meia A4 por "face" */
       margin: 10px auto;
       padding: 6mm 8mm;
       background: #fff;
@@ -98,14 +98,14 @@
       border: 1px solid #000;
       margin-bottom: 3px;
     }
-    .cabecalho .cel-data      { padding: 3px 6px; font-weight: bold; white-space: nowrap; border-right: 1px solid #000; font-size: 8pt; }
-    .cabecalho .cel-empresa   { padding: 3px 8px; font-weight: bold; font-size: 8pt; min-width: 60px; border-right: 1px solid #000; text-align: center; }
-    .cabecalho .cel-viagem    { padding: 3px 8px; font-weight: bold; font-size: 8pt; border-right: 1px solid #000; white-space: nowrap; }
+    .cabecalho .cel-data  { padding: 3px 6px; font-weight: bold; white-space: nowrap; border-right: 1px solid #000; font-size: 8pt; }
+    .cabecalho .cel-empresa { padding: 3px 8px; font-weight: bold; font-size: 8pt; min-width: 60px; border-right: 1px solid #000; text-align: center; }
+    .cabecalho .cel-viagem  { padding: 3px 8px; font-weight: bold; font-size: 8pt; border-right: 1px solid #000; white-space: nowrap; }
     .cabecalho .cel-motorista { padding: 3px 8px; font-size: 8pt; flex: 1; border-right: 1px solid #000; }
     .cabecalho .cel-veiculo   { padding: 3px 8px; font-size: 8pt; white-space: nowrap; }
 
     /* ============================================================
-       TABELA FRENTE / VERSO
+       TABELA FRENTE
     ============================================================ */
     .titulo-secao {
       font-weight: bold;
@@ -140,7 +140,6 @@
     table.mapa td.ident  { text-align: center; width: 24px; }
     table.mapa td.obs    { font-size: 6.3pt; color: #000; }
     table.mapa td.cond   { font-size: 6.2pt; color: #000; font-weight: bold; line-height: 1.1; }
-
     .condicoes-inline {
       display: block;
       margin-top: 1px;
@@ -150,7 +149,7 @@
       line-height: 1.1;
     }
 
-    /* linha vazia para margem extra (visível só na tela) */
+    /* linha vazia para margem extra */
     tr.linha-vazia td { height: 11px; background: #fff; }
     tr.linha-separador td {
       height: 12px;
@@ -176,26 +175,10 @@
        IMPRESSÃO
     ============================================================ */
     @media print {
-      /* Esconde controles de tela */
-      .zoom-bar,
-      .acoes-tela,
-      .no-print {
-        display: none !important;
-      }
-
-      /* Remove zoom da prévia */
+      .zoom-bar { display: none !important; }
       .folhas-wrapper { transform: none !important; }
-
-      /* Ajuste base para impressão */
+      .acoes-tela { display: none !important; }
       body { font-size: 7.2pt; }
-
-      /* ✅ Esconde linhas vazias e separadores na impressão */
-      tr.linha-vazia,
-      tr.linha-separador {
-        display: none !important;
-      }
-
-      /* Cada folha ocupa a página toda */
       .folha {
         width: 100%;
         min-height: auto;
@@ -204,27 +187,19 @@
         border: none;
         page-break-after: always;
       }
-
-      /* Evita quebrar uma linha de paciente no meio */
-      tr { page-break-inside: avoid; }
-
-      /* Repete cabeçalho da tabela em cada página */
-      thead { display: table-header-group; }
-
-      /* Força cores e fundo na impressão */
       .titulo-secao,
-      table.mapa th {
+      table.mapa th,
+      tr.linha-vazia td {
         background: #fff !important;
         color: #000 !important;
       }
-
-      /* Garante cores de gráficos/botões internos */
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+      .cabecalho .cel-data,
+      .cabecalho .cel-empresa,
+      .cabecalho .cel-viagem,
+      .cabecalho .cel-motorista,
+      .cabecalho .cel-veiculo {
+        font-size: 7.2pt;
       }
-
-      /* Remove quebras desnecessárias na última folha e verso */
       .folha:last-of-type { page-break-after: auto; }
       .folha.verso { page-break-before: auto; }
     }
@@ -286,26 +261,26 @@
     <tbody>
       {% if bloco.linhas %}
         {% for l in bloco.linhas %}
-          {% if l.separador %}
-            <tr class="linha-separador">
-              <td colspan="7"></td>
-            </tr>
-          {% else %}
-            <tr>
-              <td class="num">{{ l.ordem }}</td>
-              <td>{{ l.nome }}</td>
-              <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
-              <td class="ident">{{ l.paciente_id }}</td>
-              <td>{{ l.endereco }}</td>
-              <td>{{ l.bairro }}</td>
-              <td class="hor">{{ l.horario }}</td>
-            </tr>
-          {% endif %}
+        {% if l.separador %}
+        <tr class="linha-separador">
+          <td colspan="7"></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td class="num">{{ l.ordem }}</td>
+          <td>{{ l.nome }}</td>
+          <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
+          <td class="ident">{{ l.paciente_id }}</td>
+          <td>{{ l.endereco }}</td>
+          <td>{{ l.bairro }}</td>
+          <td class="hor">{{ l.horario }}</td>
+        </tr>
+        {% endif %}
         {% endfor %}
         {% for _ in bloco.vazios %}
-          <tr class="linha-vazia">
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
+        <tr class="linha-vazia">
+          <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
         {% endfor %}
       {% else %}
         <tr>
@@ -321,7 +296,7 @@
 
 
 <!-- ============================================================
-     FOLHA VERSO - BLOCO {{ forloop.counter }}
+  FOLHA VERSO - BLOCO {{ forloop.counter }}
 ============================================================ -->
 <div class="folha verso">
 
@@ -330,10 +305,7 @@
     <div class="cel-empresa">{{ empresa }}</div>
     <div class="cel-viagem">{{ numero_viagem }} — VERSO BLOCO {{ forloop.counter }}</div>
     <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
-    <div class="cel-veiculo">
-      {% if origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
-      {% if frota_label %} — {{ frota_label }}{% endif %}
-    </div>
+    <div class="cel-veiculo">{% if origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}{% if frota_label %} — {{ frota_label }}{% endif %}</div>
   </div>
 
   <table class="mapa">
@@ -350,25 +322,25 @@
     <tbody>
       {% if bloco.linhas %}
         {% for l in bloco.linhas %}
-          {% if l.separador %}
-            <tr class="linha-separador">
-              <td colspan="6"></td>
-            </tr>
-          {% else %}
-            <tr>
-              <td class="num">{{ l.ordem }}</td>
-              <td>{{ l.destino }}</td>
-              <td class="ac">{{ l.acompanhante_marca }}</td>
-              <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
-              <td>{{ l.telefone }}</td>
-              <td class="obs">{{ l.observacao }}</td>
-            </tr>
-          {% endif %}
+        {% if l.separador %}
+        <tr class="linha-separador">
+          <td colspan="6"></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td class="num">{{ l.ordem }}</td>
+          <td>{{ l.destino }}</td>
+          <td class="ac">{{ l.acompanhante_marca }}</td>
+          <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
+          <td>{{ l.telefone }}</td>
+          <td class="obs">{{ l.observacao }}</td>
+        </tr>
+        {% endif %}
         {% endfor %}
         {% for _ in bloco.vazios %}
-          <tr class="linha-vazia">
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
+        <tr class="linha-vazia">
+          <td></td><td></td><td></td><td></td><td></td><td></td>
+        </tr>
         {% endfor %}
       {% else %}
         <tr>
@@ -384,9 +356,9 @@
 {% endfor %}
 </div>
 
+</body>
 <script>
   var zoomAtual = 1;
-
   function aplicarZoom() {
     var wrapper = document.getElementById('folhasWrapper');
     var indicador = document.getElementById('zoomPercent');
@@ -414,14 +386,15 @@
       window.close();
       return;
     }
+
     if (window.history.length > 1) {
       window.history.back();
       return;
     }
+
     window.location.href = '{% url 'transporte_pacientes:mapa_operacional' %}';
   }
 
   document.addEventListener('DOMContentLoaded', aplicarZoom);
 </script>
-</body>
 </html>

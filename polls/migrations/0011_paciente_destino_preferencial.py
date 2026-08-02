@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("polls", "0010_ensure_legacy_status_columns"),
     ]
