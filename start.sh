@@ -1,9 +1,16 @@
 #!/bin/bash
 # Script de inicialização para Render
+set -e
 sleep 5
+
+echo "Iniciando deploy da aplicação..."
+echo "Commit atual: $(git rev-parse --short HEAD 2>/dev/null || echo 'indefinido')"
 
 echo "Garantindo usuário admin..."
 python manage.py create_admin || true
+
+echo "Executando migrações..."
+python manage.py migrate --no-input || true
 
 if [ -f "viaturas.csv" ]; then
     echo "Importando viaturas de viaturas.csv..."
