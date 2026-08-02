@@ -459,13 +459,14 @@ def cadastrar_transporte_lote(request):
             and veiculo_lote.lotacao
             and total_operacional > veiculo_lote.lotacao
         )
-        if houve_excesso_lotacao and not forcar_excesso_lotacao:
-            forms_validos = False
-            forms_erros.append(
-                f"Excesso de lota��o: total operacional {total_operacional} "
+        excesso_lotacao_msg = ""
+        if houve_excesso_lotacao:
+            excesso_lotacao_msg = (
+                f"Atenção: o cálculo indica excesso de ocupação no veículo. "
+                f"Total operacional {total_operacional} "
                 f"(pacientes {len(pacientes_validos)} + acompanhantes {total_acompanhantes_pacientes} + motorista 1) "
-                f"ultrapassa a lota��o do ve�culo {veiculo_lote} ({veiculo_lote.lotacao}). "
-                f'Para continuar sob sua responsabilidade, marque "Permitir excesso de lota��o".'
+                f"ultrapassa a lotação do veículo {veiculo_lote} ({veiculo_lote.lotacao}). "
+                "Você pode seguir com a viagem, mas isso deve ser confirmado pela urgência e pela responsabilidade do condutor."
             )
 
         if forms_validos:
@@ -580,12 +581,8 @@ def cadastrar_transporte_lote(request):
                     request,
                     f"Transporte cadastrado para {len(nomes)} paciente(s): {', '.join(nomes)}.",
                 )
-            if houve_excesso_lotacao and forcar_excesso_lotacao:
-                messages.warning(
-                    request,
-                    f"Aten��o: cadastro confirmado com excesso de lota��o sob responsabilidade do usu�rio. "
-                    f"Total operacional {total_operacional} para lota��o {veiculo_lote.lotacao} ({veiculo_lote}).",
-                )
+            if houve_excesso_lotacao:
+                messages.warning(request, excesso_lotacao_msg)
             if modo_lote == "misto" and otimizar_rota_mista and sequencia_rota:
                 resumo_sequencia = " | ".join(sequencia_rota[:8])
                 if len(sequencia_rota) > 8:

@@ -32,6 +32,11 @@ class Paciente(models.Model):
         blank=True,
         help_text="Número do cartão do SUS/SIS de Mogi das Cruzes",
     )
+    data_nascimento = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Data de nascimento do paciente",
+    )
     idade = models.PositiveIntegerField(null=True, blank=True)
     peso = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     rua = models.CharField(max_length=100, blank=True)
@@ -131,6 +136,16 @@ class Paciente(models.Model):
     )
     observacao_inativacao = models.TextField(blank=True)
     data_prevista_retorno = models.DateField(null=True, blank=True)
+
+    def calcular_idade(self):
+        if not self.data_nascimento:
+            return None
+
+        hoje = timezone.localdate()
+        idade = hoje.year - self.data_nascimento.year
+        if (hoje.month, hoje.day) < (self.data_nascimento.month, self.data_nascimento.day):
+            idade -= 1
+        return idade
 
     def atualizar_status_servico(
         self,

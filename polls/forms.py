@@ -318,7 +318,7 @@ class PacienteForm(forms.ModelForm):
         ),
     )
     destino_preferencial_manual = forms.CharField(
-        label="Ou digite a clínica manualmente",
+        label="Clínica de Destino",
         max_length=100,
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "Ex: Hospital Municipal Central"}),
@@ -399,14 +399,24 @@ class PacienteForm(forms.ModelForm):
             ] = "Horário da consulta (opcional)"
         if "destino_preferencial" in self.fields:
             self.fields["destino_preferencial"].required = False
-            self.fields["destino_preferencial"].label = "Clinica de Destino"
+            self.fields["destino_preferencial"].label = "Ou selecione da lista"
             self.fields["destino_preferencial"].help_text = (
-                "Clínica sugerida como destino habitual do paciente (opcional)."
+                "Digite para buscar a clínica de destino."
             )
+            self.fields["destino_preferencial"].widget = forms.TextInput(
+                attrs={
+                    "placeholder": "Digite o nome da clínica...",
+                    "list": "dl_destino_preferencial",
+                    "autocomplete": "off",
+                }
+            )
+
         if "destino_preferencial_manual" in self.fields:
+            self.fields["destino_preferencial_manual"].label = "Clínica de Destino"
             self.fields["destino_preferencial_manual"].help_text = (
-                "Se a clínica não existir na lista, digite aqui para cadastrar automaticamente."
+                "Digite para buscar clínicas cadastradas ou uma nova para cadastrar automaticamente."
             )
+            self.fields["destino_preferencial_manual"].widget.attrs.pop("list", None)
         if "latitude" in self.fields:
             self.fields["latitude"].required = False
         if "longitude" in self.fields:

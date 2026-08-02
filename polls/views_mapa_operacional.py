@@ -72,6 +72,39 @@ def _capacidade_lote(veiculo_obj, qs=None) -> int:
         return CAPACIDADE_LOTE_PADRAO
 
 
+def _preencher_destino_compartilhado_em_bloco(bloco: dict) -> None:
+    """Preenche o verso com o destino comum quando várias linhas compartilham o mesmo hospital."""
+    linhas = bloco.get("linhas", []) or []
+    linhas_normais = [linha for linha in linhas if not linha.get("separador")]
+    if not linhas_normais:
+        return
+
+    destinos_preenchidos = [
+        (linha.get("destino") or "").strip() for linha in linhas_normais if (linha.get("destino") or "").strip()
+    ]
+    if not destinos_preenchidos:
+        return
+
+    destinos_unicos = set(destinos_preenchidos)
+    if len(destinos_unicos) != 1:
+        return
+
+    destino_comum = next(iter(destinos_unicos))
+    enderecos_preenchidos = [
+        (linha.get("endereco_clinica") or "").strip()
+        for linha in linhas_normais
+        if (linha.get("endereco_clinica") or "").strip()
+    ]
+    enderecos_unicos = set(enderecos_preenchidos)
+    endereco_comum = next(iter(enderecos_unicos)) if len(enderecos_unicos) == 1 else ""
+
+    for linha in linhas_normais:
+        if not (linha.get("destino") or "").strip():
+            linha["destino"] = destino_comum
+        if not (linha.get("endereco_clinica") or "").strip() and endereco_comum:
+            linha["endereco_clinica"] = endereco_comum
+
+
 def _blocos_espelhados(linhas: list[dict], capacidade_lote: int) -> list[dict]:
     """
     Separa em lotes operacionais pela capacidade e depois em blocos de impressao.
@@ -101,14 +134,14 @@ def _blocos_espelhados(linhas: list[dict], capacidade_lote: int) -> list[dict]:
 
     blocos = []
     if not linhas_com_lote:
-        return [{"linhas": [], "vazios": range(0)}]
+        return [{"linhas": [], "vazios": []}]
 
     for i in range(0, len(linhas_com_lote), LINHAS_POR_BLOCO):
         trecho = linhas_com_lote[i : i + LINHAS_POR_BLOCO]
         blocos.append(
             {
                 "linhas": trecho,
-                "vazios": range(max(0, LINHAS_POR_BLOCO - len(trecho))),
+                "vazios": [None] * max(0, LINHAS_POR_BLOCO - len(trecho)),
             }
         )
 
@@ -141,10 +174,12 @@ def _condicoes_especiais(paciente) -> str:
     return " | ".join(condicoes)
 
 
-def _linha_from_paciente(paciente, ordem, transporte=None):
+def _linha_from_paciente(paciente, ordem, transporte=None, clinica_fallback=None):
     """Monta um dict com os dados de um paciente para a tabela do mapa."""
     clinica = transporte.clinica if transporte else None
-    if not clinica and paciente and paciente.destino_preferencial_id:
+    if not clinica and clinica_fallback:
+        clinica = clinica_fallback
+    if not clinica and paciente and getattr(paciente, "destino_preferencial_id", None):
         clinica = paciente.destino_preferencial
 
     acompanhantes = (getattr(paciente, "acompanhantes", 0) if paciente else 0) or 0
@@ -158,22 +193,46 @@ def _linha_from_paciente(paciente, ordem, transporte=None):
         horario = paciente.horario_consulta.strftime("%H:%M")
 
     telefone = ""
-    if clinica and clinica.telefone:
-        telefone = clinica.telefone
-    elif paciente and paciente.telefone:
+    if paciente and paciente.telefone:
         ddd = paciente.ddd or ""
-        telefone = (
-            f"{ddd} {paciente.telefone}".strip() if ddd else (paciente.telefone or "")
-        )
+        telefone = f"{ddd} {paciente.telefone}".strip() if ddd else (paciente.telefone or "")
+
+    idade = ""
+    if paciente:
+        idade_calculada = None
+        if getattr(paciente, "data_nascimento", None):
+            idade_calculada = paciente.calcular_idade()
+        if idade_calculada is not None:
+            idade = str(idade_calculada)
+        elif getattr(paciente, "idade", None) not in (None, ""):
+            idade = str(paciente.idade)
 
     observacao = ""
     if paciente:
         partes_obs = []
-        if paciente.referencia:
-            partes_obs.append(paciente.referencia)
-        if paciente.observacoes:
-            partes_obs.append(paciente.observacoes)
-        observacao = " / ".join(partes_obs)
+        if getattr(paciente, "referencia", None):
+            partes_obs.append(str(paciente.referencia).strip())
+        if getattr(paciente, "observacoes", None):
+            partes_obs.append(str(paciente.observacoes).strip())
+        if transporte and getattr(transporte, "observacoes", None):
+            partes_obs.append(str(transporte.observacoes).strip())
+        observacao = " / ".join([p for p in partes_obs if p])
+
+    destino_label = ""
+    if clinica and getattr(clinica, "nome", ""):
+        destino_label = clinica.nome
+    elif paciente and getattr(paciente, "destino_preferencial", None):
+        destino_label = getattr(paciente.destino_preferencial, "nome", "") or ""
+
+    endereco_clinica = ""
+    if clinica:
+        endereco_clinica = ", ".join(
+            parte for parte in [clinica.endereco, clinica.bairro, clinica.cidade] if parte
+        )
+
+    referencia_paciente = ""
+    if paciente and getattr(paciente, "referencia", None):
+        referencia_paciente = str(paciente.referencia).strip()
 
     return {
         "ordem": ordem,
@@ -185,9 +244,12 @@ def _linha_from_paciente(paciente, ordem, transporte=None):
         "horario": horario,
         "acompanhante_marca": "X" if acompanhantes > 0 else "SO",
         "condicoes_especiais": _condicoes_especiais(paciente),
-        "destino": (clinica.nome if clinica else "") if paciente else "",
+        "destino": destino_label,
         "telefone": telefone,
+        "idade": idade,
         "observacao": observacao,
+        "endereco_clinica": endereco_clinica,
+        "referencia": referencia_paciente,
     }
 
 
@@ -229,20 +291,39 @@ def mapa_operacional_imprimir(request):
     qs = qs.order_by("paciente__nome", "id")
 
     linhas = []
+    clinica_fallback = None
 
-    for ordem, t in enumerate(qs, start=1):
-        linhas.append(_linha_from_paciente(t.paciente, ordem, t))
+    if qs:
+        clinicas_encontradas = [
+            t.clinica for t in qs if getattr(t, "clinica", None) is not None
+        ]
+        ids_clinicas = {c.id for c in clinicas_encontradas if getattr(c, "id", None) is not None}
+        if len(ids_clinicas) == 1:
+            clinica_fallback = clinicas_encontradas[0]
 
-    # Se vieram pacientes selecionados, mas nenhum transporte ainda foi salvo,
-    # gera o mapa diretamente com os dados operacionais do paciente.
-    if not linhas and paciente_ids:
+    if paciente_ids:
         pacientes_qs = Paciente.objects.filter(id__in=paciente_ids)
         mapa_pacientes = {p.id: p for p in pacientes_qs}
-        pacientes_ordenados = [
-            mapa_pacientes[pid] for pid in paciente_ids if pid in mapa_pacientes
-        ]
-        for ordem, paciente in enumerate(pacientes_ordenados, start=1):
-            linhas.append(_linha_from_paciente(paciente, ordem))
+        transportes_por_paciente = {
+            t.paciente_id: t for t in qs if getattr(t, "paciente_id", None)
+        }
+
+        for ordem, pid in enumerate(paciente_ids, start=1):
+            paciente = mapa_pacientes.get(pid)
+            if not paciente:
+                continue
+            transporte = transportes_por_paciente.get(pid)
+            linhas.append(
+                _linha_from_paciente(
+                    paciente,
+                    ordem,
+                    transporte,
+                    clinica_fallback=clinica_fallback,
+                )
+            )
+    else:
+        for ordem, t in enumerate(qs, start=1):
+            linhas.append(_linha_from_paciente(t.paciente, ordem, t))
 
     condutor_obj = (
         Condutor.objects.filter(id=condutor_id).first() if condutor_id else None
@@ -258,6 +339,12 @@ def mapa_operacional_imprimir(request):
 
     capacidade_lote = _capacidade_lote(veiculo_obj, qs)
     blocos = _blocos_espelhados(linhas, capacidade_lote)
+    for bloco in blocos:
+        _preencher_destino_compartilhado_em_bloco(bloco)
+        linhas_normais = [linha for linha in bloco.get("linhas", []) if not linha.get("separador")]
+        bloco["mostrar_coluna_observacao"] = any(
+            (linha.get("observacao") or "").strip() for linha in linhas_normais
+        )
 
     data_fmt = ""
     if data_filtro:

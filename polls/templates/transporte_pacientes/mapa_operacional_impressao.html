@@ -121,6 +121,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 7.5pt;
+      table-layout: fixed;
     }
     table.mapa th {
       background: #fff;
@@ -128,6 +129,11 @@
       padding: 2px 3px;
       text-align: center;
       font-size: 7pt;
+    }
+    table.mapa th,
+    table.mapa td {
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     table.mapa td {
       border: 1px solid #000;
@@ -138,7 +144,8 @@
     table.mapa td.ac     { text-align: center; width: 22px; }
     table.mapa td.hor    { text-align: center; width: 34px; white-space: nowrap; }
     table.mapa td.ident  { text-align: center; width: 24px; }
-    table.mapa td.obs    { font-size: 6.3pt; color: #000; }
+    table.mapa td.obs    { font-size: 6.1pt; color: #000; line-height: 1.05; vertical-align: top; white-space: normal; }
+    table.mapa td.obs-vazia { color: #000; }
     table.mapa td.cond   { font-size: 6.2pt; color: #000; font-weight: bold; line-height: 1.1; }
 
     .condicoes-inline {
@@ -278,8 +285,11 @@
         <th>PACIENTE</th>
         <th style="width:82px;">CONDIÇÕES ESPECIAIS</th>
         <th style="width:24px;">ID</th>
+        <th style="width:90px;">TEL</th>
+        <th style="width:36px;">IDADE</th>
         <th>ENDEREÇO</th>
         <th style="width:70px;">BAIRRO</th>
+        <th style="width:90px;">PONTO REF.</th>
         <th style="width:46px;">CONSULTA</th>
       </tr>
     </thead>
@@ -288,7 +298,7 @@
         {% for l in bloco.linhas %}
           {% if l.separador %}
             <tr class="linha-separador">
-              <td colspan="7"></td>
+              <td colspan="10"></td>
             </tr>
           {% else %}
             <tr>
@@ -296,20 +306,25 @@
               <td>{{ l.nome }}</td>
               <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
               <td class="ident">{{ l.paciente_id }}</td>
+              <td>{{ l.telefone|default:'-' }}</td>
+              <td>{{ l.idade|default:'-' }}</td>
               <td>{{ l.endereco }}</td>
               <td>{{ l.bairro }}</td>
+              <td class="obs" style="white-space:normal;">{{ l.referencia|default:'-' }}</td>
               <td class="hor">{{ l.horario }}</td>
             </tr>
           {% endif %}
         {% endfor %}
-        {% for _ in bloco.vazios %}
-          <tr class="linha-vazia">
-            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-        {% endfor %}
+        {% if bloco.vazios %}
+          {% for _ in bloco.vazios %}
+            <tr class="linha-vazia">
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+          {% endfor %}
+        {% endif %}
       {% else %}
         <tr>
-          <td colspan="7" style="text-align:center; padding:10px; color:#777;">
+          <td colspan="10" style="text-align:center; padding:10px; color:#777;">
             Nenhum transporte encontrado para os filtros selecionados.
           </td>
         </tr>
@@ -343,8 +358,11 @@
         <th>DESTINO</th>
         <th style="width:22px;">AC</th>
         <th style="width:80px;">CONDIÇÕES ESPECIAIS</th>
-        <th style="width:80px;">TEL</th>
-        <th>OBSERVAÇÃO</th>
+        {% if bloco.mostrar_coluna_observacao %}
+        <th style="width:86px;">OBSERVAÇÃO</th>
+        {% else %}
+        <th style="width:0; border:0; padding:0;"></th>
+        {% endif %}
       </tr>
     </thead>
     <tbody>
@@ -352,27 +370,38 @@
         {% for l in bloco.linhas %}
           {% if l.separador %}
             <tr class="linha-separador">
-              <td colspan="6"></td>
+              <td colspan="{% if bloco.mostrar_coluna_observacao %}5{% else %}4{% endif %}"></td>
             </tr>
           {% else %}
             <tr>
               <td class="num">{{ l.ordem }}</td>
-              <td>{{ l.destino }}</td>
-              <td class="ac">{{ l.acompanhante_marca }}</td>
+              <td style="white-space:normal;">
+                {{ l.destino|default:'-' }}{% if l.endereco_clinica %} — {{ l.endereco_clinica }}{% endif %}
+              </td>
+              <td class="ac">{{ l.acompanhante_marca|default:'SO' }}</td>
               <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
-              <td>{{ l.telefone }}</td>
-              <td class="obs">{{ l.observacao }}</td>
+              {% if bloco.mostrar_coluna_observacao %}
+                {% if l.observacao %}
+                <td class="obs" style="white-space:normal;">{{ l.observacao }}</td>
+                {% else %}
+                <td class="obs obs-vazia" style="white-space:normal;"></td>
+                {% endif %}
+              {% else %}
+              <td style="border:0; padding:0;"></td>
+              {% endif %}
             </tr>
           {% endif %}
         {% endfor %}
-        {% for _ in bloco.vazios %}
-          <tr class="linha-vazia">
-            <td></td><td></td><td></td><td></td><td></td><td></td>
-          </tr>
-        {% endfor %}
+        {% if bloco.vazios %}
+          {% for _ in bloco.vazios %}
+            <tr class="linha-vazia">
+              <td></td><td></td><td></td><td></td>{% if bloco.mostrar_coluna_observacao %}<td></td>{% endif %}
+            </tr>
+          {% endfor %}
+        {% endif %}
       {% else %}
         <tr>
-          <td colspan="6" style="text-align:center; padding:10px; color:#777;">
+          <td colspan="{% if bloco.mostrar_coluna_observacao %}5{% else %}4{% endif %}" style="text-align:center; padding:10px; color:#777;">
             Nenhum dado para o verso.
           </td>
         </tr>

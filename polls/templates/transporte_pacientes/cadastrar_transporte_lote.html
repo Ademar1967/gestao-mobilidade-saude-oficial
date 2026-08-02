@@ -378,6 +378,8 @@
           <strong id="total-geral" style="font-size:1.3em;">{{ pacientes|length }}</strong> PESSOA(S) NO VEÍCULO
         </div>
 
+        <div id="box-alerta-lotacao" class="alert alert-warning py-2 mb-3 d-none no-print" role="alert"></div>
+
         <div class="card mb-3 border-secondary" id="card-pacientes-selecionados">
           <div class="card-header bg-secondary bg-opacity-10 fw-bold text-secondary">
             <i class="bi bi-person-lines-fill me-1"></i> Pacientes selecionados
@@ -836,6 +838,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Exclusão de paciente do lote (remove linha da tabela com confirmação)
   // Delegação de evento para garantir funcionamento mesmo após remoção dinâmica
+  function atualizarAlertaLotacao() {
+    var selectVeiculo = document.getElementById('id_veiculo_lote');
+    var alerta = document.getElementById('box-alerta-lotacao');
+    var totalEl = document.getElementById('total-geral');
+    if (!alerta || !totalEl) return;
+
+    var lotacao = 0;
+    if (selectVeiculo) {
+      var optionSelecionada = selectVeiculo.options[selectVeiculo.selectedIndex];
+      lotacao = parseInt((optionSelecionada && optionSelecionada.getAttribute('data-lotacao')) || '0', 10);
+    }
+
+    var total = parseInt(totalEl.textContent || '0', 10);
+    if (!lotacao || total <= lotacao) {
+      alerta.classList.add('d-none');
+      alerta.innerHTML = '';
+      return;
+    }
+
+    var excedente = total - lotacao;
+    alerta.classList.remove('d-none');
+    alerta.innerHTML = '<strong>⚠️ Excesso de ocupação:</strong> este veículo está com ' + total + ' pessoa(s) no total, ' + excedente + ' acima da lotação de ' + lotacao + '. A viagem pode seguir, mas é recomendável confirmar a urgência e a responsabilidade do condutor.';
+  }
+
   function atualizarTotalizador() {
     // Conta pacientes (linhas da tabela)
     var pacientes = document.querySelectorAll('#tbody-pacientes-lote tr[data-paciente-id]').length;
@@ -904,6 +930,13 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       listaSelecionados.innerHTML = itens.length ? itens.join('') : '<li class="list-group-item px-0 py-2 text-muted">Nenhum paciente selecionado.</li>';
     }
+
+    atualizarAlertaLotacao();
+  }
+
+  var selectVeiculo = document.getElementById('id_veiculo_lote');
+  if (selectVeiculo) {
+    selectVeiculo.addEventListener('change', atualizarAlertaLotacao);
   }
 
   document.querySelector('tbody').addEventListener('click', function(e) {
