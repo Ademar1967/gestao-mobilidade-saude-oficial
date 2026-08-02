@@ -255,6 +255,19 @@ class TransporteTestCase(TestCase):
             f"Transporte de {self.paciente} para {self.clinica} em 2026-03-08",
         )
 
+    def test_cadastrar_transporte_lote_garante_veiculos_no_contexto(self):
+        Veiculo.objects.all().delete()
+
+        response = self.client.get(
+            reverse("transporte_pacientes:cadastrar_transporte_lote")
+            + f"?paciente_ids={self.paciente.pk}",
+            **_secure_request_kwargs(),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "id_veiculo_lote")
+        self.assertContains(response, "Selecione um veículo")
+
 
 class ArquivosRecebidosViewTestCase(TestCase):
     def setUp(self):

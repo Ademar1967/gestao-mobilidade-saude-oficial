@@ -300,6 +300,8 @@ def cadastrar_transporte_lote(request):
     from .models import Paciente, Transporte, Veiculo
     from django.contrib import messages
 
+    _seed_master_data_if_empty(Veiculo, "importar_viaturas")
+
     def determinar_modo_lote(ids_pacientes, modo_informado=""):
         """Define modo padr�o intuitivo: todos selecionados -> unico; parcial -> misto."""
         modo_informado = (modo_informado or "").strip().lower()
