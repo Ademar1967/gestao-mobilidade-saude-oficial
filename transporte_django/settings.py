@@ -49,7 +49,7 @@ if not SECRET_KEY:
 # ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS.
 _allowed_hosts_env = os.environ.get(
     "DJANGO_ALLOWED_HOSTS",
-    "127.0.0.1,localhost,transporte-de-enfermos.onrender.com",
+    "127.0.0.1,localhost,transporte-de-enfermos.onrender.com,transporte-de-enfermos-2.onrender.com",
 )
 ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
 
