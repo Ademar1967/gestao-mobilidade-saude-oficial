@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: transporte-de-enfermos-2
+    name: gestao-mobilidade-saude
     runtime: python
     buildCommand: "./build.sh"
     startCommand: "./start.sh"
