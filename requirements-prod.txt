@@ -1,0 +1,48 @@
+# Dependências de produção — apenas o necessário para rodar no Render
+
+# Django core
+Django==6.0.2
+asgiref==3.11.1
+sqlparse==0.5.5
+
+# Servidor e estáticos
+gunicorn==25.3.0
+whitenoise==6.12.0
+
+# Banco de dados
+dj-database-url==3.1.2
+psycopg2-binary==2.9.12
+
+# Forms e UI
+django-crispy-forms==2.6
+crispy-bootstrap5==2026.3
+django-admin-interface==0.32.0
+django-colorfield==0.14.0
+
+# REST API
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+PyJWT==2.12.1
+
+# Excel / relatórios
+pandas==3.0.2
+openpyxl==3.1.5
+xlsxwriter==3.2.9
+numpy==2.4.4
+python-dateutil==2.9.0.post0
+six==1.17.0
+
+# HTTP
+requests==2.33.1
+certifi==2026.2.25
+charset-normalizer==3.4.7
+idna==3.11
+urllib3==2.6.3
+
+# Utilitários
+python-slugify==8.0.4
+text-unidecode==1.3
+pytz==2026.2
+tzdata==2026.1
+Pillow==12.2.0
+django-extensions==4.1
