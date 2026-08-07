@@ -36,6 +36,9 @@ charset-normalizer==3.4.7
 idna==3.11
 urllib3==2.6.3
 
+# Bloqueia versões que exigem compilação Rust (incompatível com Render)
+cffi<2.0
+
 # Utilitários
 python-slugify==8.0.4
 text-unidecode==1.3
