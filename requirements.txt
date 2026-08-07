@@ -37,7 +37,9 @@ django-admin-interface==0.32.0
 django-colorfield==0.14.0
 django-crispy-forms==2.6
 django-extensions==4.1
-djangorestframework @ git+https://github.com/encode/django-rest-framework.git@fbb02d9be78b1e232784dbb813c3fa118c1ba076
+#djangorestframework @ git+https://github.com/encode/django-rest-framework.git@fbb02d9be78b1e232784dbb813c3fa118c1ba076
+djangorestframework==3.16.1
+
 djangorestframework_simplejwt==5.5.1
 et_xmlfile==2.0.0
 executing==2.2.1
