@@ -1,0 +1,20 @@
+# Garante que scripts shell sempre usem LF no repositório (necessário para Linux/Render)
+*.sh text eol=lf
+
+# Python e texto geral: deixa o Git normalizar
+*.py text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+# Binários: não alterar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.db binary
