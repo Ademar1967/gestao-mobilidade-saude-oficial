@@ -233,11 +233,23 @@ def mapa_pacientes(request):
 
 # Stub seguro para a view pacientes_json
 def pacientes_json(request):
-    """Retorna pacientes com coordenadas para o mapa."""
+    """Retorna pacientes para o mapa e para busca no formulario simples."""
     from .models import Paciente
 
+    q = request.GET.get("q", "").strip()
+    qs = Paciente.objects.all()
+    if q:
+        from django.db.models import Q
+        qs = qs.filter(
+            Q(nome__icontains=q) |
+            Q(rua__icontains=q) |
+            Q(bairro__icontains=q) |
+            Q(cidade__icontains=q)
+        )
+    qs = qs[:50]
+
     pacientes = []
-    for p in Paciente.objects.all():
+    for p in qs:
         pacientes.append(
             {
                 "id": p.id,
@@ -251,6 +263,14 @@ def pacientes_json(request):
                 "cidade": p.cidade,
                 "estado": p.estado,
                 "cep": p.cep,
+                "referencia": getattr(p, "referencia", "") or "",
+                "ddd": getattr(p, "ddd", "") or "",
+                "telefone": getattr(p, "telefone", "") or "",
+                "peso": str(getattr(p, "peso", "") or ""),
+                "cartao_sis": getattr(p, "cartao_sis", "") or "",
+                "tratamento": getattr(p, "tratamento", "") or "",
+                "idade": getattr(p, "idade", None),
+                "data_nascimento": str(p.data_nascimento) if getattr(p, "data_nascimento", None) else None,
             }
         )
     return JsonResponse({"pacientes": pacientes})
