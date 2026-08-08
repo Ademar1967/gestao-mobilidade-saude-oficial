@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F.A. Remoções Eletivas</title>
+  <style>
+    /* ===== TELA ===== */
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      background: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+    }
+    .pagina {
+      background: #fff;
+      width: 210mm;
+      margin: 0 auto;
+      padding: 10mm 12mm 8mm 12mm;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .btn-bar {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .btn-bar button {
+      padding: 8px 22px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+    }
+    .btn-imprimir { background: #1565c0; color: #fff; }
+    .btn-limpar   { background: #616161; color: #fff; }
+
+    /* ===== CABEÇALHO ===== */
+    .cabecalho {
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+    .cabecalho-logo {
+      width: 60px;
+      height: 60px;
+      border: 1px solid #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #888;
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+    .cabecalho-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .cabecalho-centro {
+      flex: 1;
+      text-align: center;
+    }
+    .cabecalho-centro .prefeitura { font-size: 11px; font-weight: bold; }
+    .cabecalho-centro .secretaria { font-size: 10px; }
+    .cabecalho-centro .titulo-fa {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+    .cabecalho-direita {
+      text-align: right;
+      font-size: 10px;
+      flex-shrink: 0;
+      width: 120px;
+    }
+    .cabecalho-direita .servico {
+      font-weight: bold;
+      font-size: 11px;
+    }
+    .cabecalho-direita .numero-ficha {
+      border: 2px solid #000;
+      min-height: 28px;
+      min-width: 80px;
+      display: inline-block;
+      padding: 2px 6px;
+      margin-top: 2px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    /* ===== SEÇÕES ===== */
+    .secao-titulo {
+      background: #000;
+      color: #fff;
+      font-weight: bold;
+      font-size: 10px;
+      padding: 1px 4px;
+      margin: 4px 0 2px 0;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== CAMPOS ===== */
+    .linha { display: flex; gap: 4px; margin-bottom: 3px; align-items: flex-end; }
+    .campo { display: flex; flex-direction: column; }
+    .campo label {
+      font-size: 9px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 1px;
+      white-space: nowrap;
+    }
+    .campo input[type="text"],
+    .campo input[type="date"],
+    .campo input[type="time"] {
+      border: none;
+      border-bottom: 1px solid #555;
+      outline: none;
+      font-size: 11px;
+      padding: 1px 2px;
+      background: transparent;
+      width: 100%;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+    .campo textarea {
+      border: 1px solid #555;
+      outline: none;
+      font-size: 11px;
+      padding: 2px;
+      background: transparent;
+      width: 100%;
+      box-sizing: border-box;
+      resize: vertical;
+      font-family: Arial, sans-serif;
+    }
+
+    /* ===== LARGURAS FIXAS ===== */
+    .w-full  { flex: 1; }
+    .w-data  { width: 90px; }
+    .w-hora  { width: 70px; }
+    .w-situacao { width: 120px; }
+    .w-tratamento { flex: 2; }
+    .w-acomp { width: 90px; }
+    .w-nome  { flex: 3; }
+    .w-nasc  { width: 90px; }
+    .w-idade { width: 50px; }
+    .w-sis   { width: 100px; }
+    .w-qtH   { width: 80px; }
+    .w-local { flex: 2; }
+    .w-rua   { flex: 3; }
+    .w-num   { width: 60px; }
+    .w-bairro{ flex: 2; }
+    .w-cidade{ flex: 2; }
+    .w-uf    { width: 35px; }
+    .w-cep   { width: 75px; }
+    .w-tel   { width: 110px; }
+    .w-cel   { flex: 1; }
+
+    /* ===== TABELA HORÁRIOS ===== */
+    .tabela-horarios {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2px;
+    }
+    .tabela-horarios th {
+      border: 1px solid #555;
+      font-size: 9px;
+      font-weight: bold;
+      text-align: center;
+      padding: 1px 2px;
+      background: #f5f5f5;
+    }
+    .tabela-horarios td {
+      border: 1px solid #555;
+      padding: 1px;
+    }
+    .tabela-horarios td input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 11px;
+      text-align: center;
+      background: transparent;
+      font-family: Arial, sans-serif;
+      padding: 1px 0;
+      box-sizing: border-box;
+    }
+
+    /* ===== RODAPÉ ===== */
+    .rodape {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      align-items: flex-end;
+    }
+    .rodape-bloco { flex: 1; display: flex; flex-direction: column; }
+    .rodape-bloco label {
+      font-size: 9px;
+      font-weight: bold;
+      margin-bottom: 1px;
+    }
+    .rodape-bloco input {
+      border: none;
+      border-bottom: 1px solid #555;
+      font-size: 11px;
+      background: transparent;
+      width: 100%;
+      outline: none;
+    }
+    .assinatura {
+      flex: 1;
+      text-align: center;
+    }
+    .assinatura-linha {
+      border-top: 1px solid #000;
+      margin-top: 30px;
+      font-size: 9px;
+      padding-top: 2px;
+    }
+
+    /* ===== IMPRESSÃO ===== */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .pagina { box-shadow: none; padding: 8mm 12mm 6mm 12mm; margin: 0; width: auto; }
+      .btn-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="btn-bar no-print">
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir</button>
+  <button class="btn-limpar" onclick="limparFormulario()">🗑️ Limpar</button>
+</div>
+
+<div class="pagina" id="ficha">
+
+  <!-- CABEÇALHO -->
+  <div class="cabecalho">
+    <div class="cabecalho-logo">
+      {% load static %}
+      <img src="{% static 'transporte_pacientes/logo_prefeitura.png' %}" alt="Logo"
+           onerror="this.style.display='none'; this.parentElement.innerHTML='LOGO';">
+    </div>
+    <div class="cabecalho-centro">
+      <div class="prefeitura">MOGI DAS CRUZES</div>
+      <div class="secretaria">Prefeitura do Município de Mogi das Cruzes<br>Secretaria Municipal de Saúde</div>
+      <div class="titulo-fa">F.A. REMOÇÕES ELETIVAS</div>
+    </div>
+    <div class="cabecalho-direita">
+      <div class="servico">SERVIÇO DE AMBULÂNCIA</div>
+      <div>
+        <input type="text" id="numero-ficha"
+               style="border:2px solid #000;font-size:16px;font-weight:bold;width:80px;text-align:center;padding:2px;"
+               placeholder="MOG">
+      </div>
+      <div>
+        <input type="text" id="folha-ficha"
+               style="border:2px solid #000;font-size:14px;font-weight:bold;width:80px;text-align:center;padding:2px;margin-top:2px;"
+               placeholder="1/1">
+      </div>
+    </div>
+  </div>
+
+  <!-- LINHA TOPO -->
+  <div class="linha" style="margin-top:4px;">
+    <div class="campo w-data">
+      <label>Data</label>
+      <input type="date" id="data">
+    </div>
+    <div class="campo w-situacao">
+      <label>Situação</label>
+      <input type="text" id="situacao" placeholder="Ex: Acamado, VTR">
+    </div>
+    <div class="campo w-tratamento">
+      <label>Tratamento</label>
+      <input type="text" id="tratamento" placeholder="Ex: Fonoaudiologia">
+    </div>
+    <div class="campo w-hora">
+      <label>Horário</label>
+      <input type="time" id="horario-consulta">
+    </div>
+    <div class="campo w-acomp">
+      <label>Acompanhante(s)</label>
+      <input type="text" id="acompanhantes" placeholder="0">
+    </div>
+  </div>
+
+  <!-- DADOS PESSOAIS -->
+  <div class="secao-titulo">DADOS PESSOAIS</div>
+  <div class="linha">
+    <div class="campo w-nome">
+      <label>Nome</label>
+      <input type="text" id="nome" placeholder="Nome completo do paciente">
+    </div>
+    <div class="campo w-nasc">
+      <label>Data de Nascimento</label>
+      <input type="date" id="nascimento">
+    </div>
+    <div class="campo w-idade">
+      <label>Idade</label>
+      <input type="text" id="idade" placeholder="Ex: 65">
+    </div>
+    <div class="campo w-sis">
+      <label>Cartão SIS</label>
+      <input type="text" id="cartao-sis" placeholder="Opcional">
+    </div>
+  </div>
+  <div class="linha">
+    <div class="campo w-qtH">
+      <label>QTH</label>
+      <input type="text" id="qth" placeholder="Ex: Residência">
+    </div>
+    <div class="campo w-local">
+      <label>Local</label>
+      <input type="text" id="local-qth">
+    </div>
+  </div>
+
+  <!-- RESIDÊNCIA -->
+  <div class="secao-titulo">RESIDÊNCIA</div>
+  <div class="linha">
+    <div class="campo w-rua">
+      <label>Rua</label>
+      <input type="text" id="rua" placeholder="Nome da rua">
+    </div>
+    <div class="campo w-num">
+      <label>Número</label>
+      <input type="text" id="numero" placeholder="Nº">
+    </div>
+    <div class="campo w-bairro">
+      <label>Bairro</label>
+      <input type="text" id="bairro" placeholder="Bairro">
+    </div>
+  </div>
+  <div class="linha">
+    <div class="campo w-full">
+      <label>Complemento</label>
+      <input type="text" id="complemento" placeholder="Apto, Bloco, etc.">
+    </div>
+  </div>
+  <div class="linha">
+    <div class="campo w-full">
+      <label>Ponto de Referência</label>
+      <input type="text" id="referencia" placeholder="Ex: Próximo ao Banco do Brasil">
+    </div>
+  </div>
+  <div class="linha">
+    <div class="campo w-tel">
+      <label>Telefone fixo</label>
+      <input type="text" id="telefone-fixo" placeholder="(11) 9999-9999">
+    </div>
+    <div class="campo w-cel">
+      <label>Telefone celular</label>
+      <input type="text" id="celular" placeholder="(11) 99999-9999">
+    </div>
+    <div class="campo w-idade">
+      <label>Peso (kg)</label>
+      <input type="text" id="peso" placeholder="Ex: 75">
+    </div>
+  </div>
+
+  <!-- DESTINO -->
+  <div class="secao-titulo">DESTINO</div>
+  <div class="linha">
+    <div class="campo w-full">
+      <label>Local / Clínica</label>
+      <input type="text" id="destino-local" placeholder="Ex: Faculdade Braz Cubas - Mogi das Cruzes">
+    </div>
+  </div>
+  <div class="linha">
+    <div class="campo w-rua">
+      <label>Rua / Endereço</label>
+      <input type="text" id="destino-rua" placeholder="Rua e número">
+    </div>
+    <div class="campo w-bairro">
+      <label>Bairro</label>
+      <input type="text" id="destino-bairro" placeholder="Bairro">
+    </div>
+    <div class="campo w-cidade">
+      <label>Cidade</label>
+      <input type="text" id="destino-cidade" placeholder="Cidade">
+    </div>
+    <div class="campo w-uf">
+      <label>UF</label>
+      <input type="text" id="destino-uf" placeholder="SP" maxlength="2">
+    </div>
+  </div>
+
+  <!-- OBSERVAÇÕES -->
+  <div class="secao-titulo">OBSERVAÇÕES</div>
+  <div class="linha">
+    <div class="campo w-full">
+      <textarea id="observacoes" rows="2" placeholder="Ex: Aproximadamente 75 kg - casa de fácil acesso"></textarea>
+    </div>
+  </div>
+
+  <!-- HORÁRIOS -->
+  <div class="secao-titulo">HORÁRIOS</div>
+  <table class="tabela-horarios">
+    <thead>
+      <tr>
+        <th style="width:14%">Transmissão</th>
+        <th style="width:14%">Saída Base</th>
+        <th style="width:14%">Chegada Destino</th>
+        <th style="width:14%">Saída Destino</th>
+        <th style="width:14%">Chegada Base</th>
+        <th style="width:14%">QRV</th>
+        <th style="width:16%">Data Execução</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="text" placeholder="00:00"></td>
+        <td><input type="text" placeholder="00:00"></td>
+        <td><input type="text" placeholder="00:00"></td>
+        <td><input type="text" placeholder="00:00"></td>
+        <td><input type="text" placeholder="00:00"></td>
+        <td><input type="text" placeholder=""></td>
+        <td><input type="date" id="data-execucao"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- RODAPÉ -->
+  <div class="rodape">
+    <div class="rodape-bloco" style="flex:2">
+      <label>Solicitante</label>
+      <input type="text" id="solicitante" placeholder="Nome do solicitante">
+      <div style="font-size:9px;color:#555;margin-top:2px;" id="data-hora-solicitacao"></div>
+    </div>
+    <div class="assinatura" style="flex:1">
+      <div class="assinatura-linha">Assinatura do Condutor</div>
+    </div>
+    <div class="rodape-bloco" style="flex:2">
+      <label>Condutor</label>
+      <input type="text" id="condutor" placeholder="Nome do condutor">
+      <label style="margin-top:4px">Funcionário nº</label>
+      <input type="text" id="funcionario" placeholder="Ex: 17885">
+    </div>
+  </div>
+
+</div><!-- /pagina -->
+
+<script>
+  // Preenche data atual automaticamente
+  const hoje = new Date();
+  const isoHoje = hoje.toISOString().split('T')[0];
+  document.getElementById('data').value = isoHoje;
+  document.getElementById('data-execucao').value = isoHoje;
+
+  // Registra data/hora do solicitante em tempo real
+  const agora = hoje.toLocaleString('pt-BR');
+  document.getElementById('data-hora-solicitacao').textContent = agora;
+
+  // Calcula idade ao preencher nascimento
+  document.getElementById('nascimento').addEventListener('change', function () {
+    const nasc = new Date(this.value);
+    if (!isNaN(nasc)) {
+      let idade = hoje.getFullYear() - nasc.getFullYear();
+      const m = hoje.getMonth() - nasc.getMonth();
+      if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+      document.getElementById('idade').value = idade;
+    }
+  });
+
+  function limparFormulario() {
+    if (!confirm('Limpar todos os campos?')) return;
+    document.querySelectorAll('input[type="text"], textarea, input[type="time"]')
+      .forEach(el => el.value = '');
+    document.getElementById('data').value = isoHoje;
+    document.getElementById('data-execucao').value = isoHoje;
+  }
+</script>
+</body>
+</html>
