@@ -7,11 +7,11 @@ import pandas as pd
 from django.conf import settings
 from django.http import HttpResponse
 
-# Cache em mem�ria para autocomplete de cl�nicas
+# Cache em memoria para autocomplete de clinicas
 _AUTOCOMPLETE_DF = None
 _AUTOCOMPLETE_NOMES_NORM = None
 
-# Mapa dos c�digos IBGE para munic�pio (quando vier do CNES)
+# Mapa dos codigos IBGE para municipio (quando vier do CNES)
 _COD_MUNICIPIO = {
     "355030": "Sao Paulo",
     "350950": "Aruja",
@@ -141,14 +141,14 @@ def arquivos_recebidos_pacientes(request):
     return HttpResponse("\n".join(arquivos))
 
 
-# View para autocomplete de pacientes por nome, CPF ou endere�o
+# View para autocomplete de pacientes por nome, CPF ou endereco
 from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 
 
 @require_GET
 def autocomplete_pacientes(request):
-    """Retorna pacientes filtrados por nome, CPF (cartao_sis) ou endere�o para autocomplete."""
+    """Retorna pacientes filtrados por nome, CPF (cartao_sis) ou endereco para autocomplete."""
     termo = request.GET.get("q", "").strip()
     if not termo:
         return JsonResponse({"results": []})
@@ -178,18 +178,18 @@ def autocomplete_pacientes(request):
     return JsonResponse({"results": results})
 
 
-"""Lista arquivos CSV/Excel recebidos e permite iniciar a importa��o com um clique."""
+"""Lista arquivos CSV/Excel recebidos e permite iniciar a importacao com um clique."""
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 
 
 def importar_arquivos(request):
-    pass  # Corpo m�nimo para evitar erro de indenta��o
+    pass  # Corpo minimo para evitar erro de indentacao
 
 
 # Stub seguro para a view editar_transporte
 def editar_transporte(request, transporte_id):
-    """Implementa��o m�nima para suportar fluxo de edi��o nos testes."""
+    """Implementacao minima para suportar fluxo de edicao nos testes."""
     from django.shortcuts import get_object_or_404, redirect
     from .models import Transporte
 
@@ -268,9 +268,9 @@ def excluir_transporte(request, transporte_id):
         else None
     )
     transporte.delete()
-    # messages.success(request, f'Transporte do paciente "{nome_paciente}" exclu�do com sucesso!')
+    # messages.success(request, f'Transporte do paciente "{nome_paciente}" excluido com sucesso!')
     # else:
-    #     messages.success(request, 'Transporte exclu�do com sucesso!')
+    #     messages.success(request, 'Transporte excluido com sucesso!')
     return redirect("transporte_pacientes:listar_transportes")
 
 
@@ -303,7 +303,7 @@ def cadastrar_transporte_lote(request):
     _seed_master_data_if_empty(Veiculo, "importar_viaturas")
 
     def determinar_modo_lote(ids_pacientes, modo_informado=""):
-        """Define modo padr�o intuitivo: todos selecionados -> unico; parcial -> misto."""
+        """Define modo padrao intuitivo: todos selecionados -> unico; parcial -> misto."""
         modo_informado = (modo_informado or "").strip().lower()
         if modo_informado in ("misto", "unico"):
             return modo_informado
@@ -322,14 +322,14 @@ def cadastrar_transporte_lote(request):
     def listar_campos_obrigatorios_faltando(
         post_data, modo_lote_atual, pacientes_validos_atual
     ):
-        """Retorna os campos obrigat�rios ausentes no cadastro em lote."""
+        """Retorna os campos obrigatorios ausentes no cadastro em lote."""
         faltando = []
 
         if not (
             (post_data.get("veiculo") or "").strip()
             or (post_data.get("veiculo_livre") or "").strip()
         ):
-            faltando.append("Ve�culo")
+            faltando.append("Veículo")
         if not (
             (post_data.get("condutor") or "").strip()
             or (post_data.get("condutor_manual") or "").strip()
@@ -344,7 +344,7 @@ def cadastrar_transporte_lote(request):
                 or (post_data.get("clinica_manual_unica") or "").strip()
             ):
                 faltando.append(
-                    "Cl�nica de destino para todos os pacientes selecionados"
+                    "Clinica de destino para todos os pacientes selecionados"
                 )
         else:
             pacientes_sem_clinica = []
@@ -357,7 +357,7 @@ def cadastrar_transporte_lote(request):
                     pacientes_sem_clinica.append(paciente.nome)
             if pacientes_sem_clinica:
                 faltando.append(
-                    "Cl�nica de destino pendente para: "
+                    "Clinica de destino pendente para: "
                     + ", ".join(pacientes_sem_clinica)
                 )
 
@@ -366,7 +366,7 @@ def cadastrar_transporte_lote(request):
     import logging
 
     logger = logging.getLogger("transporte_lote")
-    logger.info(f"M�todo da requisi��o: {request.method}")
+    logger.info(f"Metodo da requisicao: {request.method}")
     logger.info(f"GET params: {request.GET}")
     logger.info(f"POST params: {request.POST}")
     logger.info(f"Iniciando processamento da view cadastrar_transporte_lote")
@@ -395,7 +395,7 @@ def cadastrar_transporte_lote(request):
         forms_erros = []
         pacientes_duplicados = []
         pacientes_validos = []
-        msg_duplicidade = "j� possui transporte cadastrado para esta data"
+        msg_duplicidade = "ja possui transporte cadastrado para esta data"
         for paciente_id in pacientes_ids:
             try:
                 paciente = Paciente.objects.get(id=paciente_id)
@@ -407,14 +407,14 @@ def cadastrar_transporte_lote(request):
                     continue
                 pacientes_validos.append(paciente)
             except Paciente.DoesNotExist:
-                logger.warning(f"Paciente ID inv�lido: {paciente_id}")
+                logger.warning(f"Paciente ID invalido: {paciente_id}")
                 continue
         if not pacientes_validos:
             messages.error(
                 request,
-                "Nenhum paciente v�lido selecionado. Volte para a lista e marque pelo menos um paciente para a viagem.",
+                "Nenhum paciente valido selecionado. Volte para a lista e marque pelo menos um paciente para a viagem.",
             )
-            logger.error(f"Nenhum paciente v�lido: {pacientes_ids}")
+            logger.error(f"Nenhum paciente valido: {pacientes_ids}")
             return redirect("transporte_pacientes:cadastrar_paciente")
 
         campos_obrigatorios_faltando = listar_campos_obrigatorios_faltando(
@@ -423,7 +423,7 @@ def cadastrar_transporte_lote(request):
         if campos_obrigatorios_faltando:
             forms_validos = False
             forms_erros.append(
-                "Campos obrigat�rios ausentes: "
+                "Campos obrigatorios ausentes: "
                 + "; ".join(campos_obrigatorios_faltando)
                 + "."
             )
@@ -506,7 +506,7 @@ def cadastrar_transporte_lote(request):
                         "paciente": paciente,
                         "clinica_manual": clinica_manual_resolvida,
                         "destino_display": clinica_manual_resolvida
-                        or "Destino n�o informado",
+                        or "Destino nao informado",
                         "chave_rota": (
                             normalizar_texto(clinica_manual_resolvida),
                             normalizar_texto(getattr(paciente, "bairro", "")),
@@ -525,7 +525,7 @@ def cadastrar_transporte_lote(request):
             sequencia_rota = []
             for item in itens_lote:
                 paciente = item["paciente"]
-                # Cria o form para cada paciente, j� preenchendo o campo paciente
+                # Cria o form para cada paciente, ja preenchendo o campo paciente
                 dados_post = request.POST.copy()
                 dados_post["paciente"] = paciente.id
                 dados_post.setdefault("tipo_transporte", "CONSULTA")
@@ -590,7 +590,7 @@ def cadastrar_transporte_lote(request):
                 if len(sequencia_rota) > 8:
                     resumo_sequencia += " | ..."
                 messages.info(
-                    request, f"Sequ�ncia sugerida da rota mista: {resumo_sequencia}"
+                    request, f"Sequencia sugerida da rota mista: {resumo_sequencia}"
                 )
             messages.info(
                 request, f"Total de acompanhantes informados: {total_acompanhantes}"
@@ -600,18 +600,18 @@ def cadastrar_transporte_lote(request):
         else:
             if pacientes_duplicados:
                 erro_msg = (
-                    "Alguns pacientes j� possuem transporte para esta data. "
-                    'Marque "Cadastrar mesmo assim" para permitir duplicidade quando necess�rio. '
+                    "Alguns pacientes ja possuem transporte para esta data. "
+                    'Marque "Cadastrar mesmo assim" para permitir duplicidade quando necessario. '
                     f"Pacientes: {', '.join(pacientes_duplicados)}."
                 )
             else:
                 if forms_erros and all(
-                    isinstance(e, str) and str(e).startswith("Excesso de lota��o:")
+                    isinstance(e, str) and str(e).startswith("Excesso de lotacao:")
                     for e in forms_erros
                 ):
                     erro_msg = ""
                 else:
-                    erro_msg = "Preencha os campos obrigat�rios e selecione pelo menos um paciente."
+                    erro_msg = "Preencha os campos obrigatorios e selecione pelo menos um paciente."
             if forms_erros:
                 from urllib.parse import quote_plus
                 from django.urls import reverse
@@ -628,7 +628,7 @@ def cadastrar_transporte_lote(request):
                 for erro in forms_erros:
                     if isinstance(erro, dict):
                         campos_txt = ", ".join(
-                            erro.get("campos_pendentes") or ["campos obrigat�rios"]
+                            erro.get("campos_pendentes") or ["campos obrigatorios"]
                         )
                         campos_chaves_txt = ",".join(
                             erro.get("campos_pendentes_chaves") or []
@@ -721,15 +721,15 @@ def cadastrar_transporte_lote(request):
             if not pacientes.exists():
                 messages.error(
                     request,
-                    "Nenhum paciente v�lido encontrado para os IDs informados. Volte � lista de pacientes e selecione novamente.",
+                    "Nenhum paciente valido encontrado para os IDs informados. Volte a lista de pacientes e selecione novamente.",
                 )
-                logger.error(f"Nenhum paciente v�lido encontrado para: {pacientes_ids}")
+                logger.error(f"Nenhum paciente valido encontrado para: {pacientes_ids}")
                 return redirect("transporte_pacientes:cadastrar_paciente")
         else:
             pacientes = []
             messages.warning(
                 request,
-                "Nenhum paciente selecionado. Volte � lista de pacientes e marque pelo menos um item para a viagem.",
+                "Nenhum paciente selecionado. Volte a lista de pacientes e marque pelo menos um item para a viagem.",
             )
             return redirect("transporte_pacientes:cadastrar_paciente")
 
@@ -753,7 +753,7 @@ def cadastrar_transporte_lote(request):
                 else 0
             )
 
-        # Adiciona vari�veis obrigat�rias para o template
+        # Adiciona variaveis obrigatorias para o template
         from .models import Veiculo, Condutor, Enfermagem
         from datetime import date
 
@@ -793,7 +793,7 @@ def cadastrar_transporte_lote(request):
 
 
 def autocomplete_field(request):
-    """Endpoint gen�rico para autocomplete de campos. Deve ser ajustado conforme necessidade."""
+    """Endpoint generico para autocomplete de campos. Deve ser ajustado conforme necessidade."""
     termo = request.GET.get("q", "").strip()
     limite_raw = (request.GET.get("limit") or "").strip()
     try:
@@ -802,7 +802,7 @@ def autocomplete_field(request):
         limite = 30
     limite = max(1, min(limite, 100))
     resultados = []
-    # Exemplo: retornar sugest�es de cl�nicas
+    # Exemplo: retornar sugestoes de clinicas
     from .models import Clinica
 
     if termo:
@@ -815,7 +815,7 @@ def autocomplete_field(request):
 
 
 def preview_veiculos(request):
-    """Exibe uma pr�via dos ve�culos cadastrados."""
+    """Exibe uma previa dos veiculos cadastrados."""
     from .models import Veiculo
 
     veiculos = Veiculo.objects.all().order_by("-id")
@@ -825,7 +825,7 @@ def preview_veiculos(request):
 
 
 def preview_condutores(request):
-    """Exibe uma pr�via dos condutores cadastrados."""
+    """Exibe uma previa dos condutores cadastrados."""
     from .models import Condutor
 
     condutores = Condutor.objects.all().order_by("-id")
@@ -837,7 +837,7 @@ def preview_condutores(request):
 
 
 def preview_clinicas(request):
-    """Exibe uma pr�via das cl�nicas cadastradas."""
+    """Exibe uma previa das clinicas cadastradas."""
     from .models import Clinica
 
     clinicas = Clinica.objects.all().order_by("-id")
@@ -847,12 +847,12 @@ def preview_clinicas(request):
 
 
 def politica_privacidade(request):
-    """Exibe a p�gina de pol�tica de privacidade."""
+    """Exibe a pagina de politica de privacidade."""
     return render(request, "politica_privacidade.html")
 
 
 def cadastrar_clinica(request):
-    """View para cadastro de cl�nica."""
+    """View para cadastro de clinica."""
     from .models import Clinica
     from django import forms
     from django.contrib import messages
@@ -879,12 +879,12 @@ def cadastrar_clinica(request):
             clinica = form.save()
             _sync_master_data_csvs_safe()
             messages.success(
-                request, f'Cl�nica "{clinica.nome}" cadastrada com sucesso!'
+                request, f'Clinica "{clinica.nome}" cadastrada com sucesso!'
             )
             return redirect("transporte_pacientes:cadastrar_clinica")
         else:
             messages.error(
-                request, "Erro ao cadastrar cl�nica: verifique os campos obrigat�rios."
+                request, "Erro ao cadastrar clinica: verifique os campos obrigatorios."
             )
     else:
         form = ClinicaForm()
@@ -917,7 +917,7 @@ def cadastrar_condutor(request):
             return redirect("transporte_pacientes:cadastrar_condutor")
         else:
             messages.error(
-                request, "Erro ao cadastrar condutor: verifique os campos obrigat�rios."
+                request, "Erro ao cadastrar condutor: verifique os campos obrigatorios."
             )
     else:
         form = CondutorForm()
@@ -934,7 +934,7 @@ def cadastrar_condutor(request):
 
 
 def cadastrar_veiculo(request):
-    """View stub para cadastro de ve�culo."""
+    """View stub para cadastro de veiculo."""
     from .forms import VeiculoForm
     from .models import Veiculo
     from django.contrib import messages
@@ -949,18 +949,18 @@ def cadastrar_veiculo(request):
             if hasattr(veiculo, "patrimonio") and veiculo.patrimonio:
                 messages.success(
                     request,
-                    f'Ve�culo patrim�nio "{veiculo.patrimonio}" cadastrado com sucesso!',
+                    f'Veículo patrimônio "{veiculo.patrimonio}" cadastrado com sucesso!',
                 )
             elif hasattr(veiculo, "placa") and veiculo.placa:
                 messages.success(
-                    request, f'Ve�culo placa "{veiculo.placa}" cadastrado com sucesso!'
+                    request, f'Veículo placa "{veiculo.placa}" cadastrado com sucesso!'
                 )
             else:
-                messages.success(request, "Ve�culo cadastrado com sucesso!")
+                messages.success(request, "Veículo cadastrado com sucesso!")
             return redirect("transporte_pacientes:cadastrar_veiculo")
         else:
             messages.error(
-                request, "Erro ao cadastrar ve�culo: verifique os campos obrigat�rios."
+                request, "Erro ao cadastrar veiculo: verifique os campos obrigatorios."
             )
     else:
         form = VeiculoForm()
@@ -1085,7 +1085,7 @@ def cadastrar_paciente(request):
                 url_transporte,
             )
 
-            # Se veio de importa��o web, mover arquivo para processados
+            # Se veio de importacao web, mover arquivo para processados
             if request.POST.get("salvar_web") and request.POST.get(
                 "arquivo_origem_nome"
             ):
@@ -1096,7 +1096,7 @@ def cadastrar_paciente(request):
                 except Exception as exc:
                     messages.warning(
                         request,
-                        f"Paciente salvo, mas n�o foi poss�vel mover o arquivo: {exc}",
+                        f"Paciente salvo, mas nao foi possivel mover o arquivo: {exc}",
                     )
 
             messages.success(request, msg_html)
@@ -1128,7 +1128,7 @@ def cadastrar_paciente(request):
         request.session.pop("limpar_rascunho_paciente", False)
     )
     pacientes = Paciente.objects.all().order_by("-id")
-    # C�lculo robusto dos totais
+    # Calculo robusto dos totais
     total_pacientes = pacientes.count()
     total_acompanhantes = sum([p.acompanhantes for p in pacientes])
     total_geral = total_pacientes + total_acompanhantes
@@ -1234,7 +1234,7 @@ def excluir_selecionadas_enfermagem(request):
             Enfermagem.objects.filter(id__in=ids).delete()
             _sync_master_data_csvs_safe()
             messages.success(
-                request, f"{len(ids)} membro(s) de enfermagem exclu�do(s) com sucesso!"
+                request, f"{len(ids)} membro(s) de enfermagem excluido(s) com sucesso!"
             )
         else:
             messages.warning(
@@ -1243,7 +1243,7 @@ def excluir_selecionadas_enfermagem(request):
     return redirect("transporte_pacientes:cadastrar_enfermagem")
 
 
-# --- LISTAGEM DE CL�NICAS (ID + nome) ---
+# --- LISTAGEM DE CLINICAS (ID + nome) ---
 from django.http import JsonResponse
 from django.http import HttpResponse
 from django.contrib.admin.views.decorators import staff_member_required
@@ -1276,10 +1276,10 @@ def _montar_contexto_estatistica(dados, filtros, chave_rotulo, pagina_estatistic
     categorias_com_dados = sum(1 for row in dados if (row.get("total") or 0) > 0)
     item_top = max(dados, key=lambda row: row.get("total") or 0, default=None)
     if item_top and (item_top.get("total") or 0) > 0:
-        top_rotulo = item_top.get(chave_rotulo) or "N�o informado"
+        top_rotulo = item_top.get(chave_rotulo) or "Não informado"
         top_total = item_top.get("total") or 0
     else:
-        top_rotulo = "Sem dados no per�odo"
+        top_rotulo = "Sem dados no periodo"
         top_total = 0
     return {
         "dados": dados,
@@ -1305,16 +1305,16 @@ def listar_clinicas(request):
     return JsonResponse({"clinicas": clinicas})
 
 
-# --- CONTAGEM DE AMBUL�NCIAS ---
+# --- CONTAGEM DE AMBULANCIAS ---
 @staff_member_required
 def contar_ambulancias(request):
     from .models import Veiculo
 
     total = Veiculo.objects.filter(tipo_veiculo="ambulancia").count()
-    return HttpResponse(f"Total de ambul�ncias cadastradas: {total}")
+    return HttpResponse(f"Total de ambulancias cadastradas: {total}")
 
 
-# --- ESTAT�STICA: Transportes por ve�culo ---
+# --- ESTATISTICA: Transportes por veiculo ---
 @staff_member_required
 def estatistica_transportes_veiculo(request):
     from .models import Transporte, Veiculo
@@ -1329,7 +1329,7 @@ def estatistica_transportes_veiculo(request):
     dados = [
         {
             "veiculo": (
-                row["veiculo__patrimonio"] or row["veiculo__placa"] or "N�o informado"
+                row["veiculo__patrimonio"] or row["veiculo__placa"] or "Não informado"
             ),
             "total": row["total"],
         }
@@ -1339,7 +1339,7 @@ def estatistica_transportes_veiculo(request):
     return render(request, "transporte_pacientes/estatistica_veiculo.html", contexto)
 
 
-# --- ESTAT�STICA: Transportes por motorista (condutor) ---
+# --- ESTATISTICA: Transportes por motorista (condutor) ---
 @staff_member_required
 def estatistica_transportes_condutor(request):
     from .models import Transporte, Condutor
@@ -1348,14 +1348,14 @@ def estatistica_transportes_condutor(request):
     base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
     qs = base_qs.values("condutor__nome").annotate(total=Count("id")).order_by("-total")
     dados = [
-        {"condutor": row["condutor__nome"] or "N�o informado", "total": row["total"]}
+        {"condutor": row["condutor__nome"] or "Não informado", "total": row["total"]}
         for row in qs
     ]
     contexto = _montar_contexto_estatistica(dados, filtros, "condutor", "condutor")
     return render(request, "transporte_pacientes/estatistica_condutor.html", contexto)
 
 
-# --- ESTAT�STICA: Transportes por m�s/ano ---
+# --- ESTATISTICA: Transportes por mes/ano ---
 @staff_member_required
 def estatistica_transportes_periodo(request):
     from .models import Transporte
@@ -1380,7 +1380,7 @@ def estatistica_transportes_periodo(request):
     return render(request, "transporte_pacientes/estatistica_periodo.html", contexto)
 
 
-# --- ESTAT�STICA: Transportes por cl�nica ---
+# --- ESTATISTICA: Transportes por clinica ---
 @staff_member_required
 def estatistica_transportes_clinica(request):
     from .models import Transporte, Clinica
@@ -1388,7 +1388,7 @@ def estatistica_transportes_clinica(request):
     filtros = _obter_filtros_periodo_estatistica(request)
     base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
     qs = base_qs.values("clinica__id").annotate(total=Count("id")).order_by("-total")
-    # Buscar s� o nome da cl�nica, sem endere�o.
+    # Buscar so o nome da clinica, sem endereco.
     clinicas_map = {
         c.id: c.nome
         for c in Clinica.objects.filter(id__in=[row["clinica__id"] for row in qs])
@@ -1397,8 +1397,8 @@ def estatistica_transportes_clinica(request):
     def _harmonizar_nome_clinica(nome):
         nome = (nome or "").strip()
         if not nome:
-            return "N�o informado"
-        # Remove espa�os duplicados e aplica capitaliza��o leg�vel com preserva��o de siglas comuns.
+            return "Não informado"
+        # Remove espacos duplicados e aplica capitalizacao legivel com preservacao de siglas comuns.
         nome = " ".join(nome.split())
         siglas_forcar_maiusculo = {
             "UBS",
@@ -1431,7 +1431,7 @@ def estatistica_transportes_clinica(request):
                 partes_formatadas.append(parte_limpa.capitalize())
         return " ".join(partes_formatadas)
 
-    # Consolida varia��es do mesmo nome (mai�sculas/min�sculas/espa�amento) em uma �nica linha.
+    # Consolida variacoes do mesmo nome (maiusculas/minusculas/espacamento) em uma unica linha.
     agregados = {}
     for row in qs:
         nome_bruto = clinicas_map.get(row["clinica__id"])
@@ -1448,7 +1448,7 @@ def estatistica_transportes_clinica(request):
     return render(request, "transporte_pacientes/estatistica_clinica.html", contexto)
 
 
-# --- ESTAT�STICA: Transportes por tipo ---
+# --- ESTATISTICA: Transportes por tipo ---
 @staff_member_required
 def estatistica_transportes_tipo(request):
     from .models import Transporte
@@ -1467,15 +1467,15 @@ def estatistica_transportes_tipo(request):
         for valor, rotulo in tipo_choices
     ]
 
-    # Novas categorias: Transfer�ncias classificadas
-    # Considera que a classifica��o est� em observacoes (ajuste se houver campo dedicado)
+    # Novas categorias: Transferencias classificadas
+    # Considera que a classificacao esta em observacoes (ajuste se houver campo dedicado)
     cores = ["amarelo", "verde", "vermelho"]
     for cor in cores:
         total = base_qs.filter(
             tipo_transporte__icontains="TRANSFER", observacoes__icontains=cor
         ).count()
         dados.append(
-            {"tipo": f"Transfer�ncia Classificada {cor.capitalize()}", "total": total}
+            {"tipo": f"Transferencia Classificada {cor.capitalize()}", "total": total}
         )
     contexto = _montar_contexto_estatistica(dados, filtros, "tipo", "tipo")
     return render(request, "transporte_pacientes/estatistica_tipo.html", contexto)
@@ -1489,7 +1489,7 @@ def estatistica_graficos_impressao(request):
     filtros = _obter_filtros_periodo_estatistica(request)
     base_qs = _aplicar_filtro_periodo_estatistica(Transporte.objects.all(), filtros)
 
-    # Ve�culo
+    # Veículo
     qs_veiculo = (
         base_qs.values("veiculo__patrimonio", "veiculo__placa")
         .annotate(total=Count("id"))
@@ -1498,7 +1498,7 @@ def estatistica_graficos_impressao(request):
     dados_veiculo = [
         {
             "veiculo": (
-                row["veiculo__patrimonio"] or row["veiculo__placa"] or "N�o informado"
+                row["veiculo__patrimonio"] or row["veiculo__placa"] or "Não informado"
             ),
             "total": row["total"],
         }
@@ -1510,11 +1510,11 @@ def estatistica_graficos_impressao(request):
         base_qs.values("condutor__nome").annotate(total=Count("id")).order_by("-total")
     )
     dados_condutor = [
-        {"condutor": row["condutor__nome"] or "N�o informado", "total": row["total"]}
+        {"condutor": row["condutor__nome"] or "Não informado", "total": row["total"]}
         for row in qs_condutor
     ]
 
-    # Per�odo
+    # Periodo
     qs_periodo = (
         base_qs.annotate(mes=TruncMonth("data_transporte"))
         .values("mes")
@@ -1529,7 +1529,7 @@ def estatistica_graficos_impressao(request):
         for row in qs_periodo
     ]
 
-    # Cl�nica
+    # Clinica
     qs_clinica = (
         base_qs.values("clinica__id").annotate(total=Count("id")).order_by("-total")
     )
@@ -1543,7 +1543,7 @@ def estatistica_graficos_impressao(request):
     def _harmonizar_nome_clinica(nome):
         nome = (nome or "").strip()
         if not nome:
-            return "N�o informado"
+            return "Não informado"
         nome = " ".join(nome.split())
         siglas_forcar_maiusculo = {
             "UBS",
@@ -1606,7 +1606,7 @@ def estatistica_graficos_impressao(request):
             tipo_transporte__icontains="TRANSFER", observacoes__icontains=cor
         ).count()
         dados_tipo.append(
-            {"tipo": f"Transfer�ncia Classificada {cor.capitalize()}", "total": total}
+            {"tipo": f"Transferencia Classificada {cor.capitalize()}", "total": total}
         )
 
     contexto = {
@@ -1632,12 +1632,12 @@ def retorno_sugestao_api(request):
 
     paciente_id = request.GET.get("paciente_id")
     if not paciente_id:
-        return JsonResponse({"erro": "Paciente n�o informado."}, status=400)
+        return JsonResponse({"erro": "Paciente nao informado."}, status=400)
     try:
         paciente = Paciente.objects.get(id=paciente_id)
     except Paciente.DoesNotExist:
-        return JsonResponse({"erro": "Paciente n�o encontrado."}, status=404)
-    # Busca o �ltimo transporte de consulta desse paciente
+        return JsonResponse({"erro": "Paciente nao encontrado."}, status=404)
+    # Busca o ultimo transporte de consulta desse paciente
     consulta = (
         Transporte.objects.filter(paciente=paciente, tipo_transporte="CONSULTA")
         .order_by("-data_transporte", "-hora_saida")
@@ -1648,7 +1648,7 @@ def retorno_sugestao_api(request):
             {"erro": "Nenhum transporte de consulta encontrado para este paciente."},
             status=404,
         )
-    # Sugerir dados invertidos: origem = clinica, destino = endere�o do paciente
+    # Sugerir dados invertidos: origem = clinica, destino = endereco do paciente
     sugestao = {
         "origem_nome": consulta.clinica.nome if consulta.clinica else "",
         "origem_endereco": (
@@ -1678,13 +1678,13 @@ import logging
 # --- API: Detalhes completos do paciente para busca global ---
 @require_GET
 def paciente_detalhes_api(request, paciente_id):
-    # print(f"[DEBUG] Requisi��o detalhes paciente id={paciente_id}")
+    # print(f"[DEBUG] Requisicao detalhes paciente id={paciente_id}")
     try:
         p = Paciente.objects.get(id=paciente_id)
         print(f"[DEBUG] Paciente encontrado: {p.nome} (id={p.id})")
     except Paciente.DoesNotExist:
-        print(f"[DEBUG] Paciente id={paciente_id} N�O encontrado!")
-        return JsonResponse({"erro": "Paciente n�o encontrado."}, status=404)
+        print(f"[DEBUG] Paciente id={paciente_id} NAO encontrado!")
+        return JsonResponse({"erro": "Paciente nao encontrado."}, status=404)
     except Exception as exc:
         print(f"[DEBUG] Erro inesperado ao buscar paciente id={paciente_id}: {exc}")
         return JsonResponse({"erro": f"Erro inesperado: {exc}"}, status=500)
@@ -1704,10 +1704,10 @@ def paciente_detalhes_api(request, paciente_id):
                 data_str = t.data_transporte.strftime("%d/%m/%Y")
                 atualizacoes.append(f"{data_str} - {clinica_nome} - {veiculo_nome}")
                 print(
-                    f"[DEBUG] Atualiza��o adicionada: {data_str} - {clinica_nome} - {veiculo_nome}"
+                    f"[DEBUG] Atualizacao adicionada: {data_str} - {clinica_nome} - {veiculo_nome}"
                 )
             except Exception as exc:
-                print(f"[DEBUG] Erro ao montar atualiza��o transporte id={t.id}: {exc}")
+                print(f"[DEBUG] Erro ao montar atualizacao transporte id={t.id}: {exc}")
                 continue
     except Exception as exc:
         print(f"[DEBUG] Erro ao buscar transportes: {exc}")
@@ -1845,7 +1845,7 @@ def _sync_patient_data_csv_safe():
             pass
 
 
-# --- AUTOCOMPLETE DE VE�CULOS (AMBUL�NCIA POR PATRIM�NIO, VAN POR PLACA) ---
+# --- AUTOCOMPLETE DE VEICULOS (AMBULANCIA POR PATRIMONIO, VAN POR PLACA) ---
 @require_GET
 def buscar_veiculos_sugestoes(request):
     from .models import Veiculo
@@ -1929,12 +1929,12 @@ def whatsapp_webhook(request):
 
         MensagemWhatsApp.objects.create(numero=from_number, corpo=body)
 
-        # Resposta autom�tica orientando o usu�rio
+        # Resposta automatica orientando o usuario
         msg_instrucoes = (
-            "Ol�! Para cadastrar um paciente, envie os dados neste formato:\n"
+            "Ola! Para cadastrar um paciente, envie os dados neste formato:\n"
             "Nome: [nome completo]\n"
             "Idade: [idade]\n"
-            "Endere�o: [endere�o completo]\n"
+            "Endereco: [endereco completo]\n"
             "Telefone: [telefone]"
         )
         if MessagingResponse is None:
@@ -1964,7 +1964,7 @@ def cadastrar_transporte_v2(request):
 
 
 def preparar_cadastro_transporte_lote(request):
-    """Armazena os pacientes selecionados em sess�o e abre o cadastro em lote."""
+    """Armazena os pacientes selecionados em sessao e abre o cadastro em lote."""
     if request.method != "POST":
         return redirect("transporte_pacientes:listar_transportes")
 
@@ -2055,7 +2055,7 @@ def editar_veiculo(request, veiculo_id):
             _sync_master_data_csvs_safe()
             from django.contrib import messages
 
-            messages.success(request, "Dados do ve�culo atualizados com sucesso!")
+            messages.success(request, "Dados do veiculo atualizados com sucesso!")
             return redirect("transporte_pacientes:cadastrar_veiculo")
     else:
         form = VeiculoForm(instance=veiculo)
@@ -2121,7 +2121,7 @@ def buscar_clinicas_sugestoes(request):
     if len(termo) < 2 and not mostrar_todas:
         return JsonResponse({"sucesso": True, "resultados": []})
 
-    # 1) Cl�nicas j� cadastradas no banco (prioridade)
+    # 1) Clinicas ja cadastradas no banco (prioridade)
     queryset_base = Clinica.objects.only(
         "id", "nome", "endereco", "bairro", "cidade", "telefone"
     ).annotate(
@@ -2145,7 +2145,7 @@ def buscar_clinicas_sugestoes(request):
         for c in queryset
     ]
 
-    # 2) Complementa com CNES se ainda h� espa�o (at� o limite total)
+    # 2) Complementa com CNES se ainda ha espaco (ate o limite total)
     vagas = limite - len(resultados)
     if vagas > 0:
         # Garante cache carregado
@@ -2164,14 +2164,14 @@ def buscar_clinicas_sugestoes(request):
             for _, row in df_cnes[mask].head(vagas * 2).iterrows():
                 if len(resultados) >= limite:
                     break
-                # N�o duplicar o que j� est� no banco
+                # Não duplicar o que ja esta no banco
                 if row["nome"].lower() in nomes_banco:
                     continue
                 cidade = row.get("municipio", "")
                 resultados.append(
                     {
                         "id": None,
-                        "nome": f"{row['nome']} � {cidade}" if cidade else row["nome"],
+                        "nome": f"{row['nome']} - {cidade}" if cidade else row["nome"],
                         "endereco": f"{row['logradouro']}, {row['numero']}".strip(", "),
                         "bairro": row.get("bairro", ""),
                         "cidade": cidade,
@@ -2180,7 +2180,7 @@ def buscar_clinicas_sugestoes(request):
                         "fonte": "cnes",
                     }
                 )
-            # Fuzzy fallback para termos com erro de digita��o ou buscas gen�ricas
+            # Fuzzy fallback para termos com erro de digitacao ou buscas genericas
             if termo_norm and len(resultados) < min(limite, 15) and process and fuzz:
                 nomes_lista = nomes_norm.tolist()
                 fuzzy_matches = process.extract(
@@ -2199,7 +2199,7 @@ def buscar_clinicas_sugestoes(request):
                         {
                             "id": None,
                             "nome": (
-                                f"{row['nome']} � {cidade}" if cidade else row["nome"]
+                                f"{row['nome']} - {cidade}" if cidade else row["nome"]
                             ),
                             "endereco": f"{row['logradouro']}, {row['numero']}".strip(
                                 ", "
@@ -2211,7 +2211,7 @@ def buscar_clinicas_sugestoes(request):
                             "fonte": "cnes",
                         }
                     )
-    # 2b) Enriquecer resultados do banco que n�o t�m endere�o com dados do CSV
+    # 2b) Enriquecer resultados do banco que nao tem endereco com dados do CSV
     if _AUTOCOMPLETE_DF is None:
         _AUTOCOMPLETE_DF, _AUTOCOMPLETE_NOMES_NORM = _load_autocomplete_df()
     if _AUTOCOMPLETE_DF is not None:
@@ -2447,7 +2447,7 @@ def obter_dados_clinica(request, clinica_id):
         )
 
 
-# Stub tempor�rio para listar_transportes
+# Stub temporario para listar_transportes
 from django.shortcuts import render
 
 
@@ -2461,7 +2461,7 @@ def listar_transportes(request):
         "paciente", "veiculo", "condutor", "clinica", "enfermagem"
     ).order_by("-data_transporte", "-id")
 
-    # Agrupar por lote_id para exibi��o visual
+    # Agrupar por lote_id para exibicao visual
     lote_dict = defaultdict(list)
     individuais = []
     for t in transportes_qs:
@@ -2574,20 +2574,20 @@ def cadastrar_transporte(request):
                 hasattr(form, "novo_veiculo_cadastrado")
                 and form.novo_veiculo_cadastrado
             ):
-                detalhes.append("Ve�culo cadastrado")
+                detalhes.append("Veículo cadastrado")
             elif hasattr(form, "veiculo_ja_existia") and form.veiculo_ja_existia:
-                detalhes.append("Ve�culo j� existia e foi selecionado")
+                detalhes.append("Veículo ja existia e foi selecionado")
             if (
                 hasattr(form, "alerta_oxigenio_ambulancia")
                 and form.alerta_oxigenio_ambulancia
             ):
                 detalhes.append(
-                    "Aten��o: paciente usu�rio de O2 deve ser alocado preferencialmente em ambul�ncia. O transporte foi salvo mesmo assim."
+                    "Atencao: paciente usuario de O2 deve ser alocado preferencialmente em ambulancia. O transporte foi salvo mesmo assim."
                 )
             if form.cleaned_data.get("condutor_manual"):
                 detalhes.append("Condutor salvo")
             if form.cleaned_data.get("clinica_manual"):
-                detalhes.append("Cl�nica salva")
+                detalhes.append("Clinica salva")
             if form.cleaned_data.get("enfermagem_manual"):
                 detalhes.append("Enfermagem salva")
             if detalhes:
@@ -2676,10 +2676,10 @@ def cadastrar_transporte(request):
                     )
         lote_id_ctx = post_data.get("lote_id", "").strip()
     else:
-        # GET: pr�-preenchimentos
+        # GET: pre-preenchimentos
         initial = {}
 
-        # Lote: pr�-preenche ve�culo, condutor, data e hora da viagem existente
+        # Lote: pre-preenche veiculo, condutor, data e hora da viagem existente
         if lote_param:
             try:
                 lote_ref = (
@@ -2705,7 +2705,7 @@ def cadastrar_transporte(request):
             except Exception:
                 pass
 
-        # Paciente pr�-selecionado via URL
+        # Paciente pre-selecionado via URL
         if paciente_id:
             try:
                 paciente_obj = Paciente.objects.get(id=paciente_id)
@@ -2934,7 +2934,7 @@ def excluir_paciente_ajax(request):
 
 
 def inativar_paciente_ajax(request):
-    """Inativa paciente sem excluir hist�rico, com motivo e observa��o."""
+    """Inativa paciente sem excluir historico, com motivo e observacao."""
     from django.http import JsonResponse
     from django.shortcuts import get_object_or_404
     from .models import Paciente
