@@ -16,6 +16,8 @@ psycopg2-binary==2.9.12
 # Forms e UI
 django-crispy-forms==2.6
 crispy-bootstrap5==2026.3
+django-admin-interface==0.32.0
+django-colorfield==0.14.0
 
 # REST API
 djangorestframework==3.16.1
