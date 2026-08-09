@@ -433,6 +433,12 @@ document.addEventListener('DOMContentLoaded', function() {
 {# Mensagens padrão #}
 {% include 'partials/messages_high_contrast.html' %}
 
+{% if limpar_rascunho_paciente %}
+  <div class="alert alert-success fw-semibold border border-success" role="alert">
+    Cadastro salvo com sucesso. Formulario reiniciado para novo paciente.
+  </div>
+{% endif %}
+
 
 
 {# 2. Formulário manual de cadastro (agora primeiro bloco) #}
@@ -2092,6 +2098,18 @@ if (inputDestino) {
 
     if (limparRascunhoAposSalvar) {
       try { localStorage.removeItem(PACIENTE_DRAFT_STORAGE_KEY); } catch (e) {}
+      try { form.reset(); } catch (e) {}
+
+      var hiddenPacienteIds = form.querySelectorAll('input[name="paciente_existente_id"]');
+      hiddenPacienteIds.forEach(function(el) {
+        el.value = '';
+      });
+
+      var buscaPaciente = document.getElementById('busca-paciente-existente');
+      if (buscaPaciente) buscaPaciente.value = '';
+
+      var campoNome = form.querySelector('[name="nome"]');
+      if (campoNome) campoNome.focus();
       return;
     }
 

@@ -259,3 +259,23 @@ class PacienteRouteRegressionTest(TestCase):
         self.assertIn("Paciente \"Paciente Fluxo Rapido\" cadastrado com sucesso!", html)
         self.assertFalse(response.context["form"].is_bound)
         self.assertIn('id="id_nome"', html)
+
+    def test_formulario_principal_mostra_feedback_de_sucesso_apos_salvar(self):
+        response = self.client.post(
+            reverse("transporte_pacientes:cadastrar_paciente"),
+            {
+                "nome": "Paciente Principal Fluxo",
+                "rua": "Rua Teste",
+                "numero": "11",
+                "bairro": "Centro",
+                "cidade": "Sao Paulo",
+                "servico_status": "ativo",
+                "acompanhantes": "0",
+                "consentimento_lgpd": "on",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8", errors="ignore")
+        self.assertIn("Cadastro salvo com sucesso. Formulario reiniciado para novo paciente.", html)
