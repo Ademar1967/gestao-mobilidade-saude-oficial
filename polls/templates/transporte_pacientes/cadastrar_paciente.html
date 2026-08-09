@@ -1,3 +1,14 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+
+
+
+
+
+{% block content %}
+
 <!-- Modal de confirmação para preenchimento automático -->
 <div class="modal fade" id="modalConfirmarPreencher" tabindex="-1" aria-labelledby="modalConfirmarPreencherLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -65,7 +76,7 @@ function preencherPacienteForm(paciente) {
   });
 
   // Gatilho para mostrar/ocultar campo O2 litros
-  
+
   var evt = document.createEvent('HTMLEvents');
   evt.initEvent('change', true, false);
   var oxigenioCheckbox = document.getElementById('id_oxigenio');
@@ -138,16 +149,6 @@ function exibirModalConfirmarPreencher(paciente) {
   };
 }
 </script>
-{% extends 'base.html' %}
-{% load static %}
-{% load crispy_forms_tags %}
-
-
-
-
-
-
-{% block content %}
 
 {% include 'partials/breadcrumbs_dynamic.html' %}
 
