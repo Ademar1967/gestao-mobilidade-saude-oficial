@@ -29,3 +29,8 @@ trufflehog-results.json
 BACKUPS_MANUAIS/
 BASE_DE_DADOS_CNES_*.zip
 tbEstabelecimento*.csv
+
+# Dados sensíveis - LGPD
+*.csv
+dados.json
+pacientes.json
