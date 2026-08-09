@@ -1205,7 +1205,7 @@ def cadastrar_paciente_simples(request):
                 'Paciente "{}" {} com sucesso! <span class="d-block small text-muted"><a href="{}">Abrir formulario completo</a> se precisar preencher mais detalhes.</span>',
                 paciente.nome,
                 acao,
-                reverse("transporte_pacientes:cadastrar_paciente"),
+                reverse("transporte_pacientes:cadastrar_paciente_completo"),
             )
             messages.success(request, msg_html)
             return redirect("transporte_pacientes:cadastrar_paciente_simples")

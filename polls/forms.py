@@ -844,6 +844,7 @@ class PacienteSimplesForm(PacienteForm):
             self.fields["idade"].widget.attrs["placeholder"] = "Ex: 65"
         if "peso" in self.fields:
             self.fields["peso"].widget.attrs["placeholder"] = "Ex: 75"
+            self.fields["peso"].widget.attrs.pop("style", None)
         if "cartao_sis" in self.fields:
             self.fields["cartao_sis"].widget.attrs["placeholder"] = "Opcional"
         if "tratamento" in self.fields:
@@ -851,6 +852,7 @@ class PacienteSimplesForm(PacienteForm):
         if "acompanhantes" in self.fields:
             self.fields["acompanhantes"].label = "Acompanhantes"
             self.fields["acompanhantes"].widget.attrs["placeholder"] = "0"
+            self.fields["acompanhantes"].widget.attrs.pop("style", None)
         if "destino_preferencial_manual" in self.fields:
             self.fields["destino_preferencial_manual"].widget.attrs[
                 "placeholder"
@@ -859,6 +861,7 @@ class PacienteSimplesForm(PacienteForm):
             self.fields["ddd"].widget.attrs["placeholder"] = "11"
         if "telefone" in self.fields:
             self.fields["telefone"].widget.attrs["placeholder"] = "99999-9999"
+            self.fields["telefone"].widget.attrs.pop("style", None)
         if "rua" in self.fields:
             self.fields["rua"].label = "Rua"
             self.fields["rua"].widget.attrs["placeholder"] = "Rua"

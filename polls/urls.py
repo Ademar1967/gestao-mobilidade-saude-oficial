@@ -91,7 +91,16 @@ urlpatterns = [
         views.autocomplete_endereco_unidade,
         name="autocomplete_endereco_unidade",
     ),
-    path("pacientes/cadastrar/", views.cadastrar_paciente, name="cadastrar_paciente"),
+    path(
+        "pacientes/cadastrar/",
+        views.cadastrar_paciente_simples,
+        name="cadastrar_paciente",
+    ),
+    path(
+        "pacientes/cadastrar-completo/",
+        views.cadastrar_paciente,
+        name="cadastrar_paciente_completo",
+    ),
     path(
         "pacientes/cadastrar-simples/",
         views.cadastrar_paciente_simples,
