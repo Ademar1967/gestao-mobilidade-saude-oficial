@@ -890,6 +890,69 @@ class PacienteSimplesForm(PacienteForm):
                 "placeholder"
             ] = "Observacoes gerais (opcional)"
 
+    def clean(self):
+        """Pula a validacao obrigatoria de endereco completo (campos opcionais neste formulario)."""
+        cleaned_data = super(PacienteForm, self).clean()
+
+        # Copia a logica do PacienteForm.clean mas sem exigir endereco completo
+        nome = cleaned_data.get("nome")
+        telefone = cleaned_data.get("telefone")
+        oxigenio = cleaned_data.get("oxigenio")
+        oxigenio_litros_min = cleaned_data.get("oxigenio_litros_min")
+
+        if oxigenio:
+            if oxigenio_litros_min is None:
+                self.add_error(
+                    "oxigenio_litros_min",
+                    "Informe a quantidade de O2 em litros por minuto.",
+                )
+            elif oxigenio_litros_min <= 0:
+                self.add_error(
+                    "oxigenio_litros_min", "O valor de O2 deve ser maior que zero."
+                )
+        else:
+            cleaned_data["oxigenio_litros_min"] = None
+
+        servico_status = cleaned_data.get("servico_status") or "ativo"
+        motivo_inativacao = cleaned_data.get("motivo_inativacao")
+        data_inativacao = cleaned_data.get("data_inativacao")
+
+        if servico_status == "ativo":
+            cleaned_data["servico_ativo"] = True
+            cleaned_data["data_inativacao"] = None
+            cleaned_data["motivo_inativacao"] = ""
+            cleaned_data["observacao_inativacao"] = ""
+            cleaned_data["data_prevista_retorno"] = None
+        else:
+            cleaned_data["servico_ativo"] = False
+            if not data_inativacao:
+                self.add_error(
+                    "data_inativacao",
+                    "Informe a data de inativacao para status suspenso/encerrado.",
+                )
+            if not motivo_inativacao:
+                self.add_error("motivo_inativacao", "Selecione o motivo da inativacao.")
+            if servico_status != "suspenso":
+                cleaned_data["data_prevista_retorno"] = None
+
+        # Verifica duplicata apenas se nome E telefone forem informados
+        if nome and telefone:
+            qs = Paciente.objects.filter(nome=nome, telefone=telefone)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            paciente_existente_id = (
+                self.data.get("paciente_existente_id") or ""
+            ).strip()
+            if paciente_existente_id and paciente_existente_id.isdigit():
+                qs = qs.exclude(pk=int(paciente_existente_id))
+            if qs.exists():
+                self.add_error(
+                    "nome",
+                    "Já existe um paciente cadastrado com este nome e telefone.",
+                )
+
+        return cleaned_data
+
 
 class VeiculoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
