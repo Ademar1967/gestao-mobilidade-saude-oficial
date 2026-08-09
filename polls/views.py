@@ -1239,6 +1239,9 @@ def cadastrar_paciente_simples(request):
         "transporte_pacientes/cadastrar_paciente_simples.html",
         {
             "form": form,
+            "url_formulario_completo": reverse(
+                "transporte_pacientes:cadastrar_paciente_completo"
+            ),
         },
     )
 

@@ -2,6 +2,7 @@ from datetime import date
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 from polls.models import Clinica, Paciente, Transporte
 from polls.views_mapa_operacional import (
     _linha_from_paciente,
@@ -207,3 +208,32 @@ class PacienteModelTest(TestCase):
         self.assertEqual(bloco["linhas"][0]["destino"], "Hospital Compartilhado")
         self.assertEqual(bloco["linhas"][1]["destino"], "Hospital Compartilhado")
         self.assertIn("Rua do Hospital", bloco["linhas"][1]["endereco_clinica"])
+
+
+class PacienteRouteRegressionTest(TestCase):
+    def setUp(self):
+        user = get_user_model().objects.create_user(username="tester_routes", password="123")
+        self.client.force_login(user)
+
+    def test_paciente_principal_continua_abindo_o_formulario_completo(self):
+        response = self.client.get(reverse("transporte_pacientes:cadastrar_paciente"))
+        self.assertEqual(response.status_code, 200)
+
+        html = response.content.decode("utf-8", errors="ignore")
+        self.assertIn("Cadastro e Gerenciamento de Pacientes", html)
+        self.assertNotIn("Abrir formulario completo", html)
+
+    def test_formulario_simples_mostra_botao_do_completo_no_topo(self):
+        response = self.client.get(
+            reverse("transporte_pacientes:cadastrar_paciente_simples")
+        )
+        self.assertEqual(response.status_code, 200)
+
+        html = response.content.decode("utf-8", errors="ignore")
+        botao_pos = html.find("Abrir formulario completo")
+        salvar_pos = html.find("Salvar ficha")
+
+        self.assertNotEqual(botao_pos, -1)
+        self.assertNotEqual(salvar_pos, -1)
+        self.assertLess(botao_pos, salvar_pos)
+        self.assertIn("/pacientes/cadastrar-completo/", html)
