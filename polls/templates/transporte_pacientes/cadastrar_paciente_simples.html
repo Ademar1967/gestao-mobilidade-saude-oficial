@@ -24,6 +24,8 @@
           </div>
         </div>
 
+        {% include 'partials/messages_high_contrast.html' %}
+
         <!-- BOX BUSCA PACIENTE CADASTRADO -->
         <div id="box-busca-paciente" style="background:#fff3cd;border:2px solid #ffc107;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
           <div style="display:flex;align-items:center;gap:10px;">
@@ -717,6 +719,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var campoObservacoes = document.getElementById('id_observacoes');
   if (campoObservacoes) {
     campoObservacoes.removeAttribute('placeholder');
+  }
+
+  var campoNome = document.getElementById('id_nome');
+  if (campoNome && !campoNome.value) {
+    campoNome.focus();
   }
 
   // ===== BUSCA E PREENCHIMENTO DE PACIENTE CADASTRADO =====

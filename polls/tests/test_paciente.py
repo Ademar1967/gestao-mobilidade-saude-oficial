@@ -237,3 +237,25 @@ class PacienteRouteRegressionTest(TestCase):
         self.assertNotEqual(salvar_pos, -1)
         self.assertLess(botao_pos, salvar_pos)
         self.assertIn("/pacientes/cadastrar-completo/", html)
+
+    def test_formulario_simples_mostra_sucesso_e_reinicia_para_novo_cadastro(self):
+        response = self.client.post(
+            reverse("transporte_pacientes:cadastrar_paciente_simples"),
+            {
+                "nome": "Paciente Fluxo Rapido",
+                "rua": "Rua Teste",
+                "numero": "10",
+                "bairro": "Centro",
+                "cidade": "Sao Paulo",
+                "servico_status": "ativo",
+                "acompanhantes": "0",
+                "consentimento_lgpd": "on",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8", errors="ignore")
+        self.assertIn("Paciente \"Paciente Fluxo Rapido\" cadastrado com sucesso!", html)
+        self.assertFalse(response.context["form"].is_bound)
+        self.assertIn('id="id_nome"', html)
