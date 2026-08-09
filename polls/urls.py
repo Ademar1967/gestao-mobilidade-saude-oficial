@@ -93,7 +93,7 @@ urlpatterns = [
     ),
     path(
         "pacientes/cadastrar/",
-        views.cadastrar_paciente_simples,
+        views.cadastrar_paciente,
         name="cadastrar_paciente",
     ),
     path(
