@@ -49,7 +49,7 @@ if not SECRET_KEY:
 # ALLOWED_HOSTS: lista separada por vírgula em DJANGO_ALLOWED_HOSTS.
 _allowed_hosts_env = os.environ.get(
     "DJANGO_ALLOWED_HOSTS",
-    "127.0.0.1,localhost,transporte-de-enfermos.onrender.com",
+    "127.0.0.1,localhost,testserver,transporte-de-enfermos.onrender.com",
 )
 ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
 
@@ -156,6 +156,19 @@ DATABASES = {
     )
 }
 
+# If using a DATABASE_URL that points to Postgres, ensure SSL is required
+try:
+    engine = _db_config.get("ENGINE", "")
+except Exception:
+    engine = ""
+if _db_url and engine and "postgres" in engine:
+    opts = _db_config.get("OPTIONS", {}) or {}
+    # Prefer explicit sslmode from the URL, otherwise require SSL
+    if not opts.get("sslmode"):
+        opts["sslmode"] = "require"
+    _db_config["OPTIONS"] = opts
+    DATABASES["default"] = _db_config
+
 # ---------------------------------------------------------------2
 
 # Password validation
@@ -210,11 +223,16 @@ ADMIN_ALLOWED_IPS = [ip.strip() for ip in _admin_ips_env.split(",") if ip.strip(
 # Sessão salva no banco de dados — persiste mesmo quando Render reinicia o servidor
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 try:
-    SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", "28800"))  # 8 horas
+    SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", "1800"))  # 30 minutos
 except (TypeError, ValueError):
-    SESSION_COOKIE_AGE = 28800
+    SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Sessão persiste ao fechar/reabrir o navegador
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # A sessão expira ao fechar o navegador
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_AGE = 1800
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Evita conflito de sessão entre múltiplos projetos Django rodando no mesmo host
 # (ex.: localhost:8000 e localhost:8001 compartilham escopo de cookie por domínio).
