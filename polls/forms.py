@@ -19,6 +19,35 @@ import logging
 
 logger = logging.getLogger("paciente_form")
 
+
+def _inferir_tipo_veiculo_por_identificador(valor):
+    """Classifica o tipo do veículo com baixo risco de conflito.
+
+    A regra é explícita: se o texto contiver palavras de ambulância ou patrimônio,
+    ele segue como ambulância; se for um padrão de placa, segue como van; e, em
+    casos ambiguos, prioriza a indicação explícita em vez do "esquema padrão".
+    """
+    if not valor:
+        return "ambulancia"
+
+    texto = unicodedata.normalize("NFKD", str(valor))
+    texto = texto.encode("ASCII", "ignore").decode("ASCII")
+    texto = re.sub(r"\s+", " ", texto).strip().upper()
+
+    if re.search(r"(?i)(AMBULANCIA|AMB\.?|PATRIMONIO|PATRIMÔNIO|PATRIMONIO|PATRIMÔNIO)", texto):
+        return "ambulancia"
+
+    if re.search(r"(?i)(VAN|VEICULO|VEÍCULO|PLACA)", texto):
+        return "van"
+
+    if re.fullmatch(r"[A-Z]{3}-?\d{4}", texto) or re.fullmatch(
+        r"[A-Z]{3}\d[A-Z0-9]\d{2}", texto
+    ):
+        return "van"
+
+    return "ambulancia"
+
+
 # --- FORMULÁRIO DE TRANSPORTE ---
 # Permite cadastrar um transporte integrando paciente, veículo, condutor, clínica e enfermagem.
 
@@ -198,16 +227,12 @@ class TransporteForm(forms.ModelForm):
                 self.novo_veiculo_cadastrado = False
                 self.veiculo_ja_existia = True
             else:
-                # Decide tipo pelo formato (simples: placa tem letras e números, patrimônio só números)
-                if re.match(r"^[A-Za-z]{3}\d[A-Za-z]\d{2}$", veiculo_livre) or re.match(
-                    r"^[A-Za-z]{3}-\d{4}$", veiculo_livre
-                ):
-                    tipo = "van"
+                tipo = _inferir_tipo_veiculo_por_identificador(veiculo_livre)
+                if tipo == "van":
                     novo_veiculo = Veiculo.objects.create(
                         tipo_veiculo=tipo, placa=veiculo_livre
                     )
                 else:
-                    tipo = "ambulancia"
                     novo_veiculo = Veiculo.objects.create(
                         tipo_veiculo=tipo, patrimonio=veiculo_livre
                     )
@@ -329,6 +354,12 @@ class PacienteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.fields["idade"].widget = forms.TextInput(attrs={
+            "inputmode": "numeric",
+            "pattern": "[0-9]*",
+            "placeholder": "Ex: 45",
+        })
 
         tabindexes = [
             ("nome", 1),

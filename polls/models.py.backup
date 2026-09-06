@@ -38,8 +38,7 @@ class Paciente(models.Model):
         help_text="Data de nascimento do paciente",
     )
     idade = models.PositiveIntegerField(null=True, blank=True)
-    peso = models.PositiveIntegerField(null=True, blank=True)
-
+    peso = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     rua = models.CharField(max_length=100, blank=True)
     numero = models.CharField(max_length=10, blank=True)
     bairro = models.CharField(max_length=100, blank=True)
@@ -341,7 +340,6 @@ class Condutor(models.Model):
     def __str__(self):
         return self.nome
 
-
 class Motorista(models.Model):
     nome = models.CharField(max_length=100)
 
@@ -432,20 +430,6 @@ class Transporte(models.Model):
     )
     observacoes = models.TextField(blank=True)
 
-    # ============ NOVOS CAMPOS (mapa de viagem persistido) ============
-    bloco = models.ForeignKey(
-        "Bloco",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="transportes",
-        help_text="Bloco ao qual este paciente está alocado",
-    )
-    ordem = models.PositiveIntegerField(
-        default=0,
-        help_text="Ordem do paciente dentro do bloco",
-    )
-
     def __str__(self):
         return (
             f"Transporte de {self.paciente} para {self.clinica} "
@@ -478,81 +462,3 @@ class Transporte(models.Model):
             "enfermagem": self.enfermagem.nome if self.enfermagem else "",
             "paciente": paciente_ops,
         }
-
-
-# ==================== NOVO: VIAGEM (roteiro do dia) ====================
-class Viagem(models.Model):
-    STATUS_CHOICES = [
-        ("rascunho", "Rascunho"),
-        ("finalizado", "Finalizado"),
-    ]
-    data = models.DateField(db_index=True)
-    numero = models.PositiveIntegerField(
-        default=1,
-        help_text="Número da viagem no dia (1ª, 2ª, 3ª...)",
-    )
-    veiculo = models.ForeignKey(
-        "Veiculo",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="viagens",
-    )
-    condutor = models.ForeignKey(
-        "Condutor",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="viagens",
-    )
-    enfermagem = models.ForeignKey(
-        "Enfermagem",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="viagens",
-    )
-    status = models.CharField(
-        max_length=15, choices=STATUS_CHOICES, default="rascunho", db_index=True
-    )
-    observacoes = models.TextField(blank=True)
-    criado_em = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["data", "numero"]
-        verbose_name = "Viagem"
-        verbose_name_plural = "Viagens"
-
-    def __str__(self):
-        return f"Viagem {self.numero} — {self.data:%d/%m/%Y} ({self.veiculo or 'sem veículo'})"
-
-    @property
-    def total_pacientes(self):
-        return sum(b.transportes.count() for b in self.blocos.all())
-
-
-# ==================== NOVO: BLOCO (grupo de pacientes da viagem) ====================
-class Bloco(models.Model):
-    viagem = models.ForeignKey(
-        "Viagem",
-        on_delete=models.CASCADE,
-        related_name="blocos",
-    )
-    numero = models.PositiveIntegerField(
-        default=1,
-        help_text="Número do bloco dentro da viagem (1, 2, 3...)",
-    )
-    observacoes = models.TextField(blank=True)
-    criado_em = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["numero"]
-        verbose_name = "Bloco"
-        verbose_name_plural = "Blocos"
-
-    def __str__(self):
-        return f"{self.viagem} — Bloco {self.numero}"
-
-    @property
-    def total_pacientes(self):
-        return self.transportes.count()

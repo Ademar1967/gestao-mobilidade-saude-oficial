@@ -1,0 +1,120 @@
+    enderecos_unicos = set(enderecos_preenchidos)
+    endereco_comum = next(iter(enderecos_unicos)) if len(enderecos_unicos) == 1 else ""
+
+    for linha in linhas_normais:
+        if not (linha.get("destino") or "").strip():
+            linha["destino"] = destino_comum
+        if not (linha.get("endereco_clinica") or "").strip() and endereco_comum:
+            linha["endereco_clinica"] = endereco_comum
+
+
+def _numero_viagem_para_int(numero_viagem) -> int:
+    texto = (numero_viagem or "").strip()
+    if not texto:
+        return 1
+    match = re.search(r"(\d+)", texto)
+    if not match:
+        return 1
+    try:
+        return max(1, int(match.group(1)))
+    except ValueError:
+        return 1
+
+
+def _trip_key_de_linha(linha: dict):
+    veiculo_id = linha.get("veiculo_id")
+    condutor_id = linha.get("condutor_id")
+    data_ref = linha.get("data_transporte") or linha.get("data") or ""
+    return (str(data_ref), str(veiculo_id or ""), str(condutor_id or ""))
+
+
+def _reiniciar_ordem_por_viagem(grupos: list[dict]) -> None:
+    for grupo in grupos:
+        ordem_atual = 0
+        for linha in grupo.get("linhas", []):
+            if linha.get("separador"):
+                continue
+            ordem_atual += 1
+            linha["ordem"] = ordem_atual
+
+
+def _metadata_viagem_bloco(blocos: list[dict], numero_viagem=None) -> list[dict]:
+    """Adiciona metadados visuais de viagem e de bloco para a impressão."""
+    base_trip = _numero_viagem_para_int(numero_viagem) if numero_viagem is not None else 1
+    for indice, bloco in enumerate(blocos, start=1):
+        bloco["trip_num"] = bloco.get("trip_num", base_trip)
+        bloco["bloco_num"] = bloco.get("bloco_num", indice)
+        bloco["label"] = f"VIAGEM {bloco['trip_num']} — BLOCO {bloco['bloco_num']}"
+        bloco["verso_label"] = f"VIAGEM {bloco['trip_num']} — VERSO BLOCO {bloco['bloco_num']}"
+        bloco["mostrar_separador_antes"] = indice > 1
+    return blocos
+
+
+def _blocos_espelhados(linhas: list[dict], capacidade_lote: int) -> list[dict]:
+    """
+    Separa por viagem real (data + veículo + motorista), respeita a capacidade do lote
+    e depois fragmenta em blocos de impressão mantendo o fluxo contínuo.
+    """
+    blocos = []
+    if not linhas:
+        return [{"linhas": [], "vazios": [], "trip_num": 1, "bloco_num": 1, "label": "VIAGEM 1 — BLOCO 1", "verso_label": "VIAGEM 1 — VERSO BLOCO 1", "mostrar_separador_antes": False}]
+
+    grupos_por_viagem = []
+    ordem_viagens = {}
+    for linha in linhas:
+        trip_key = _trip_key_de_linha(linha)
+        if trip_key not in ordem_viagens:
+            ordem_viagens[trip_key] = len(grupos_por_viagem) + 1
+            grupos_por_viagem.append({"trip_key": trip_key, "trip_num": len(grupos_por_viagem) + 1, "linhas": []})
+        grupos_por_viagem[ordem_viagens[trip_key] - 1]["linhas"].append(linha)
+
+    bloco_atual = 1
+    for grupo in grupos_por_viagem:
+        linhas_com_lote = []
+        lote_atual = 1
+        ocupacao_atual = 0
+        trip_num = grupo["trip_num"]
+
+        for linha in grupo["linhas"]:
+            acompanhantes = int(linha.get("acompanhantes") or 0)
+            ocupacao_item = 1 + max(0, acompanhantes)
+
+            if ocupacao_atual > 0 and (ocupacao_atual + ocupacao_item) > capacidade_lote:
+                lote_atual += 1
+                linhas_com_lote.append({"separador": True, "lote_num": lote_atual})
+                ocupacao_atual = 0
+
+            linha["lote_num"] = lote_atual
+            linha["trip_num"] = trip_num
+            linhas_com_lote.append(linha)
+            ocupacao_atual += ocupacao_item
+
+        _reiniciar_ordem_por_viagem([{"linhas": linhas_com_lote}])
+
+        for i in range(0, len(linhas_com_lote), LINHAS_POR_BLOCO):
+            trecho = linhas_com_lote[i : i + LINHAS_POR_BLOCO]
+            bloco = {
+                "linhas": trecho,
+                "vazios": [None] * max(0, LINHAS_POR_BLOCO - len(trecho)),
+                "trip_num": trip_num,
+                "bloco_num": bloco_atual,
+                "mostrar_separador_antes": len(blocos) > 0,
+            }
+            bloco["label"] = f"VIAGEM {trip_num} — BLOCO {bloco_atual}"
+            bloco["verso_label"] = f"VIAGEM {trip_num} — VERSO BLOCO {bloco_atual}"
+            blocos.append(bloco)
+            bloco_atual += 1
+
+    return blocos
+
+
+def _normalizar_texto_impresso(valor):
+    if valor is None:
+        return ""
+    texto = str(valor).strip()
+    if not texto:
+        return ""
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = texto.encode("ascii", "ignore").decode("ascii")
+    return texto
+

@@ -278,13 +278,17 @@
                 </tr>
               </thead>
               <tbody id="tbody-pacientes-lote">
-                {% for pac in pacientes %}
-                <tr data-paciente-id="{{ pac.id }}" data-acompanhantes="{{ pac.acompanhantes|default_if_none:0 }}">
+                {% for item in pacientes_com_status %}
+                {% with pac=item.paciente %}
+                <tr data-paciente-id="{{ pac.id }}" data-acompanhantes="{{ pac.acompanhantes|default_if_none:0 }}" class="{% if item.status == 'alocado' %}table-success status-alocado{% else %}table-warning status-pendente{% endif %}">
                   <td class="text-center fw-bold col-numero-linha">{{ forloop.counter }}</td>
                   <td>
                     <div class="d-flex align-items-center gap-2">
                       <div>
-                        <strong>{{ pac.nome }}</strong><br>
+                        <strong>{{ pac.nome }}</strong>
+                        <span class="badge {% if item.status == 'alocado' %}bg-success{% else %}bg-warning text-dark{% endif %} ms-2">
+                          {% if item.status == 'alocado' %}Alocado{% else %}Pendente{% endif %}
+                        </span><br>
                         <small class="text-muted">{{ pac.idade }} anos &bull; {{ pac.peso }} kg</small>
                       </div>
                       <button type="button" class="btn btn-outline-primary btn-sm btn-preencher-paciente-lote" data-paciente-id="{{ pac.id }}" title="Reaproveitar dados do paciente" aria-label="Reaproveitar dados">
@@ -308,7 +312,6 @@
                           {% endfor %}
                         </select>
                         <div class="form-text text-danger d-none mt-1" data-error-for-paciente="{{ pac.id }}-select"></div>
-                        <!-- Box verde com endereço da clínica selecionada -->
                         <div id="endereco_box_{{ pac.id }}" class="alert alert-success d-none mt-2 mb-2" style="padding:10px; border-left:5px solid #28a745;">
                           <strong>📍 Endereço da Clínica:</strong><br>
                           <span id="endereco_text_{{ pac.id }}"></span>
@@ -325,7 +328,7 @@
                     </div>
                   </td>
                 </tr>
-                <!-- Script de exclusão de paciente removido do loop para evitar múltiplos bindings -->
+                {% endwith %}
                 {% endfor %}
               </tbody>
             </table>
@@ -386,8 +389,14 @@
           </div>
           <div class="card-body py-2">
             <ul class="list-group list-group-flush" id="lista-pacientes-selecionados">
-              {% for pac in pacientes %}
-                <li class="list-group-item px-0 py-2">{{ forloop.counter }}. {{ pac.nome }} <span class="text-muted">(Acompanhantes: {{ pac.acompanhantes|default_if_none:0 }})</span></li>
+              {% for item in pacientes_com_status %}
+                {% with pac=item.paciente %}
+                <li class="list-group-item px-0 py-2 {% if item.status == 'alocado' %}text-success fw-semibold{% else %}text-warning fw-semibold{% endif %}">
+                  {{ forloop.counter }}. {{ pac.nome }}
+                  <span class="badge {% if item.status == 'alocado' %}bg-success{% else %}bg-warning text-dark{% endif %} ms-2">{% if item.status == 'alocado' %}Alocado{% else %}Pendente{% endif %}</span>
+                  <span class="text-muted">(Acompanhantes: {{ pac.acompanhantes|default_if_none:0 }})</span>
+                </li>
+                {% endwith %}
               {% empty %}
                 <li class="list-group-item px-0 py-2 text-muted">Nenhum paciente selecionado.</li>
               {% endfor %}

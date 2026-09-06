@@ -44,14 +44,28 @@ class LoginObrigatorioMiddleware:
 
     def __call__(self, request):
         path = request.path_info
-        # Permite URLs públicas
-        for url in URLS_PUBLICAS:
-            if path.startswith(url):
-                return self.get_response(request)
+        if path.startswith("/static/") or path.startswith("/media/"):
+            return self.get_response(request)
+
+        if path.startswith("/login/") or path.startswith("/logout/"):
+            return self.get_response(request)
+
+        if path.startswith(settings.ADMIN_URL_PATH):
+            return self.get_response(request)
+
+        if path.startswith("/api/whatsapp/webhook/"):
+            return self.get_response(request)
+
+        if path.startswith("/api/token/"):
+            return self.get_response(request)
+
+        if path.startswith("/autocomplete_endereco_unidade/"):
+            return self.get_response(request)
+
+        if path.startswith("/pacientes/cadastrar-simples/"):
+            return self.get_response(request)
 
         if not request.user.is_authenticated:
-            # Para endpoints de API, retorna JSON 401 em vez de HTML de login.
-            # Isso evita quebrar autocomplete que espera resposta JSON.
             if path.startswith("/api/"):
                 return JsonResponse(
                     {"sucesso": False, "erro": "nao_autenticado"}, status=401

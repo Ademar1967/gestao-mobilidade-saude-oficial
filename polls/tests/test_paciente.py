@@ -3,14 +3,88 @@ from datetime import date
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from polls.models import Clinica, Paciente, Transporte
+from polls.forms import TransporteForm
+from polls.models import Clinica, Condutor, Paciente, Transporte, Veiculo
 from polls.views_mapa_operacional import (
+    _blocos_espelhados,
     _linha_from_paciente,
+    _metadata_viagem_bloco,
     _preencher_destino_compartilhado_em_bloco,
 )
 
 
 class PacienteModelTest(TestCase):
+    def test_fluxo_lote_mantem_sequencia_de_viagem_e_bloco_na_mesma_pagina(self):
+        user = get_user_model().objects.create_user(username="tester_fluxo", password="123")
+        self.client.force_login(user)
+
+        paciente = Paciente.objects.create(nome="Paciente Fluxo", telefone="11999999999")
+        veiculo = Veiculo.objects.create(tipo_veiculo="ambulancia", patrimonio="AMB-001", lotacao=4)
+        condutor = Condutor.objects.create(nome="Condutor Fluxo")
+
+        session = self.client.session
+        session["paciente_ids_lote"] = [str(paciente.id)]
+        session["fluxo_lote"] = {"viagem_atual": 1, "bloco_atual": 1}
+        session.save()
+
+        response = self.client.post(
+            reverse("transporte_pacientes:cadastrar_transporte_lote"),
+            {
+                "paciente_ids_lote": [str(paciente.id)],
+                "pacientes": [str(paciente.id)],
+                "modo_lote": "misto",
+                "veiculo": str(veiculo.id),
+                "condutor": str(condutor.id),
+                "data_transporte": "2026-08-20",
+                "tipo_transporte": "CONSULTA",
+                "numero_viagem": "1",
+                "numero_bloco": "1",
+                "clinica_1": "",
+                "clinica_manual_1": "Clínica Fluxo",
+                "forcar_duplicado": "0",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session["fluxo_lote"]["viagem_atual"], 2)
+        self.assertEqual(self.client.session["fluxo_lote"]["bloco_atual"], 2)
+
+        response_get = self.client.get(reverse("transporte_pacientes:cadastrar_transporte_lote"))
+        self.assertEqual(response_get.status_code, 200)
+        self.assertEqual(response_get.context["numero_viagem"], 2)
+        self.assertEqual(response_get.context["numero_bloco"], 2)
+
+    def test_veiculo_manual_ambiguuo_nao_deve_virar_van_automaticamente(self):
+        paciente = Paciente.objects.create(nome="Paciente Ambíguo", telefone="11999999999")
+        form = TransporteForm(
+            data={
+                "paciente": paciente.pk,
+                "data_transporte": "2026-08-20",
+                "veiculo_livre": "AMBULANCIA 01",
+                "tipo_transporte": "CONSULTA",
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors.as_json())
+        veiculo = form.cleaned_data["veiculo"]
+        self.assertEqual(veiculo.tipo_veiculo, "ambulancia")
+        self.assertEqual(veiculo.patrimonio, "AMBULANCIA 01")
+        self.assertFalse(veiculo.placa)
+
+        form_van = TransporteForm(
+            data={
+                "paciente": paciente.pk,
+                "data_transporte": "2026-08-20",
+                "veiculo_livre": "ABC-1234",
+                "tipo_transporte": "CONSULTA",
+            }
+        )
+
+        self.assertTrue(form_van.is_valid(), form_van.errors.as_json())
+        veiculo_van = form_van.cleaned_data["veiculo"]
+        self.assertEqual(veiculo_van.tipo_veiculo, "van")
+        self.assertEqual(veiculo_van.placa, "ABC-1234")
+
     def test_cadastro_paciente_sem_cadeira_dobravel(self):
         paciente = Paciente.objects.create(
             nome="Teste Paciente",
@@ -48,6 +122,37 @@ class PacienteModelTest(TestCase):
 
         self.assertEqual(linha["telefone"], "11 99999-1111")
         self.assertEqual(linha["destino"], "Hospital Teste")
+
+    def test_impressao_preserva_ordem_numerica_dos_pacientes_no_bloco(self):
+        user = get_user_model().objects.create_user(username="tester_ordem", password="123")
+        self.client.force_login(user)
+
+        paciente_z = Paciente.objects.create(nome="Paciente Zulu", telefone="1111")
+        paciente_a = Paciente.objects.create(nome="Paciente Alpha", telefone="2222")
+        paciente_m = Paciente.objects.create(nome="Paciente Médio", telefone="3333")
+
+        for paciente in [paciente_z, paciente_a, paciente_m]:
+            Transporte.objects.create(
+                paciente=paciente,
+                data_transporte="2026-08-02",
+            )
+
+        response = self.client.get(
+            "/mapas-viagem/imprimir/",
+            {
+                "data": "2026-08-02",
+                "origem": "prefeitura",
+                "empresa": "PREFEITURA",
+                "numero_viagem": "1a Viagem",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8")
+        self.assertIn("<th style=\"width:24px;\">ID</th>", html)
+        self.assertIn(f">{paciente_z.id}</td>", html)
+        self.assertIn(f">{paciente_a.id}</td>", html)
+        self.assertIn(f">{paciente_m.id}</td>", html)
 
     def test_impressao_gera_linha_para_cada_paciente_selecionado(self):
         user = get_user_model().objects.create_user(username="tester", password="123")
@@ -152,6 +257,39 @@ class PacienteModelTest(TestCase):
         self.assertIn("Necessita apoio", linha["observacao"])
         self.assertIn("Chegar cedo", linha["observacao"])
 
+    def test_linha_de_impressao_remove_caractere_invalido_sem_perder_texto(self):
+        paciente = Paciente.objects.create(
+            nome="Paciente Especial",
+            rua="Rua da Igreja",
+            bairro="Centro",
+        )
+        clinica = Clinica.objects.create(
+            nome="HOSPITAL SAGRADA FAMILIA � Maua",
+            endereco="Rua do Hospital �",
+            bairro="Maua",
+            cidade="Sao Paulo",
+        )
+
+        linha = _linha_from_paciente(paciente, 1, None, clinica_fallback=clinica)
+
+        self.assertNotIn("�", linha["destino"])
+        self.assertNotIn("�", linha["endereco_clinica"])
+        self.assertIn("HOSPITAL SAGRADA FAMILIA", linha["destino"])
+        self.assertIn("Maua", linha["destino"])
+
+    def test_linha_de_impressao_exibe_numero_real_de_acompanhantes_no_campo_ac(self):
+        paciente = Paciente.objects.create(
+            nome="Paciente Acompanhado",
+            acompanhantes=2,
+            rua="Rua da Igreja",
+            bairro="Centro",
+        )
+
+        linha = _linha_from_paciente(paciente, 1, None)
+
+        self.assertEqual(linha["acompanhante_marca"], "2")
+        self.assertEqual(linha["acompanhantes"], 2)
+
     def test_impressao_sinaliza_coluna_de_observacao_so_quando_houver_conteudo(self):
         user = get_user_model().objects.create_user(username="tester_obs", password="123")
         self.client.force_login(user)
@@ -208,6 +346,60 @@ class PacienteModelTest(TestCase):
         self.assertEqual(bloco["linhas"][0]["destino"], "Hospital Compartilhado")
         self.assertEqual(bloco["linhas"][1]["destino"], "Hospital Compartilhado")
         self.assertIn("Rua do Hospital", bloco["linhas"][1]["endereco_clinica"])
+
+    def test_metadata_de_bloco_organiza_viagem_e_bloco_com_separacao_entre_grupos(self):
+        blocos = [
+            {"linhas": [], "vazios": []},
+            {"linhas": [], "vazios": []},
+        ]
+
+        blocos = _metadata_viagem_bloco(blocos, "2a Viagem")
+
+        self.assertEqual(blocos[0]["trip_num"], 2)
+        self.assertEqual(blocos[0]["bloco_num"], 1)
+        self.assertEqual(blocos[0]["label"], "VIAGEM 2 — BLOCO 1")
+        self.assertEqual(blocos[1]["label"], "VIAGEM 2 — BLOCO 2")
+
+        self.assertFalse(blocos[0]["mostrar_separador_antes"])
+        self.assertTrue(blocos[1]["mostrar_separador_antes"])
+
+    def test_ordem_das_linhas_reinicia_por_viagem_ao_agrupamento(self):
+        linhas = [
+            {"paciente_id": 1, "acompanhantes": 0, "data_transporte": "2026-08-02", "veiculo_id": 10, "condutor_id": 21},
+            {"paciente_id": 2, "acompanhantes": 0, "data_transporte": "2026-08-02", "veiculo_id": 10, "condutor_id": 21},
+            {"paciente_id": 3, "acompanhantes": 0, "data_transporte": "2026-08-02", "veiculo_id": 11, "condutor_id": 22},
+            {"paciente_id": 4, "acompanhantes": 0, "data_transporte": "2026-08-02", "veiculo_id": 11, "condutor_id": 22},
+        ]
+
+        blocos = _blocos_espelhados(linhas, 50)
+        ordens = []
+        for bloco in blocos:
+            for linha in bloco["linhas"]:
+                if not linha.get("separador"):
+                    ordens.append(linha["ordem"])
+
+        self.assertEqual(ordens, [1, 2, 1, 2])
+
+    def test_linhas_de_viagens_distintas_na_mesma_data_sao_agrupadas_em_fluxo_continuo(self):
+        condutor_1 = {"id": 1, "nome": "Motorista A"}
+        condutor_2 = {"id": 2, "nome": "Motorista B"}
+        veiculo_1 = {"id": 10, "placa": "ABC-1234"}
+        veiculo_2 = {"id": 11, "placa": "XYZ-9876"}
+
+        linhas = [
+            {"paciente_id": 1, "acompanhantes": 0, "data_transporte": "2026-08-02", "veiculo_id": veiculo_1["id"], "condutor_id": condutor_1["id"]},
+            {"paciente_id": 2, "acompanhantes": 0, "data_transporte": "2026-08-02", "veiculo_id": veiculo_2["id"], "condutor_id": condutor_2["id"]},
+        ]
+
+        blocos = _blocos_espelhados(linhas, 50)
+
+        self.assertEqual(len(blocos), 2)
+        self.assertEqual(blocos[0]["trip_num"], 1)
+        self.assertEqual(blocos[0]["bloco_num"], 1)
+        self.assertEqual(blocos[1]["trip_num"], 2)
+        self.assertEqual(blocos[1]["bloco_num"], 2)
+        self.assertEqual(blocos[0]["label"], "VIAGEM 1 — BLOCO 1")
+        self.assertEqual(blocos[1]["label"], "VIAGEM 2 — BLOCO 2")
 
 
 class PacienteRouteRegressionTest(TestCase):
@@ -279,3 +471,80 @@ class PacienteRouteRegressionTest(TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8", errors="ignore")
         self.assertIn("Cadastro salvo com sucesso. Formulario reiniciado para novo paciente.", html)
+
+    def test_lote_exibe_status_visual_de_pacientes_alocados_e_pendentes(self):
+        user = get_user_model().objects.create_user(username="tester_lote_status", password="123")
+        self.client.force_login(user)
+
+        paciente_alocado = Paciente.objects.create(
+            nome="Paciente Alocado",
+            rua="Rua Teste",
+            numero="10",
+            bairro="Centro",
+            cidade="Sao Paulo",
+            servico_status="ativo",
+        )
+        paciente_pendente = Paciente.objects.create(
+            nome="Paciente Pendente",
+            rua="Rua Teste",
+            numero="11",
+            bairro="Centro",
+            cidade="Sao Paulo",
+            servico_status="ativo",
+        )
+        Transporte.objects.create(
+            paciente=paciente_alocado,
+            data_transporte=date.today(),
+            tipo_transporte="CONSULTA",
+        )
+
+        response = self.client.get(
+            reverse("transporte_pacientes:cadastrar_transporte_lote"),
+            {
+                "paciente_ids": f"{paciente_alocado.id},{paciente_pendente.id}",
+                "data_transporte": date.today().isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8", errors="ignore")
+        self.assertIn("status-alocado", html)
+        self.assertIn("status-pendente", html)
+        self.assertIn("Paciente Alocado", html)
+        self.assertIn("Paciente Pendente", html)
+
+    def test_cadastro_em_lote_mantem_fluxo_aberto_apos_salvar(self):
+        user = get_user_model().objects.create_user(username="tester_lote", password="123")
+        self.client.force_login(user)
+
+        paciente = Paciente.objects.create(
+            nome="Paciente Lote Fluxo",
+            rua="Rua Teste",
+            numero="99",
+            bairro="Centro",
+            cidade="Sao Paulo",
+            servico_status="ativo",
+        )
+        veiculo = Veiculo.objects.create(tipo_veiculo="van", placa="ABC-1234", lotacao=10)
+        condutor = Condutor.objects.create(nome="Condutor Fluxo")
+
+        response = self.client.post(
+            reverse("transporte_pacientes:cadastrar_transporte_lote"),
+            {
+                "pacientes": [str(paciente.id)],
+                "modo_lote": "misto",
+                "veiculo": str(veiculo.id),
+                "condutor": str(condutor.id),
+                "tipo_transporte": "CONSULTA",
+                "data_transporte": date.today().isoformat(),
+                f"clinica_manual_{paciente.id}": "Hospital Teste",
+                "forcar_excesso_lotacao": "0",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "salvo com sucesso")
+        self.assertContains(response, "continue alocando")
+        self.assertContains(response, reverse("transporte_pacientes:cadastrar_transporte_lote"))
+        self.assertContains(response, "Paciente Lote Fluxo")

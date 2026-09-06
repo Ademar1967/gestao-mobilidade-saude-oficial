@@ -34,3 +34,7 @@ tbEstabelecimento*.csv
 *.csv
 dados.json
 pacientes.json
+
+# Dados sensíveis - LGPD
+*.csv
+dados.json

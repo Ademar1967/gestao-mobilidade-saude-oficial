@@ -316,6 +316,8 @@ def cadastrar_transporte_lote(request):
     except Exception as e:
         clinicas = []
     """View para cadastro em lote de transportes."""
+    from datetime import date
+
     from .forms import TransporteForm
     from .models import Paciente, Transporte, Veiculo
     from django.contrib import messages
@@ -386,11 +388,29 @@ def cadastrar_transporte_lote(request):
     import logging
 
     logger = logging.getLogger("transporte_lote")
+
+    def _estado_fluxo_lote(request):
+        fluxo = request.session.get("fluxo_lote") or {}
+        if not isinstance(fluxo, dict):
+            fluxo = {}
+        viagem_atual = int(fluxo.get("viagem_atual") or fluxo.get("numero_viagem") or 1)
+        bloco_atual = int(fluxo.get("bloco_atual") or fluxo.get("numero_bloco") or 1)
+        return viagem_atual, bloco_atual
+
+    def _avancar_fluxo_lote(request):
+        viagem_atual, bloco_atual = _estado_fluxo_lote(request)
+        request.session["fluxo_lote"] = {
+            "viagem_atual": viagem_atual + 1,
+            "bloco_atual": bloco_atual + 1,
+        }
+        return request.session["fluxo_lote"]
+
     logger.info(f"Metodo da requisicao: {request.method}")
     logger.info(f"GET params: {request.GET}")
     logger.info(f"POST params: {request.POST}")
     logger.info(f"Iniciando processamento da view cadastrar_transporte_lote")
     paciente_ids_sessao = request.session.get("paciente_ids_lote", [])
+    numero_viagem_atual, numero_bloco_atual = _estado_fluxo_lote(request)
     if request.method == "POST":
         otimizar_rota_mista = request.POST.get("otimizar_rota_mista") == "1"
         ordem_pacientes_raw = request.POST.get("ordem_pacientes", "")
@@ -596,12 +616,13 @@ def cadastrar_transporte_lote(request):
         if nomes and forms_validos:
             if len(nomes) == 1:
                 messages.success(
-                    request, f'Transporte cadastrado para o paciente "{nomes[0]}".'
+                    request,
+                    f'salvo com sucesso para o paciente "{nomes[0]}". continue alocando outros pacientes no mesmo fluxo.',
                 )
             else:
                 messages.success(
                     request,
-                    f"Transporte cadastrado para {len(nomes)} paciente(s): {', '.join(nomes)}.",
+                    f"salvo com sucesso para {len(nomes)} paciente(s): {', '.join(nomes)}. continue alocando outros pacientes para completar a viagem.",
                 )
             if houve_excesso_lotacao:
                 messages.warning(request, excesso_lotacao_msg)
@@ -616,7 +637,11 @@ def cadastrar_transporte_lote(request):
                 request, f"Total de acompanhantes informados: {total_acompanhantes}"
             )
             request.session["limpar_rascunho_transporte_lote"] = True
-            return redirect("transporte_pacientes:listar_transportes")
+            request.session["paciente_ids_lote"] = [
+                str(pid) for pid in pacientes_ids if str(pid).strip()
+            ]
+            _avancar_fluxo_lote(request)
+            return redirect("transporte_pacientes:cadastrar_transporte_lote")
         else:
             if pacientes_duplicados:
                 erro_msg = (
@@ -677,12 +702,22 @@ def cadastrar_transporte_lote(request):
         pacientes_disponiveis = Paciente.objects.filter(servico_ativo=True).order_by(
             "-data_cadastro"
         )
+        data_ref = (request.POST.get("data_transporte") or date.today().isoformat()).strip()
+        ids_alocados = set(
+            Transporte.objects.filter(
+                paciente_id__in=[str(pid) for pid in pacientes_ids if str(pid).strip()],
+                data_transporte=data_ref,
+            ).values_list("paciente_id", flat=True)
+        )
+        pacientes_com_status = []
+        for paciente in pacientes:
+            status = "alocado" if str(paciente.id) in {str(pid) for pid in ids_alocados} else "pendente"
+            pacientes_com_status.append({"paciente": paciente, "status": status})
         acompanhantes_count = sum(
             (getattr(p, "acompanhantes", 0) or 0) for p in pacientes
         )
 
         from .models import Condutor, Enfermagem
-        from datetime import date
 
         veiculos = Veiculo.objects.all().order_by("id")
         condutores = Condutor.objects.all().order_by("id")
@@ -700,11 +735,14 @@ def cadastrar_transporte_lote(request):
                 "forcar_duplicado": request.POST.get("forcar_duplicado") == "1",
                 "forcar_excesso_lotacao": request.POST.get("forcar_excesso_lotacao")
                 == "1",
+                "numero_viagem": numero_viagem_atual,
+                "numero_bloco": numero_bloco_atual,
                 "pacientes_duplicados": pacientes_duplicados,
                 "pacientes_disponiveis": pacientes_disponiveis,
                 "pacientes_ids": pacientes_ids,
                 "paciente_ids_lote": [str(pid) for pid in pacientes_ids if str(pid)],
                 "pacientes": pacientes,
+                "pacientes_com_status": pacientes_com_status,
                 "acompanhantes_count": acompanhantes_count,
                 "clinicas": clinicas,
                 "veiculos": veiculos,
@@ -753,6 +791,18 @@ def cadastrar_transporte_lote(request):
             )
             return redirect("transporte_pacientes:cadastrar_paciente")
 
+        data_ref = (request.GET.get("data_transporte") or date.today().isoformat()).strip()
+        ids_alocados = set(
+            Transporte.objects.filter(
+                paciente_id__in=[str(pid) for pid in pacientes_ids if str(pid).strip()],
+                data_transporte=data_ref,
+            ).values_list("paciente_id", flat=True)
+        )
+        pacientes_com_status = []
+        for paciente in pacientes:
+            status = "alocado" if str(paciente.id) in {str(pid) for pid in ids_alocados} else "pendente"
+            pacientes_com_status.append({"paciente": paciente, "status": status})
+
         # Calcular total de acompanhantes (preferir valores do POST se houver)
         if request.method == "POST" and pacientes_ids:
             acompanhantes_count = 0
@@ -797,11 +847,14 @@ def cadastrar_transporte_lote(request):
                 == "1",
                 "forcar_duplicado": False,
                 "forcar_excesso_lotacao": False,
+                "numero_viagem": numero_viagem_atual,
+                "numero_bloco": numero_bloco_atual,
                 "pacientes_duplicados": [],
                 "pacientes_disponiveis": pacientes_disponiveis,
                 "pacientes_ids": pacientes_ids,
                 "paciente_ids_lote": [str(pid) for pid in pacientes_ids if str(pid)],
                 "pacientes": pacientes,
+                "pacientes_com_status": pacientes_com_status,
                 "acompanhantes_count": acompanhantes_count,
                 "clinicas": clinicas,
                 "veiculos": veiculos,

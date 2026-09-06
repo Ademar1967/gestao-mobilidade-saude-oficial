@@ -1,0 +1,14 @@
+usage: manage.py test [-h] [--noinput] [--testrunner TESTRUNNER] [--failfast]
+                      [-t TOP_LEVEL] [-p PATTERN] [--keepdb]
+                      [--shuffle [SEED]] [-r] [--debug-mode] [-d]
+                      [--parallel [N]] [--tag TAGS]
+                      [--exclude-tag EXCLUDE_TAGS] [--pdb] [-b]
+                      [--no-faulthandler] [--timing] [-k TEST_NAME_PATTERNS]
+                      [--durations N] [--version] [-v {0,1,2,3}]
+                      [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                      [--traceback] [--no-color] [--force-color]
+                      [test_label ...]
+manage.py test: error: unrecognized arguments: ; Write-Host EXIT:$LASTEXITCODE; Get-Content testlog_lote.txt -Tail 80
+[DIAGNOSTICO] PYTHONPATH: ['C:\\Users\\elide\\OneDrive\\Desktop\\codigos\\gestao-mobilidade-saude-oficial_novo', 'C:\\Users\\elide\\AppData\\Local\\Programs\\Python\\Python314\\python314.zip', 'C:\\Users\\elide\\AppData\\Local\\Programs\\Python\\Python314\\DLLs', 'C:\\Users\\elide\\AppData\\Local\\Programs\\Python\\Python314\\Lib', 'C:\\Users\\elide\\AppData\\Local\\Programs\\Python\\Python314', 'C:\\Users\\elide\\AppData\\Roaming\\Python\\Python314\\site-packages', 'C:\\Users\\elide\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages']
+[DIAGNOSTICO] Pandas importado com sucesso!
+DEBUG DATABASE_URL: ''

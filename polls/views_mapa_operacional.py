@@ -5,6 +5,9 @@ Gera escala no formato frente/verso inspirado no modelo fisico da CASEM.
 
 from __future__ import annotations
 
+import re
+import unicodedata
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils.dateparse import parse_date
@@ -105,47 +108,115 @@ def _preencher_destino_compartilhado_em_bloco(bloco: dict) -> None:
             linha["endereco_clinica"] = endereco_comum
 
 
+def _numero_viagem_para_int(numero_viagem) -> int:
+    texto = (numero_viagem or "").strip()
+    if not texto:
+        return 1
+    match = re.search(r"(\d+)", texto)
+    if not match:
+        return 1
+    try:
+        return max(1, int(match.group(1)))
+    except ValueError:
+        return 1
+
+
+def _trip_key_de_linha(linha: dict):
+    veiculo_id = linha.get("veiculo_id")
+    condutor_id = linha.get("condutor_id")
+    data_ref = linha.get("data_transporte") or linha.get("data") or ""
+    return (str(data_ref), str(veiculo_id or ""), str(condutor_id or ""))
+
+
+def _reiniciar_ordem_por_viagem(grupos: list[dict]) -> None:
+    for grupo in grupos:
+        ordem_atual = 0
+        for linha in grupo.get("linhas", []):
+            if linha.get("separador"):
+                continue
+            ordem_atual += 1
+            linha["ordem"] = ordem_atual
+
+
+def _metadata_viagem_bloco(blocos: list[dict], numero_viagem=None) -> list[dict]:
+    """Adiciona metadados visuais de viagem e de bloco para a impressão."""
+    base_trip = _numero_viagem_para_int(numero_viagem) if numero_viagem is not None else 1
+    for indice, bloco in enumerate(blocos, start=1):
+        bloco["trip_num"] = bloco.get("trip_num", base_trip)
+        bloco["bloco_num"] = bloco.get("bloco_num", indice)
+        bloco["label"] = f"VIAGEM {bloco['trip_num']} — BLOCO {bloco['bloco_num']}"
+        bloco["verso_label"] = f"VIAGEM {bloco['trip_num']} — VERSO BLOCO {bloco['bloco_num']}"
+        bloco["mostrar_separador_antes"] = indice > 1
+    return blocos
+
+
 def _blocos_espelhados(linhas: list[dict], capacidade_lote: int) -> list[dict]:
     """
-    Separa em lotes operacionais pela capacidade e depois em blocos de impressao.
-    Inclui linhas separadoras para iniciar novo lote sem perder alinhamento frente/verso.
+    Separa por viagem real (data + veículo + motorista), respeita a capacidade do lote
+    e depois fragmenta em blocos de impressão mantendo o fluxo contínuo.
     """
-    linhas_com_lote = []
-    lote_atual = 1
-    ocupacao_atual = 0
-
-    for linha in linhas:
-        acompanhantes = int(linha.get("acompanhantes") or 0)
-        ocupacao_item = 1 + max(0, acompanhantes)
-
-        if ocupacao_atual > 0 and (ocupacao_atual + ocupacao_item) > capacidade_lote:
-            lote_atual += 1
-            linhas_com_lote.append(
-                {
-                    "separador": True,
-                    "lote_num": lote_atual,
-                }
-            )
-            ocupacao_atual = 0
-
-        linha["lote_num"] = lote_atual
-        linhas_com_lote.append(linha)
-        ocupacao_atual += ocupacao_item
-
     blocos = []
-    if not linhas_com_lote:
-        return [{"linhas": [], "vazios": []}]
+    if not linhas:
+        return [{"linhas": [], "vazios": [], "trip_num": 1, "bloco_num": 1, "label": "VIAGEM 1 — BLOCO 1", "verso_label": "VIAGEM 1 — VERSO BLOCO 1", "mostrar_separador_antes": False}]
 
-    for i in range(0, len(linhas_com_lote), LINHAS_POR_BLOCO):
-        trecho = linhas_com_lote[i : i + LINHAS_POR_BLOCO]
-        blocos.append(
-            {
+    grupos_por_viagem = []
+    ordem_viagens = {}
+    for linha in linhas:
+        trip_key = _trip_key_de_linha(linha)
+        if trip_key not in ordem_viagens:
+            ordem_viagens[trip_key] = len(grupos_por_viagem) + 1
+            grupos_por_viagem.append({"trip_key": trip_key, "trip_num": len(grupos_por_viagem) + 1, "linhas": []})
+        grupos_por_viagem[ordem_viagens[trip_key] - 1]["linhas"].append(linha)
+
+    bloco_atual = 1
+    for grupo in grupos_por_viagem:
+        linhas_com_lote = []
+        lote_atual = 1
+        ocupacao_atual = 0
+        trip_num = grupo["trip_num"]
+
+        for linha in grupo["linhas"]:
+            acompanhantes = int(linha.get("acompanhantes") or 0)
+            ocupacao_item = 1 + max(0, acompanhantes)
+
+            if ocupacao_atual > 0 and (ocupacao_atual + ocupacao_item) > capacidade_lote:
+                lote_atual += 1
+                linhas_com_lote.append({"separador": True, "lote_num": lote_atual})
+                ocupacao_atual = 0
+
+            linha["lote_num"] = lote_atual
+            linha["trip_num"] = trip_num
+            linhas_com_lote.append(linha)
+            ocupacao_atual += ocupacao_item
+
+        _reiniciar_ordem_por_viagem([{"linhas": linhas_com_lote}])
+
+        for i in range(0, len(linhas_com_lote), LINHAS_POR_BLOCO):
+            trecho = linhas_com_lote[i : i + LINHAS_POR_BLOCO]
+            bloco = {
                 "linhas": trecho,
                 "vazios": [None] * max(0, LINHAS_POR_BLOCO - len(trecho)),
+                "trip_num": trip_num,
+                "bloco_num": bloco_atual,
+                "mostrar_separador_antes": len(blocos) > 0,
             }
-        )
+            bloco["label"] = f"VIAGEM {trip_num} — BLOCO {bloco_atual}"
+            bloco["verso_label"] = f"VIAGEM {trip_num} — VERSO BLOCO {bloco_atual}"
+            blocos.append(bloco)
+            bloco_atual += 1
 
     return blocos
+
+
+def _normalizar_texto_impresso(valor):
+    if valor is None:
+        return ""
+    texto = str(valor).strip()
+    if not texto:
+        return ""
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = texto.encode("ascii", "ignore").decode("ascii")
+    return texto
 
 
 def _condicoes_especiais(paciente) -> str:
@@ -220,19 +291,31 @@ def _linha_from_paciente(paciente, ordem, transporte=None, clinica_fallback=None
 
     destino_label = ""
     if clinica and getattr(clinica, "nome", ""):
-        destino_label = clinica.nome
+        destino_label = _normalizar_texto_impresso(clinica.nome)
     elif paciente and getattr(paciente, "destino_preferencial", None):
-        destino_label = getattr(paciente.destino_preferencial, "nome", "") or ""
+        destino_label = _normalizar_texto_impresso(
+            getattr(paciente.destino_preferencial, "nome", "") or ""
+        )
 
     endereco_clinica = ""
     if clinica:
         endereco_clinica = ", ".join(
-            parte for parte in [clinica.endereco, clinica.bairro, clinica.cidade] if parte
+            _normalizar_texto_impresso(parte)
+            for parte in [clinica.endereco, clinica.bairro, clinica.cidade]
+            if parte
         )
 
     referencia_paciente = ""
     if paciente and getattr(paciente, "referencia", None):
         referencia_paciente = str(paciente.referencia).strip()
+
+    data_transporte_value = getattr(transporte, "data_transporte", None) if transporte else None
+    if data_transporte_value is not None and hasattr(data_transporte_value, "isoformat"):
+        data_transporte_fmt = data_transporte_value.isoformat()
+    elif data_transporte_value is not None:
+        data_transporte_fmt = str(data_transporte_value)
+    else:
+        data_transporte_fmt = None
 
     return {
         "ordem": ordem,
@@ -242,7 +325,7 @@ def _linha_from_paciente(paciente, ordem, transporte=None, clinica_fallback=None
         "endereco": endereco_paciente,
         "bairro": (paciente.bairro if paciente else "") or "",
         "horario": horario,
-        "acompanhante_marca": "X" if acompanhantes > 0 else "SO",
+        "acompanhante_marca": str(acompanhantes),
         "condicoes_especiais": _condicoes_especiais(paciente),
         "destino": destino_label,
         "telefone": telefone,
@@ -250,6 +333,9 @@ def _linha_from_paciente(paciente, ordem, transporte=None, clinica_fallback=None
         "observacao": observacao,
         "endereco_clinica": endereco_clinica,
         "referencia": referencia_paciente,
+        "data_transporte": data_transporte_fmt,
+        "veiculo_id": getattr(transporte, "veiculo_id", None) if transporte else None,
+        "condutor_id": getattr(transporte, "condutor_id", None) if transporte else None,
     }
 
 
@@ -288,7 +374,9 @@ def mapa_operacional_imprimir(request):
     if paciente_ids:
         qs = qs.filter(paciente_id__in=paciente_ids)
 
-    qs = qs.order_by("paciente__nome", "id")
+    # Mantém a relação frente/verso consistente: o número da linha precisa seguir a
+    # ordem real dos pacientes da viagem, e não a ordenação alfabética do nome.
+    qs = qs.order_by("paciente_id", "id")
 
     linhas = []
     clinica_fallback = None
@@ -339,6 +427,7 @@ def mapa_operacional_imprimir(request):
 
     capacidade_lote = _capacidade_lote(veiculo_obj, qs)
     blocos = _blocos_espelhados(linhas, capacidade_lote)
+    blocos = _metadata_viagem_bloco(blocos, numero_viagem)
     for bloco in blocos:
         _preencher_destino_compartilhado_em_bloco(bloco)
         linhas_normais = [linha for linha in bloco.get("linhas", []) if not linha.get("separador")]
