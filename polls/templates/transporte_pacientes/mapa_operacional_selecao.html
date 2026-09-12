@@ -1,6 +1,234 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-4" style="max-width:700px;">
+<style>
+  .linha-paciente-mapa.linha-selecionada-mapa {
+    box-shadow: inset 4px 0 0 #0d6efd;
+  }
+
+  .painel-pacientes-toolbar {
+    border: 1px solid #dbe6f3;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%);
+    padding: 10px;
+  }
+
+  .painel-pacientes-toolbar .toolbar-linha {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .painel-pacientes-toolbar .btn-toolbar-mapa {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 0.36rem 0.8rem;
+  }
+
+  .painel-pacientes-toolbar .campo-filtro-mapa {
+    border-radius: 999px;
+    border-color: #b8cbe0;
+    min-width: 260px;
+    flex: 1;
+  }
+
+  .painel-pacientes-toolbar .chip-info-mapa {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: #eaf3ff;
+    color: #1f3f66;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.22rem 0.62rem;
+  }
+
+  .nome-paciente-mapa {
+    cursor: help;
+  }
+
+  .toggle-orientacao-pacientes {
+    border-radius: 999px;
+    font-weight: 700;
+    padding: 0.28rem 0.72rem;
+  }
+
+  .orientacao-pacientes-box {
+    border: 1px dashed #f2c87a;
+    background: #fffaf1;
+    color: #77581a;
+    border-radius: 10px;
+    padding: 0.55rem 0.72rem;
+    font-size: 0.86rem;
+  }
+
+  .detalhes-pacientes-box {
+    border-top: 1px dashed #c8d9ee;
+    margin-top: 0.4rem;
+    padding-top: 0.55rem;
+  }
+
+  .barra-acoes-pacientes {
+    position: static;
+    background: #fff;
+    border-radius: 10px;
+  }
+
+  .resumo-rapido-painel {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .resumo-rapido-painel .item-resumo {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #d6e4f4;
+    border-radius: 999px;
+    background: #f8fbff;
+    color: #36567b;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.18rem 0.58rem;
+  }
+
+  .barra-acoes-form {
+    position: static;
+    background: #ffffff;
+    border: 1px solid #dbe6f3;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.08);
+  }
+
+  .status-salvamento {
+    font-size: 0.86rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.35rem 0.55rem;
+    display: none;
+  }
+
+  .status-salvamento.status-info {
+    display: block;
+    background: #e8f1ff;
+    color: #184d9a;
+  }
+
+  .status-salvamento.status-success {
+    display: block;
+    background: #e9f8ef;
+    color: #19613a;
+  }
+
+  .status-salvamento.status-danger {
+    display: block;
+    background: #fdecec;
+    color: #842029;
+  }
+
+  .aviso-auto-ocultar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #f0c36d;
+    background: #fff4d8;
+    color: #6f4c00;
+    border-radius: 10px;
+    padding: 0.42rem 0.62rem;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.25;
+    box-shadow: 0 2px 7px rgba(129, 87, 0, 0.14);
+  }
+
+  .aviso-auto-ocultar.aviso-fixo-lista {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin-bottom: 8px;
+  }
+
+  .aviso-auto-ocultar::before {
+    content: '!!';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    flex: 0 0 auto;
+  }
+
+  .aviso-auto-ocultar.aviso-info {
+    animation: pulsoAviso 1.7s ease-in-out infinite;
+  }
+
+  .aviso-auto-ocultar.aviso-ok {
+    border-color: #8acea7;
+    background: #e9f8ef;
+    color: #145935;
+    box-shadow: 0 2px 7px rgba(20, 89, 53, 0.11);
+    animation: none;
+  }
+
+  .aviso-auto-ocultar.aviso-ok::before {
+    content: 'OK';
+  }
+
+  .aviso-auto-ocultar.aviso-neutro {
+    border-color: #c3d8ef;
+    background: #edf5ff;
+    color: #214f80;
+    box-shadow: 0 2px 7px rgba(33, 79, 128, 0.1);
+    animation: none;
+  }
+
+  .aviso-auto-ocultar.aviso-neutro::before {
+    content: 'i';
+    font-size: 0.9rem;
+  }
+
+  @keyframes pulsoAviso {
+    0%,
+    100% {
+      box-shadow: 0 2px 7px rgba(129, 87, 0, 0.14);
+      transform: translateY(0);
+    }
+    50% {
+      box-shadow: 0 4px 12px rgba(129, 87, 0, 0.28);
+      transform: translateY(-1px);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .barra-acoes-form .btn,
+    .painel-pacientes-toolbar .btn-toolbar-mapa {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .painel-pacientes-toolbar .campo-filtro-mapa {
+      min-width: 100%;
+      flex-basis: 100%;
+    }
+
+    .resumo-rapido-painel {
+      overflow-x: auto;
+      padding-bottom: 4px;
+      white-space: nowrap;
+      flex-wrap: nowrap;
+    }
+  }
+</style>
+<div class="container mt-4" style="max-width:1320px;">
+  <div class="row g-3 align-items-start">
+    <div class="col-12 col-xl-7">
   <div class="card shadow-sm">
     <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
       <span style="font-size:1.5rem;">📋</span>
@@ -38,9 +266,31 @@
       </div>
 
       <form method="get" action="{% url 'transporte_pacientes:mapa_operacional_imprimir' %}" id="formMapa" target="_blank">
-        {% if form_values.paciente_ids %}
-        <input type="hidden" name="paciente_ids" value="{{ form_values.paciente_ids }}">
-        {% endif %}
+        {% csrf_token %}
+        <input type="hidden" name="paciente_ids" id="pacienteIdsHidden" value="{{ form_values.paciente_ids|default:'' }}">
+
+        <div class="barra-acoes-form mb-3">
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-primary fw-bold px-4">
+              <i class="bi bi-eye"></i> Abrir Prévia do Mapa (sem salvar)
+            </button>
+            <button type="button" id="btnSalvarViagem" class="btn btn-success fw-bold px-4"
+                    data-url="{% url 'transporte_pacientes:salvar_viagem' %}">
+              <i class="bi bi-save"></i> Salvar e continuar editando
+            </button>
+            <button type="button" id="btnSalvarEPrevia" class="btn btn-outline-primary fw-bold px-4"
+                    data-url="{% url 'transporte_pacientes:salvar_viagem' %}">
+              <i class="bi bi-check2-circle"></i> Concluir e abrir prévia
+            </button>
+            <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-outline-secondary">
+              Voltar
+            </a>
+          </div>
+          <div id="statusSalvamentoMapa" class="status-salvamento mt-2" role="status" aria-live="polite"></div>
+          <small class="text-muted d-block mt-2">
+            Salvar e continuar editando: monte a escala aos poucos. Concluir e abrir prévia: finalize e gere a impressão.
+          </small>
+        </div>
 
         <!-- Origem do transporte -->
         <div class="mb-3">
@@ -65,7 +315,35 @@
         <!-- Data -->
         <div class="mb-3">
           <label class="form-label fw-bold">Data da Viagem</label>
-          <input type="date" class="form-control" name="data" value="{{ hoje }}" required>
+          <input type="date" class="form-control" name="data" value="{{ form_values.data|default:hoje }}" required>
+        </div>
+
+        <!-- Padrão de agendamento -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">Padrão de Agendamento</label>
+          <select class="form-select" name="padrao_agendamento" id="padraoAgendamento">
+            <option value="data_unica" {% if form_values.padrao_agendamento|default:'data_unica' == 'data_unica' %}selected{% endif %}>Somente a data informada</option>
+            <option value="periodo" {% if form_values.padrao_agendamento == 'periodo' %}selected{% endif %}>Período (vários dias)</option>
+          </select>
+          <div class="form-text">Use Período para deixar viagens prontas em feriados prolongados ou agendas futuras.</div>
+        </div>
+
+        <div id="camposPeriodo" class="mb-3" style="display:none;">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Data final do período</label>
+              <input type="date" class="form-control" name="data_final" value="{{ form_values.data_final|default:'' }}">
+            </div>
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="apenas_dias_uteis" id="apenasDiasUteis" {% if form_values.apenas_dias_uteis %}checked{% endif %}>
+                <label class="form-check-label fw-bold" for="apenasDiasUteis">
+                  Agendar apenas dias úteis (seg-sex)
+                </label>
+              </div>
+              <div class="form-text">Sábados e domingos serão ignorados quando essa opção estiver marcada.</div>
+            </div>
+          </div>
         </div>
 
         <!-- Número da viagem -->
@@ -110,33 +388,258 @@
           <div class="form-text">Se informado, será usado na coluna da consulta no mapa. Ex: 06:00</div>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-          <button type="submit" class="btn btn-primary fw-bold px-4">
-            <i class="bi bi-eye"></i> Abrir Prévia do Mapa
-          </button>
-          <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-outline-secondary">
-            Voltar
-          </a>
+        <!-- Observação de planejamento -->
+        <div class="mb-4">
+          <label class="form-label fw-bold">Observação do planejamento <span class="text-muted fw-normal">(opcional)</span></label>
+          <textarea class="form-control" name="observacoes" id="observacoesPlanejamento" rows="2"
+                    placeholder="Ex: Feriado prolongado - agenda preparada antecipadamente para 20/11 a 24/11.">{{ form_values.observacoes|default:'' }}</textarea>
+          <div class="form-text">Esse texto será salvo na viagem para facilitar conferência da equipe depois.</div>
+        </div>
+
+        <div class="mb-4 border rounded p-3 bg-light-subtle">
+          <label class="form-label fw-bold mb-2">Padrões de rotina</label>
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6">
+              <label class="form-label mb-1">Nome do padrão</label>
+              <input type="text" class="form-control" id="nomePadraoRotina" maxlength="60" placeholder="Ex: Hemodiálise manhã - seg/qua/sex">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label mb-1">Padrões salvos</label>
+              <select class="form-select" id="selectPadraoRotina">
+                <option value="">Selecione um padrão salvo</option>
+              </select>
+            </div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            <button type="button" class="btn btn-outline-success btn-sm" id="btnSalvarPadraoRotina">Salvar padrão atual</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="btnAplicarPadraoRotina">Aplicar padrão selecionado</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" id="btnExcluirPadraoRotina">Excluir padrão selecionado</button>
+          </div>
+          <div class="form-text mt-2">O padrão guarda pacientes selecionados e filtros principais (empresa, origem, motorista, veículo, viagem e observação). A data da viagem continua sendo informada no momento do uso e você mantém autonomia para trocar condutor, veículo e destino quando necessário.</div>
         </div>
 
       </form>
     </div>
   </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center gap-2 flex-wrap">
+          <span class="fw-bold">Pacientes para este mapa</span>
+          <span class="badge text-bg-primary" id="badgeSelecionados">0 selecionado(s)</span>
+        </div>
+        <div class="card-body">
+          <div class="painel-pacientes-toolbar barra-acoes-pacientes mb-3">
+            <div class="toolbar-linha mb-2">
+              <span class="small fw-bold text-primary">Acoes rapidas da lista</span>
+              <span class="small text-muted">Use / para focar a busca</span>
+            </div>
+
+            <div class="toolbar-linha">
+              <input type="text" id="filtroPacientesMapa" class="form-control campo-filtro-mapa" placeholder="Filtrar por nome, bairro ou cidade...">
+              <button type="button" class="btn btn-outline-dark btn-sm btn-toolbar-mapa" id="btnLimparBuscaPacientes"><i class="bi bi-x-circle me-1"></i>Limpar busca</button>
+              <button type="button" class="btn btn-outline-primary btn-sm btn-toolbar-mapa" id="btnSelecionarVisiveis"><i class="bi bi-check2-square me-1"></i>Selecionar visiveis</button>
+              <button type="button" class="btn btn-outline-warning btn-sm btn-toolbar-mapa" id="btnOcultarSelecionadosLista"><i class="bi bi-eye-slash me-1"></i>Ocultar selecionados da lista</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnMostrarSomenteOcultos"><i class="bi bi-funnel me-1"></i>Mostrar apenas ocultos</button>
+              <button type="button" class="btn btn-outline-info btn-sm btn-toolbar-mapa" id="btnMostrarOcultosLista"><i class="bi bi-eye me-1"></i>Mostrar ocultos</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnLimparSelecao"><i class="bi bi-eraser me-1"></i>Remover selecionados do mapa</button>
+              <button type="button" id="btnToggleDetalhesPacientes" class="btn btn-sm btn-outline-warning toggle-orientacao-pacientes" data-filtro="{% if somente_ativos %}Ativos{% else %}Todos{% endif %}"><i class="bi bi-sliders me-1"></i>Exibir detalhes</button>
+            </div>
+
+            <div class="resumo-rapido-painel" id="resumoRapidoPainelPacientes">
+              <span class="item-resumo" id="resumoRapidoSelecionados">Selecionados: 0</span>
+              <span class="item-resumo" id="resumoRapidoPessoas">Pessoas: 0</span>
+              <span class="item-resumo" id="resumoRapidoOcultos">Ocultos: 0</span>
+              <span class="item-resumo" id="resumoRapidoAutoOcultar">Auto-ocultar: ligado</span>
+              <span class="item-resumo" id="resumoRapidoModoLista">Modo: lista principal</span>
+              <span class="item-resumo" id="resumoRapidoFiltro">Filtro: {% if somente_ativos %}Ativos{% else %}Todos{% endif %}</span>
+              <span class="item-resumo">Dica: ocultar nao remove da impressao</span>
+            </div>
+
+            <div class="toolbar-linha mt-2">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="toggleAutoOcultarPosPrevia" checked>
+                <label class="form-check-label small fw-semibold" for="toggleAutoOcultarPosPrevia" id="labelAutoOcultarPosPrevia">
+                  Auto-ocultar da lista apos abrir previa
+                </label>
+              </div>
+            </div>
+
+            <div id="boxDetalhesPacientes" class="detalhes-pacientes-box" style="display:none;">
+              <div class="toolbar-linha mb-2">
+                <span class="small text-muted fw-semibold">Filtro rápido:</span>
+                <a
+                  href="?{% if status_base_qs %}{{ status_base_qs }}&{% endif %}somente_ativos=1"
+                  class="btn btn-sm js-preserva-selecao btn-toolbar-mapa {% if somente_ativos %}btn-success{% else %}btn-outline-success{% endif %}"
+                >Ativos</a>
+                <a
+                  href="?{% if status_base_qs %}{{ status_base_qs }}&{% endif %}somente_ativos=0"
+                  class="btn btn-sm js-preserva-selecao btn-toolbar-mapa {% if not somente_ativos %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                >Todos</a>
+              </div>
+
+              <div class="toolbar-linha mb-2">
+                <span class="badge rounded-pill text-bg-success">Alocado na data</span>
+                <span class="badge rounded-pill text-bg-light border text-dark">Ainda não alocado</span>
+                <span class="badge rounded-pill text-bg-primary">Selecionado no mapa</span>
+              </div>
+
+              <div class="toolbar-linha mb-2">
+                <span class="chip-info-mapa">Verde = já alocado na data.</span>
+              </div>
+
+              <div class="orientacao-pacientes-box mb-0">
+                Marque os pacientes aqui sem sair desta tela. A seleção atualiza automaticamente o mapa e o salvamento da viagem.
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-height:420px; overflow:auto;">
+            <div class="aviso-auto-ocultar aviso-info aviso-fixo-lista" id="avisoAutoOcultarLista" role="status" aria-live="polite">Atencao: os pacientes permanecem selecionados para impressao.</div>
+            <table class="table table-sm table-hover align-middle mb-0" id="tabelaPacientesMapa">
+              <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                <tr>
+                  <th style="width:48px;">OK</th>
+                  <th>Paciente</th>
+                  <th style="width:120px;">Cidade/Bairro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in pacientes_cadastrados %}
+                <tr class="linha-paciente-mapa" data-paciente-id="{{ p.id }}">
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input paciente-mapa-check"
+                      value="{{ p.id }}"
+                      data-acompanhantes="{{ p.acompanhantes|default:0 }}"
+                      {% if p.id in selected_patient_ids %}checked{% endif %}
+                    >
+                  </td>
+                  <td>
+                    <div class="fw-semibold nome-paciente-mapa">{{ p.nome }}</div>
+                    <small class="text-muted">ID {{ p.id }}{% if p.peso %} • {{ p.peso }} kg{% endif %}</small>
+                  </td>
+                  <td>
+                    <small>{{ p.cidade|default:'-' }} / {{ p.bairro|default:'-' }}</small>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="text-muted text-center py-3">Nenhum paciente cadastrado.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if pacientes_page_obj and pacientes_page_obj.paginator.num_pages > 1 %}
+          <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+            <small class="text-muted">
+              Página {{ pacientes_page_obj.number }} de {{ pacientes_page_obj.paginator.num_pages }}
+            </small>
+            <div class="btn-group btn-group-sm" role="group">
+              {% if pacientes_page_obj.has_previous %}
+              <a class="btn btn-outline-secondary js-preserva-selecao" href="?{% if paginacao_base_qs %}{{ paginacao_base_qs }}&{% endif %}pagina_pacientes={{ pacientes_page_obj.previous_page_number }}">Anterior</a>
+              {% else %}
+              <button class="btn btn-outline-secondary" type="button" disabled>Anterior</button>
+              {% endif %}
+              {% if pacientes_page_obj.has_next %}
+              <a class="btn btn-outline-secondary js-preserva-selecao" href="?{% if paginacao_base_qs %}{{ paginacao_base_qs }}&{% endif %}pagina_pacientes={{ pacientes_page_obj.next_page_number }}">Próxima</a>
+              {% else %}
+              <button class="btn btn-outline-secondary" type="button" disabled>Próxima</button>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+          <small class="text-muted d-block mt-2" id="resumoPessoasSelecionadas">Total de pessoas selecionadas: 0</small>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
   (function() {
+    var STORAGE_KEY_INSTRUCOES = 'mapa_operacional_instrucoes_abertas_v1';
+    var STORAGE_KEY_DETALHES_PACIENTES = 'mapa_operacional_detalhes_pacientes_aberto_v1';
     var btn = document.getElementById('btnToggleInstrucoes');
     var box = document.getElementById('boxInstrucoes');
     var origem = document.getElementById('origemTransporte');
     var empresa = document.getElementById('empresaPrestadora');
     var hintPatrimonio = document.getElementById('hintPatrimonio');
+    var padraoAgendamento = document.getElementById('padraoAgendamento');
+    var camposPeriodo = document.getElementById('camposPeriodo');
+    var btnToggleDetalhesPacientes = document.getElementById('btnToggleDetalhesPacientes');
+    var boxDetalhesPacientes = document.getElementById('boxDetalhesPacientes');
     if (!btn || !box) return;
 
+    function salvarPreferencia(chave, aberto) {
+      try {
+        localStorage.setItem(chave, aberto ? '1' : '0');
+      } catch (e) {
+        // Ignore storage errors without breaking the page flow.
+      }
+    }
+
+    function lerPreferencia(chave, padrao) {
+      try {
+        var valor = localStorage.getItem(chave);
+        if (valor === null) return !!padrao;
+        return valor === '1';
+      } catch (e) {
+        return !!padrao;
+      }
+    }
+
+    function aplicarEstadoToggle(botao, caixa, aberto, textoFechar, textoAbrir) {
+      if (!botao || !caixa) return;
+      caixa.style.display = aberto ? 'block' : 'none';
+      botao.textContent = aberto ? textoFechar : textoAbrir;
+    }
+
+    function atualizarTextoBotaoDetalhes() {
+      if (!btnToggleDetalhesPacientes || !boxDetalhesPacientes) return;
+      var filtroAtual = btnToggleDetalhesPacientes.getAttribute('data-filtro') || 'Todos';
+      var aberto = boxDetalhesPacientes.style.display !== 'none';
+      btnToggleDetalhesPacientes.textContent = (aberto ? 'Ocultar detalhes do painel' : 'Exibir detalhes do painel') + ' (' + filtroAtual + ')';
+    }
+
+    function atualizarCamposPeriodo() {
+      if (!padraoAgendamento || !camposPeriodo) return;
+      camposPeriodo.style.display = padraoAgendamento.value === 'periodo' ? 'block' : 'none';
+    }
+
+    aplicarEstadoToggle(
+      btn,
+      box,
+      lerPreferencia(STORAGE_KEY_INSTRUCOES, false),
+      'Ocultar instruções de uso',
+      'Exibir instruções de uso'
+    );
+
     btn.addEventListener('click', function() {
-      var oculto = box.style.display === 'none';
-      box.style.display = oculto ? 'block' : 'none';
-      btn.textContent = oculto ? 'Ocultar instruções de uso' : 'Exibir instruções de uso';
+      var abrir = box.style.display === 'none';
+      aplicarEstadoToggle(btn, box, abrir, 'Ocultar instruções de uso', 'Exibir instruções de uso');
+      salvarPreferencia(STORAGE_KEY_INSTRUCOES, abrir);
     });
+
+    if (btnToggleDetalhesPacientes && boxDetalhesPacientes) {
+      aplicarEstadoToggle(
+        btnToggleDetalhesPacientes,
+        boxDetalhesPacientes,
+        lerPreferencia(STORAGE_KEY_DETALHES_PACIENTES, false),
+        'Ocultar detalhes do painel',
+        'Exibir detalhes do painel'
+      );
+      atualizarTextoBotaoDetalhes();
+
+      btnToggleDetalhesPacientes.addEventListener('click', function() {
+        var abrir = boxDetalhesPacientes.style.display === 'none';
+        aplicarEstadoToggle(btnToggleDetalhesPacientes, boxDetalhesPacientes, abrir, 'Ocultar detalhes do painel', 'Exibir detalhes do painel');
+        salvarPreferencia(STORAGE_KEY_DETALHES_PACIENTES, abrir);
+        atualizarTextoBotaoDetalhes();
+      });
+    }
 
     if (origem && empresa) {
       origem.addEventListener('change', function() {
@@ -153,6 +656,986 @@
         }
       });
     }
+
+    if (padraoAgendamento) {
+      padraoAgendamento.addEventListener('change', atualizarCamposPeriodo);
+      atualizarCamposPeriodo();
+    }
   })();
 </script>
-{% endblock %}
+<script>
+  
+ (function() {
+    var STORAGE_KEY = 'mapa_operacional_selecao_paciente_ids_v1';
+   var STORAGE_KEY_OCULTOS_LISTA = 'mapa_operacional_pacientes_ocultos_lista_v1';
+   var STORAGE_KEY_AUTO_OCULTAR_POS_PREVIA = 'mapa_operacional_auto_ocultar_pos_previa_v1';
+   var rotinasCache = [];
+   var idsOcultosLista = {};
+   var autoOcultarPosPrevia = true;
+  var modoSomenteOcultos = false;
+
+    function parseIdsCsv(valor) {
+      var ids = [];
+      (valor || '').split(',').forEach(function(parte) {
+        var n = parseInt((parte || '').trim(), 10);
+        if (!isNaN(n)) ids.push(String(n));
+      });
+      return ids;
+    }
+
+    function dedupeIds(ids) {
+      var set = {};
+      var out = [];
+      (ids || []).forEach(function(id) {
+        var key = String(id || '').trim();
+        if (!key || set[key]) return;
+        set[key] = true;
+        out.push(key);
+      });
+      return out;
+    }
+
+    function carregarOcultosLista() {
+      try {
+        var bruto = localStorage.getItem(STORAGE_KEY_OCULTOS_LISTA) || '';
+        var set = {};
+        dedupeIds(parseIdsCsv(bruto)).forEach(function(id) {
+          set[String(id)] = true;
+        });
+        return set;
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function salvarOcultosLista(setOcultos) {
+      try {
+        var ids = Object.keys(setOcultos || {}).filter(function(id) {
+          return !!setOcultos[id];
+        });
+        localStorage.setItem(STORAGE_KEY_OCULTOS_LISTA, dedupeIds(ids).join(','));
+      } catch (e) {
+        // Ignore storage errors without breaking the page flow.
+      }
+    }
+
+    function atualizarResumoOcultosLista() {
+      var el = document.getElementById('resumoRapidoOcultos');
+      if (!el) return;
+      var total = Object.keys(idsOcultosLista).filter(function(id) {
+        return !!idsOcultosLista[id];
+      }).length;
+      el.textContent = 'Ocultos: ' + total;
+    }
+
+    function carregarPreferenciaAutoOcultar() {
+      try {
+        var valor = localStorage.getItem(STORAGE_KEY_AUTO_OCULTAR_POS_PREVIA);
+        if (valor === null) return true;
+        return valor === '1';
+      } catch (e) {
+        return true;
+      }
+    }
+
+    function salvarPreferenciaAutoOcultar(ativo) {
+      try {
+        localStorage.setItem(STORAGE_KEY_AUTO_OCULTAR_POS_PREVIA, ativo ? '1' : '0');
+      } catch (e) {
+        // Ignore storage errors without breaking the page flow.
+      }
+    }
+
+    function atualizarResumoAutoOcultar() {
+      var el = document.getElementById('resumoRapidoAutoOcultar');
+      if (!el) return;
+      el.textContent = 'Auto-ocultar: ' + (autoOcultarPosPrevia ? 'ligado' : 'desligado');
+    }
+
+    function atualizarResumoModoLista() {
+      var el = document.getElementById('resumoRapidoModoLista');
+      if (!el) return;
+      el.textContent = modoSomenteOcultos ? 'Modo: apenas ocultos' : 'Modo: lista principal';
+    }
+
+    function atualizarBotaoSomenteOcultos() {
+      var btn = document.getElementById('btnMostrarSomenteOcultos');
+      if (!btn) return;
+      btn.classList.remove('btn-outline-secondary', 'btn-outline-warning');
+      if (modoSomenteOcultos) {
+        btn.classList.add('btn-outline-warning');
+        btn.innerHTML = '<i class="bi bi-list me-1"></i>Voltar para lista';
+      } else {
+        btn.classList.add('btn-outline-secondary');
+        btn.innerHTML = '<i class="bi bi-funnel me-1"></i>Mostrar apenas ocultos';
+      }
+      atualizarResumoModoLista();
+    }
+
+    function atualizarEstadoToggleAutoOcultar() {
+      var toggle = document.getElementById('toggleAutoOcultarPosPrevia');
+      var label = document.getElementById('labelAutoOcultarPosPrevia');
+      if (toggle) {
+        toggle.checked = !!autoOcultarPosPrevia;
+      }
+      if (label) {
+        label.textContent = autoOcultarPosPrevia
+          ? 'Auto-ocultar da lista apos abrir previa (ligado)'
+          : 'Auto-ocultar da lista apos abrir previa (desligado)';
+      }
+      atualizarResumoAutoOcultar();
+    }
+
+    function registrarAvisoAutoOcultar(mensagem, tipo) {
+      var el = document.getElementById('avisoAutoOcultarLista');
+      if (!el) return;
+      var tipoMensagem = tipo || 'info';
+      var prefixo = 'Atencao: ';
+      if (tipoMensagem === 'ok') {
+        prefixo = 'Sucesso: ';
+      } else if (tipoMensagem === 'neutro') {
+        prefixo = 'Info: ';
+      }
+
+      el.classList.remove('aviso-info', 'aviso-ok', 'aviso-neutro');
+      if (tipoMensagem === 'ok') {
+        el.classList.add('aviso-ok');
+      } else if (tipoMensagem === 'neutro') {
+        el.classList.add('aviso-neutro');
+      } else {
+        el.classList.add('aviso-info');
+      }
+
+      el.textContent = prefixo + mensagem;
+    }
+
+    function configurarAvisosHoverAlocacao() {
+      var nomes = document.querySelectorAll('.nome-paciente-mapa');
+      Array.prototype.forEach.call(nomes, function(nomeEl) {
+        if (nomeEl.getAttribute('data-hover-aviso-registrado') === '1') return;
+        nomeEl.setAttribute('data-hover-aviso-registrado', '1');
+
+        nomeEl.addEventListener('mouseenter', function() {
+          var linha = nomeEl.closest('.linha-paciente-mapa');
+          if (!linha) return;
+          var alocado = linha.getAttribute('data-alocado') === '1';
+          if (alocado) {
+            registrarAvisoAutoOcultar('Paciente ja alocado em veiculo.', 'neutro');
+          } else {
+            registrarAvisoAutoOcultar('Paciente ainda nao alocado em veiculo.', 'neutro');
+          }
+        });
+
+        nomeEl.addEventListener('mouseleave', function() {
+          registrarAvisoAutoOcultar('Os pacientes permanecem selecionados para impressao.', 'info');
+        });
+      });
+    }
+
+    function salvarSelecaoLocal(ids) {
+      try {
+        localStorage.setItem(STORAGE_KEY, dedupeIds(ids).join(','));
+      } catch (e) {
+        // Ignore storage errors without breaking the page flow.
+      }
+    }
+
+    function carregarSelecaoLocal() {
+      try {
+        return dedupeIds(parseIdsCsv(localStorage.getItem(STORAGE_KEY) || ''));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function preencherSelectRotinas() {
+      var select = document.getElementById('selectPadraoRotina');
+      if (!select) return;
+      var atual = select.value;
+      var rotinas = rotinasCache;
+
+      select.innerHTML = '<option value="">Selecione um padrão salvo</option>';
+      rotinas.forEach(function(r) {
+        if (!r || !r.nome || !r.id) return;
+        var opt = document.createElement('option');
+        opt.value = String(r.id);
+        opt.textContent = r.nome;
+        select.appendChild(opt);
+      });
+
+      if (atual && rotinas.some(function(r) { return r && String(r.id) === String(atual); })) {
+        select.value = atual;
+      }
+    }
+
+    function carregarRotinasServidor() {
+      return fetch('{% url 'transporte_pacientes:rotinas_mapa_api' %}', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      .then(function(resp) {
+        return resp.json().catch(function() { return {}; });
+      })
+      .then(function(result) {
+        if (result && result.ok && Array.isArray(result.rotinas)) {
+          rotinasCache = result.rotinas;
+          preencherSelectRotinas();
+          return true;
+        }
+        return false;
+      })
+      .catch(function() {
+        return false;
+      });
+    }
+
+    function salvarRotinaServidor(payload) {
+      return fetch('{% url 'transporte_pacientes:rotinas_mapa_api' %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(document.getElementById('formMapa'))
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(function(resp) {
+        return resp.json().catch(function() { return {}; });
+      });
+    }
+
+    function excluirRotinaServidor(id) {
+      return salvarRotinaServidor({ action: 'delete', id: id });
+    }
+
+    function capturarEstadoAtualFormulario() {
+      var form = document.getElementById('formMapa');
+      if (!form) return null;
+
+      var idsSelecionados = dedupeIds(Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check:checked'))
+        .map(function(c) { return c.value; }));
+
+      return {
+        origem: (form.querySelector('[name="origem"]') || {}).value || '',
+        empresa: (form.querySelector('[name="empresa"]') || {}).value || '',
+        padrao_agendamento: (form.querySelector('[name="padrao_agendamento"]') || {}).value || 'data_unica',
+        data_final: (form.querySelector('[name="data_final"]') || {}).value || '',
+        apenas_dias_uteis: !!((form.querySelector('[name="apenas_dias_uteis"]') || {}).checked),
+        numero_viagem: (form.querySelector('[name="numero_viagem"]') || {}).value || '',
+        condutor: (form.querySelector('[name="condutor"]') || {}).value || '',
+        veiculo: (form.querySelector('[name="veiculo"]') || {}).value || '',
+        horario_consulta: (form.querySelector('[name="horario_consulta"]') || {}).value || '',
+        observacoes: (form.querySelector('[name="observacoes"]') || {}).value || '',
+        paciente_ids: idsSelecionados
+      };
+    }
+
+    function aplicarEstadoNoFormulario(dados) {
+      var form = document.getElementById('formMapa');
+      if (!form || !dados) return;
+
+      function setValor(nome, valor) {
+        var el = form.querySelector('[name="' + nome + '"]');
+        if (!el) return;
+        if (el.type === 'checkbox') {
+          el.checked = !!valor;
+        } else {
+          el.value = valor == null ? '' : valor;
+        }
+      }
+
+      setValor('origem', dados.origem || 'nem');
+      setValor('empresa', dados.empresa || 'NEM');
+      setValor('padrao_agendamento', dados.padrao_agendamento || 'data_unica');
+      setValor('data_final', dados.data_final || '');
+      setValor('apenas_dias_uteis', !!dados.apenas_dias_uteis);
+      setValor('numero_viagem', dados.numero_viagem || '1ª Viagem');
+      setValor('condutor', dados.condutor || '');
+      setValor('veiculo', dados.veiculo || '');
+      setValor('horario_consulta', dados.horario_consulta || '');
+      setValor('observacoes', dados.observacoes || '');
+
+      aplicarChecksPorIds(Array.isArray(dados.paciente_ids) ? dados.paciente_ids : []);
+      syncPacienteIdsHidden();
+
+      var padraoAgendamento = document.getElementById('padraoAgendamento');
+      if (padraoAgendamento) {
+        var evento = new Event('change');
+        padraoAgendamento.dispatchEvent(evento);
+      }
+
+      var origemTransporte = document.getElementById('origemTransporte');
+      if (origemTransporte) {
+        origemTransporte.dispatchEvent(new Event('change'));
+      }
+    }
+
+    function aplicarChecksPorIds(ids) {
+      var set = {};
+      dedupeIds(ids).forEach(function(id) {
+        set[String(id)] = true;
+      });
+
+      var checks = document.querySelectorAll('.paciente-mapa-check');
+      Array.prototype.forEach.call(checks, function(check) {
+        check.checked = !!set[String(check.value)];
+      });
+    }
+
+    function atualizarLinksComSelecao(ids) {
+      var idsCsv = dedupeIds(ids).join(',');
+      var links = document.querySelectorAll('a.js-preserva-selecao');
+      Array.prototype.forEach.call(links, function(link) {
+        var href = link.getAttribute('href') || '';
+        if (!href) return;
+
+        var url;
+        try {
+          url = new URL(href, window.location.origin);
+        } catch (e) {
+          return;
+        }
+
+        if (idsCsv) {
+          url.searchParams.set('paciente_ids', idsCsv);
+        } else {
+          url.searchParams.delete('paciente_ids');
+        }
+
+        var novaHref = url.pathname + (url.search || '');
+        link.setAttribute('href', novaHref);
+      });
+    }
+
+    function atualizarResumoSelecao() {
+      var checks = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check'));
+      var selecionados = checks.filter(function(c) { return c.checked; });
+      var badge = document.getElementById('badgeSelecionados');
+      var resumo = document.getElementById('resumoPessoasSelecionadas');
+      var totalPacientes = selecionados.length;
+      var totalAcompanhantes = selecionados.reduce(function(acc, c) {
+        var qtd = parseInt(c.dataset.acompanhantes || '0', 10);
+        return acc + (isNaN(qtd) ? 0 : qtd);
+      }, 0);
+      var totalPessoas = totalPacientes + totalAcompanhantes;
+
+      if (badge) {
+        badge.textContent = totalPacientes + ' selecionado(s)';
+      }
+      if (resumo) {
+        resumo.textContent = 'Total de pessoas selecionadas: ' + totalPessoas +
+          ' (Pacientes: ' + totalPacientes + ' | Acompanhantes: ' + totalAcompanhantes + ')';
+      }
+      if (resumoRapidoSelecionados) {
+        resumoRapidoSelecionados.textContent = 'Selecionados: ' + totalPacientes;
+      }
+      if (resumoRapidoPessoas) {
+        resumoRapidoPessoas.textContent = 'Pessoas: ' + totalPessoas;
+      }
+    }
+
+    function aplicarDestaqueAlocados(idsAlocados) {
+      var mapa = {};
+      (idsAlocados || []).forEach(function(id) {
+        mapa[String(id)] = true;
+      });
+
+      var linhas = document.querySelectorAll('.linha-paciente-mapa');
+      Array.prototype.forEach.call(linhas, function(linha) {
+        var pid = String(linha.getAttribute('data-paciente-id') || '');
+        var alocado = !!mapa[pid];
+        linha.setAttribute('data-alocado', alocado ? '1' : '0');
+      });
+
+      atualizarCoresLinhasPacientes();
+    }
+
+    function atualizarCoresLinhasPacientes() {
+      var linhas = document.querySelectorAll('.linha-paciente-mapa');
+      Array.prototype.forEach.call(linhas, function(linha) {
+        var check = linha.querySelector('.paciente-mapa-check');
+        var nomePaciente = linha.querySelector('.nome-paciente-mapa');
+        var selecionado = !!(check && check.checked);
+        var alocado = linha.getAttribute('data-alocado') === '1';
+
+        linha.classList.remove('table-success', 'table-light', 'table-primary');
+
+        if (alocado) {
+          linha.classList.add('table-success');
+        } else if (selecionado) {
+          linha.classList.add('table-primary');
+        } else {
+          linha.classList.add('table-light');
+        }
+
+        linha.classList.toggle('linha-selecionada-mapa', selecionado);
+
+        if (nomePaciente) {
+          if (alocado) {
+            nomePaciente.setAttribute('title', 'Paciente ja alocado em veiculo.');
+          } else {
+            nomePaciente.setAttribute('title', 'Paciente ainda nao alocado em veiculo.');
+          }
+        }
+      });
+    }
+
+    function atualizarDestaquePorData() {
+      var dataEl = document.querySelector('#formMapa [name="data"]');
+      if (!dataEl || !dataEl.value) return;
+
+      fetch('{% url 'transporte_pacientes:pacientes_alocados_por_data' %}?data=' + encodeURIComponent(dataEl.value), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      .then(function(resp) {
+        return resp.json().catch(function() { return {}; });
+      })
+      .then(function(result) {
+        if (result && result.ok && Array.isArray(result.alocados_ids)) {
+          aplicarDestaqueAlocados(result.alocados_ids);
+        }
+      })
+      .catch(function() {
+        // Mantem o fluxo sem bloquear o usuario caso a consulta de destaque falhe.
+      });
+    }
+
+    function syncPacienteIdsHidden() {
+      var hidden = document.getElementById('pacienteIdsHidden');
+      if (!hidden) return;
+      var ids = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check:checked'))
+        .map(function(c) { return c.value; });
+      ids = dedupeIds(ids);
+      hidden.value = ids.join(',');
+      salvarSelecaoLocal(ids);
+      atualizarLinksComSelecao(ids);
+      atualizarResumoSelecao();
+      atualizarCoresLinhasPacientes();
+    }
+
+    function aplicarFiltroPacientes() {
+      var filtroEl = document.getElementById('filtroPacientesMapa');
+      var termo = (filtroEl && filtroEl.value ? filtroEl.value : '').trim().toLowerCase();
+      var linhas = document.querySelectorAll('#tabelaPacientesMapa tbody tr');
+
+      Array.prototype.forEach.call(linhas, function(tr) {
+        if (tr.classList && tr.classList.contains('linha-paciente-mapa')) {
+          var pid = String(tr.getAttribute('data-paciente-id') || '');
+          var estaOculto = pid && idsOcultosLista[pid];
+          if (!modoSomenteOcultos && estaOculto) {
+            tr.style.display = 'none';
+            return;
+          }
+          if (modoSomenteOcultos && !estaOculto) {
+            tr.style.display = 'none';
+            return;
+          }
+        }
+        var texto = (tr.textContent || '').toLowerCase();
+        var visivel = !termo || texto.indexOf(termo) !== -1;
+        tr.style.display = visivel ? '' : 'none';
+      });
+    }
+
+    function ocultarIdsNaLista(ids, origem) {
+      var lista = dedupeIds(ids || []);
+      if (!lista.length) {
+        return 0;
+      }
+      var adicionados = 0;
+      lista.forEach(function(id) {
+        if (!idsOcultosLista[id]) {
+          idsOcultosLista[id] = true;
+          adicionados += 1;
+        }
+      });
+      salvarOcultosLista(idsOcultosLista);
+      atualizarResumoOcultosLista();
+      aplicarFiltroPacientes();
+      if (origem === 'automatica' && adicionados > 0) {
+        registrarAvisoAutoOcultar(adicionados + ' paciente(s) ocultado(s) automaticamente apos abrir a previa.', 'ok');
+      }
+      return adicionados;
+    }
+
+    function ocultarSelecionadosDaLista() {
+      var checksMarcados = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check:checked'));
+      if (!checksMarcados.length) {
+        alert('Selecione ao menos um paciente para ocultar da lista.');
+        return;
+      }
+      ocultarIdsNaLista(checksMarcados.map(function(check) { return check.value; }), 'manual');
+      registrarAvisoAutoOcultar('Pacientes ocultados manualmente. Eles continuam selecionados para impressao.', 'ok');
+    }
+
+    function mostrarOcultosDaLista() {
+      idsOcultosLista = {};
+      modoSomenteOcultos = false;
+      salvarOcultosLista(idsOcultosLista);
+      atualizarResumoOcultosLista();
+      atualizarBotaoSomenteOcultos();
+      aplicarFiltroPacientes();
+      registrarAvisoAutoOcultar('Lista restaurada. Nenhum paciente oculto no momento.', 'ok');
+    }
+
+    function alternarSomenteOcultos() {
+      var totalOcultos = Object.keys(idsOcultosLista).filter(function(id) {
+        return !!idsOcultosLista[id];
+      }).length;
+
+      if (!modoSomenteOcultos && totalOcultos === 0) {
+        alert('Nao ha pacientes ocultos para exibir.');
+        return;
+      }
+
+      modoSomenteOcultos = !modoSomenteOcultos;
+      atualizarBotaoSomenteOcultos();
+      aplicarFiltroPacientes();
+
+      if (modoSomenteOcultos) {
+        registrarAvisoAutoOcultar('Exibindo somente pacientes ocultos da lista principal.', 'neutro');
+      } else {
+        registrarAvisoAutoOcultar('Exibindo lista principal. Pacientes ocultos continuam fora da lista.', 'neutro');
+      }
+    }
+
+    function ordenarPacientesPorIdCrescente() {
+      var tbody = document.querySelector('#tabelaPacientesMapa tbody');
+      if (!tbody) return;
+
+      var linhas = Array.prototype.slice.call(tbody.querySelectorAll('tr.linha-paciente-mapa'));
+      linhas.sort(function(a, b) {
+        var idA = parseInt(a.getAttribute('data-paciente-id') || '0', 10);
+        var idB = parseInt(b.getAttribute('data-paciente-id') || '0', 10);
+        if (isNaN(idA) && isNaN(idB)) return 0;
+        if (isNaN(idA)) return 1;
+        if (isNaN(idB)) return -1;
+        return idA - idB;
+      });
+
+      linhas.forEach(function(linha) {
+        tbody.appendChild(linha);
+      });
+    }
+
+  function getCsrfToken(form) {
+      var input = form.querySelector('[name="csrfmiddlewaretoken"]');
+      if (input && input.value) {
+        return input.value;
+      }
+      var value = '; ' + document.cookie;
+      var parts = value.split('; csrftoken=');
+      if (parts.length === 2) {
+        return parts.pop().split(';').shift();
+      }
+      return '';
+    }
+
+    var btnSalvar = document.getElementById('btnSalvarViagem');
+    var btnSalvarEPrevia = document.getElementById('btnSalvarEPrevia');
+    var formMapa = document.getElementById('formMapa');
+    var btnPreviaSemSalvar = formMapa ? formMapa.querySelector('button[type="submit"]') : null;
+    var inputNomePadrao = document.getElementById('nomePadraoRotina');
+    var selectPadrao = document.getElementById('selectPadraoRotina');
+    var btnSalvarPadrao = document.getElementById('btnSalvarPadraoRotina');
+    var btnAplicarPadrao = document.getElementById('btnAplicarPadraoRotina');
+    var btnExcluirPadrao = document.getElementById('btnExcluirPadraoRotina');
+    var checks = document.querySelectorAll('.paciente-mapa-check');
+    var filtro = document.getElementById('filtroPacientesMapa');
+    var btnLimparBuscaPacientes = document.getElementById('btnLimparBuscaPacientes');
+    var btnSelecionarVisiveis = document.getElementById('btnSelecionarVisiveis');
+    var btnLimparSelecao = document.getElementById('btnLimparSelecao');
+    var btnOcultarSelecionadosLista = document.getElementById('btnOcultarSelecionadosLista');
+    var btnMostrarSomenteOcultos = document.getElementById('btnMostrarSomenteOcultos');
+    var btnMostrarOcultosLista = document.getElementById('btnMostrarOcultosLista');
+    var resumoRapidoSelecionados = document.getElementById('resumoRapidoSelecionados');
+    var resumoRapidoPessoas = document.getElementById('resumoRapidoPessoas');
+    var statusSalvamentoMapa = document.getElementById('statusSalvamentoMapa');
+
+    function exibirStatusSalvamento(tipo, mensagem) {
+      if (!statusSalvamentoMapa) return;
+      statusSalvamentoMapa.className = 'status-salvamento mt-2';
+      if (tipo) {
+        statusSalvamentoMapa.classList.add('status-' + tipo);
+      }
+      statusSalvamentoMapa.textContent = mensagem || '';
+    }
+
+    ordenarPacientesPorIdCrescente();
+    idsOcultosLista = carregarOcultosLista();
+    autoOcultarPosPrevia = carregarPreferenciaAutoOcultar();
+    atualizarResumoOcultosLista();
+    atualizarEstadoToggleAutoOcultar();
+    atualizarBotaoSomenteOcultos();
+    registrarAvisoAutoOcultar('Os pacientes permanecem selecionados para impressao.', 'info');
+    configurarAvisosHoverAlocacao();
+
+    Array.prototype.forEach.call(checks, function(check) {
+      check.addEventListener('change', syncPacienteIdsHidden);
+    });
+
+    if (filtro) {
+      filtro.addEventListener('input', aplicarFiltroPacientes);
+      filtro.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+          filtro.value = '';
+          aplicarFiltroPacientes();
+        }
+      });
+    }
+
+    if (btnLimparBuscaPacientes && filtro) {
+      btnLimparBuscaPacientes.addEventListener('click', function() {
+        filtro.value = '';
+        filtro.focus();
+        aplicarFiltroPacientes();
+      });
+    }
+
+    var dataInputMapa = document.querySelector('#formMapa [name="data"]');
+    if (dataInputMapa) {
+      dataInputMapa.addEventListener('change', atualizarDestaquePorData);
+    }
+
+    if (btnSelecionarVisiveis) {
+      btnSelecionarVisiveis.addEventListener('click', function() {
+        var visiveis = document.querySelectorAll('#tabelaPacientesMapa tbody tr');
+        Array.prototype.forEach.call(visiveis, function(tr) {
+          if (tr.style.display === 'none') return;
+          var check = tr.querySelector('.paciente-mapa-check');
+          if (check) check.checked = true;
+        });
+        syncPacienteIdsHidden();
+      });
+    }
+
+    if (btnLimparSelecao) {
+      btnLimparSelecao.addEventListener('click', function() {
+        Array.prototype.forEach.call(checks, function(check) {
+          check.checked = false;
+        });
+        syncPacienteIdsHidden();
+      });
+    }
+
+    if (btnOcultarSelecionadosLista) {
+      btnOcultarSelecionadosLista.addEventListener('click', ocultarSelecionadosDaLista);
+    }
+
+    if (btnMostrarOcultosLista) {
+      btnMostrarOcultosLista.addEventListener('click', mostrarOcultosDaLista);
+    }
+
+    if (btnMostrarSomenteOcultos) {
+      btnMostrarSomenteOcultos.addEventListener('click', alternarSomenteOcultos);
+    }
+
+    var toggleAutoOcultarPosPrevia = document.getElementById('toggleAutoOcultarPosPrevia');
+    if (toggleAutoOcultarPosPrevia) {
+      toggleAutoOcultarPosPrevia.addEventListener('change', function() {
+        autoOcultarPosPrevia = !!toggleAutoOcultarPosPrevia.checked;
+        salvarPreferenciaAutoOcultar(autoOcultarPosPrevia);
+        atualizarEstadoToggleAutoOcultar();
+      });
+    }
+
+    if (formMapa && btnPreviaSemSalvar) {
+      formMapa.addEventListener('submit', function(event) {
+        if (!autoOcultarPosPrevia) return;
+        var submitter = event.submitter;
+        if (submitter && submitter !== btnPreviaSemSalvar) return;
+        var idsSelecionados = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check:checked'))
+          .map(function(c) { return c.value; });
+        ocultarIdsNaLista(idsSelecionados, 'automatica');
+      });
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (!filtro) return;
+      if (event.key === '/' && document.activeElement !== filtro) {
+        var tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        event.preventDefault();
+        filtro.focus();
+      }
+    });
+
+    carregarRotinasServidor();
+
+    if (btnSalvarPadrao) {
+      btnSalvarPadrao.addEventListener('click', function() {
+        var nome = (inputNomePadrao && inputNomePadrao.value ? inputNomePadrao.value : '').trim();
+        if (!nome) {
+          alert('Informe um nome para o padrão de rotina.');
+          return;
+        }
+
+        var estado = capturarEstadoAtualFormulario();
+        if (!estado) return;
+
+        var rotinaExistente = rotinasCache.find(function(r) {
+          return r && r.nome === nome;
+        });
+
+        salvarRotinaServidor({
+          action: 'save',
+          id: rotinaExistente ? rotinaExistente.id : null,
+          nome: nome,
+          dados: estado
+        }).then(function(result) {
+          if (!result || !result.ok) {
+            alert('Erro ao salvar padrão: ' + ((result && (result.erro || result.error)) || 'erro desconhecido'));
+            return;
+          }
+
+          if (Array.isArray(result.rotinas)) {
+            rotinasCache = result.rotinas;
+            preencherSelectRotinas();
+          }
+          if (selectPadrao && result.rotina && result.rotina.id) {
+            selectPadrao.value = String(result.rotina.id);
+          }
+          alert('Padrão de rotina salvo no banco com sucesso.');
+        }).catch(function(err) {
+          alert('Falha ao salvar padrão: ' + err.message);
+        });
+      });
+    }
+
+    if (btnAplicarPadrao) {
+      btnAplicarPadrao.addEventListener('click', function() {
+        var rotinaId = (selectPadrao && selectPadrao.value ? selectPadrao.value : '').trim();
+        if (!rotinaId) {
+          alert('Selecione um padrão para aplicar.');
+          return;
+        }
+
+        var rotina = rotinasCache.find(function(r) {
+          return r && String(r.id) === String(rotinaId);
+        });
+        if (!rotina || !rotina.dados) {
+          alert('Padrão não encontrado.');
+          return;
+        }
+
+        aplicarEstadoNoFormulario(rotina.dados);
+        if (inputNomePadrao) {
+          inputNomePadrao.value = rotina.nome || '';
+        }
+        alert('Padrão aplicado. Você pode ajustar condutor, veículo e destino antes de salvar.');
+      });
+    }
+
+    if (btnExcluirPadrao) {
+      btnExcluirPadrao.addEventListener('click', function() {
+        var rotinaId = (selectPadrao && selectPadrao.value ? selectPadrao.value : '').trim();
+        if (!rotinaId) {
+          alert('Selecione um padrão para excluir.');
+          return;
+        }
+
+        var rotina = rotinasCache.find(function(r) {
+          return r && String(r.id) === String(rotinaId);
+        });
+        var nome = rotina && rotina.nome ? rotina.nome : 'selecionado';
+
+        if (!confirm('Deseja excluir o padrão "' + nome + '"?')) {
+          return;
+        }
+
+        excluirRotinaServidor(rotinaId).then(function(result) {
+          if (!result || !result.ok) {
+            alert('Erro ao excluir padrão: ' + ((result && (result.erro || result.error)) || 'erro desconhecido'));
+            return;
+          }
+
+          if (Array.isArray(result.rotinas)) {
+            rotinasCache = result.rotinas;
+            preencherSelectRotinas();
+          }
+          if (inputNomePadrao) {
+            inputNomePadrao.value = '';
+          }
+          alert('Padrão excluído com sucesso.');
+        }).catch(function(err) {
+          alert('Falha ao excluir padrão: ' + err.message);
+        });
+      });
+    }
+
+    var hiddenInicial = document.getElementById('pacienteIdsHidden');
+    var idsDaUrl = parseIdsCsv(hiddenInicial ? hiddenInicial.value : '');
+    var idsIniciais = idsDaUrl.length ? idsDaUrl : carregarSelecaoLocal();
+    if (idsIniciais.length) {
+      aplicarChecksPorIds(idsIniciais);
+      if (hiddenInicial) {
+        hiddenInicial.value = dedupeIds(idsIniciais).join(',');
+      }
+    }
+
+    syncPacienteIdsHidden();
+    aplicarDestaqueAlocados([{% for pid in alocados_na_data_ids %}{{ pid }}{% if not forloop.last %}, {% endif %}{% endfor %}]);
+    aplicarFiltroPacientes();
+
+    if (!btnSalvar && !btnSalvarEPrevia) return;
+
+    function resetarBotoesSalvar() {
+      if (btnSalvar) {
+        btnSalvar.disabled = false;
+        btnSalvar.innerHTML = '<i class="bi bi-save"></i> Salvar e continuar editando';
+      }
+      if (btnSalvarEPrevia) {
+        btnSalvarEPrevia.disabled = false;
+        btnSalvarEPrevia.innerHTML = '<i class="bi bi-check2-circle"></i> Concluir e abrir prévia';
+      }
+    }
+
+    function abrirPreviaEmNovaAba(form, extras) {
+      try {
+        if (autoOcultarPosPrevia) {
+          var idsSelecionados = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check:checked'))
+            .map(function(c) { return c.value; });
+          ocultarIdsNaLista(idsSelecionados, 'automatica');
+        }
+        var action = form.getAttribute('action') || window.location.href;
+        var params = new URLSearchParams(new FormData(form));
+        if (extras && Array.isArray(extras.viagem_ids) && extras.viagem_ids.length) {
+          params.set('viagem_ids', extras.viagem_ids.join(','));
+        }
+        var url = action + (action.indexOf('?') === -1 ? '?' : '&') + params.toString();
+        window.open(url, '_blank');
+      } catch (e) {
+        form.submit();
+      }
+    }
+
+    function executarSalvamento(opcoes) {
+      var modo = (opcoes && opcoes.modo) || 'continuar';
+      var form = document.getElementById('formMapa');
+      if (!form) return;
+
+      var dataVal = form.querySelector('[name="data"]').value;
+      if (!dataVal) {
+        alert('Informe a data da viagem.');
+        return;
+      }
+
+      var padraoAgendamento = form.querySelector('[name="padrao_agendamento"]');
+      var dataFinalEl = form.querySelector('[name="data_final"]');
+      if (padraoAgendamento && padraoAgendamento.value === 'periodo') {
+        var dataFinalVal = dataFinalEl ? dataFinalEl.value : '';
+        if (!dataFinalVal) {
+          alert('Informe a data final para agendamento por período.');
+          return;
+        }
+      }
+
+      var campoPacientes = form.querySelector('[name="paciente_ids"]');
+      var pacienteIds = [];
+      if (campoPacientes && campoPacientes.value) {
+        pacienteIds = campoPacientes.value.split(',').map(function(s) {
+          return parseInt(s.trim(), 10);
+        }).filter(function(n) {
+          return !isNaN(n);
+        });
+      }
+
+      var payload = {
+        data: dataVal,
+        padrao_agendamento: form.querySelector('[name="padrao_agendamento"]').value,
+        data_final: form.querySelector('[name="data_final"]') ? form.querySelector('[name="data_final"]').value : '',
+        apenas_dias_uteis: form.querySelector('[name="apenas_dias_uteis"]') ? form.querySelector('[name="apenas_dias_uteis"]').checked : false,
+        veiculo: form.querySelector('[name="veiculo"]').value,
+        condutor: form.querySelector('[name="condutor"]').value,
+        numero_viagem: form.querySelector('[name="numero_viagem"]').value,
+        observacoes: form.querySelector('[name="observacoes"]') ? form.querySelector('[name="observacoes"]').value : '',
+        paciente_ids: pacienteIds
+      };
+
+      if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando…';
+      }
+      if (btnSalvarEPrevia) {
+        btnSalvarEPrevia.disabled = true;
+        btnSalvarEPrevia.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Salvando…';
+      }
+      exibirStatusSalvamento('info', 'Salvando viagem...');
+
+      var urlSalvar = (btnSalvar && btnSalvar.dataset.url) || (btnSalvarEPrevia && btnSalvarEPrevia.dataset.url);
+      fetch(urlSalvar, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(form)
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(function(resp) {
+        return resp.json().catch(function() { return {}; }).then(function(result) {
+          result = result || {};
+          result.__httpOk = resp.ok;
+          result.__status = resp.status;
+          return result;
+        });
+      })
+      .then(function(result) {
+        var mensagemErro = result.erro || result.error || ('falha HTTP ' + (result.__status || 'desconhecida'));
+        if (result.ok) {
+          var linhas = [
+            'Viagem(ns) salva(s) com sucesso!',
+            '',
+            'Primeiro ID: ' + (result.viagem_id || '-'),
+            'Viagens: ' + (result.total_viagens || 1),
+            'Transportes: ' + (result.total_transportes || 0),
+            'Blocos: ' + (result.total_blocos || 0)
+          ];
+          if (result.periodo_agendado) {
+            linhas.push('Período: ' + result.periodo_agendado);
+          }
+
+          var agora = new Date();
+          var horarioSalvo = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          exibirStatusSalvamento('success', 'Salvo com sucesso às ' + horarioSalvo + '.');
+
+          if (modo === 'concluir_previa') {
+            var abrirPreviaAgora = confirm(linhas.join('\n') + '\n\nAbrir prévia do mapa agora?\n\nOK = abrir prévia\nCancelar = continuar editando');
+            if (abrirPreviaAgora) {
+              resetarBotoesSalvar();
+              abrirPreviaEmNovaAba(form, { viagem_ids: Array.isArray(result.viagem_ids) ? result.viagem_ids : [] });
+              return;
+            }
+          }
+        } else {
+          exibirStatusSalvamento('danger', 'Erro ao salvar: ' + mensagemErro);
+          alert('Erro ao salvar: ' + mensagemErro);
+        }
+      })
+      .catch(function(err) {
+        exibirStatusSalvamento('danger', 'Falha na requisição: ' + err.message);
+        alert('Falha na requisição: ' + err.message);
+      })
+      .finally(function() {
+        resetarBotoesSalvar();
+      });
+    }
+
+    if (btnSalvar) {
+      btnSalvar.addEventListener('click', function() {
+        executarSalvamento({ modo: 'continuar' });
+      });
+    }
+
+    if (btnSalvarEPrevia) {
+      btnSalvarEPrevia.addEventListener('click', function() {
+        executarSalvamento({ modo: 'concluir_previa' });
+      });
+    }
+  })();
+</script>
+
+    {% endblock %}

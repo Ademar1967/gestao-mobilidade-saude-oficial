@@ -131,7 +131,6 @@ import dj_database_url
 _db_url = os.environ.get("DATABASE_URL", "").strip()
 # Mantem modo estrito como opt-in para evitar quebra de deploy.
 _strict_database_url = strtobool(os.environ.get("STRICT_DATABASE_URL", "0"))
-print("DEBUG DATABASE_URL:", repr(_db_url[:60]))
 
 if _strict_database_url and not DEBUG and not _db_url:
     raise ImproperlyConfigured(

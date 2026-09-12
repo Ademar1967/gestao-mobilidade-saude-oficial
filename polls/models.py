@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -556,3 +557,49 @@ class Bloco(models.Model):
     @property
     def total_pacientes(self):
         return self.transportes.count()
+
+
+class RotinaMapaViagem(models.Model):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="rotinas_mapa_viagem",
+    )
+    nome = models.CharField(max_length=100)
+    origem = models.CharField(max_length=20, default="nem")
+    empresa = models.CharField(max_length=30, default="NEM")
+    padrao_agendamento = models.CharField(max_length=20, default="data_unica")
+    data_final = models.DateField(null=True, blank=True)
+    apenas_dias_uteis = models.BooleanField(default=False)
+    numero_viagem = models.CharField(max_length=20, default="1ª Viagem")
+    condutor = models.ForeignKey(
+        "Condutor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rotinas_mapa_viagem",
+    )
+    veiculo = models.ForeignKey(
+        "Veiculo",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rotinas_mapa_viagem",
+    )
+    horario_consulta = models.TimeField(null=True, blank=True)
+    observacoes = models.TextField(blank=True)
+    paciente_ids_json = models.JSONField(default=list, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["nome"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["usuario", "nome"],
+                name="uniq_rotina_mapa_viagem_usuario_nome",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.nome} ({self.usuario})"

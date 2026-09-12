@@ -13,7 +13,6 @@ URLS_PUBLICAS = [
     "/api/token/",
     "/api/token/refresh/",
     "/autocomplete_endereco_unidade/",
-    "/pacientes/cadastrar-simples/",
 ]
 
 
@@ -60,9 +59,6 @@ class LoginObrigatorioMiddleware:
             return self.get_response(request)
 
         if path.startswith("/autocomplete_endereco_unidade/"):
-            return self.get_response(request)
-
-        if path.startswith("/pacientes/cadastrar-simples/"):
             return self.get_response(request)
 
         if not request.user.is_authenticated:

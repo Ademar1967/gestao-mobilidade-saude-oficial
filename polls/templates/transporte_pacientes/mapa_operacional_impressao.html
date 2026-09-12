@@ -21,24 +21,91 @@
        BOTÕES DE AÇÃO — visíveis apenas na tela
     ============================================================ */
     .acoes-tela {
-      padding: 10px 20px;
       display: flex;
-      gap: 12px;
+      justify-content: space-between;
       align-items: center;
-      background: #f0f4f8;
-      border-bottom: 1px solid #ccc;
+      gap: 14px;
+      padding: 12px 20px;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+      border-bottom: 1px solid #ccd6e3;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    .acoes-tela button, .acoes-tela a {
-      padding: 7px 22px;
-      border-radius: 5px;
-      font-size: 13px;
-      font-weight: bold;
+    .acoes-tela-grupo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .acoes-tela form {
+      margin: 0;
+    }
+    .acao-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
       cursor: pointer;
       text-decoration: none;
-      border: none;
+      border: 1px solid transparent;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+      line-height: 1;
     }
-    .btn-imprimir  { background: #1565c0; color: #fff; }
-    .btn-voltar    { background: #e0e0e0; color: #333; }
+    .acao-btn:hover {
+      filter: brightness(1.02);
+      box-shadow: 0 2px 8px rgba(16, 42, 67, 0.14);
+    }
+    .acao-btn:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+    .acao-btn-primario {
+      background: #0b66c3;
+      color: #fff;
+      border-color: #0b66c3;
+    }
+    .acao-btn-sucesso {
+      background: #1c7c54;
+      color: #fff;
+      border-color: #1c7c54;
+    }
+    .acao-btn-neutro {
+      background: #ffffff;
+      color: #243b53;
+      border-color: #9fb3c8;
+    }
+    .acoes-tela-ajuda {
+      font-size: 11px;
+      color: #486581;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-edicao-impressao {
+      font-size: 11px;
+      color: #334e68;
+      font-weight: 700;
+    }
+    @media (max-width: 900px) {
+      .acoes-tela {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .acoes-tela-grupo {
+        width: 100%;
+      }
+      .acao-btn {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 180px;
+      }
+      .acoes-tela-ajuda {
+        white-space: normal;
+      }
+    }
 
     /* ============================================================
        FOLHA — simula A4 em tela
@@ -152,6 +219,21 @@
     table.mapa td.obs    { font-size: 6.1pt; color: #000; line-height: 1.05; vertical-align: top; white-space: normal; }
     table.mapa td.obs-vazia { color: #000; }
     table.mapa td.cond   { font-size: 6.2pt; color: #000; font-weight: bold; line-height: 1.1; }
+    table.mapa th.col-acao-impressao,
+    table.mapa td.col-acao-impressao {
+      width: 58px;
+      text-align: center;
+    }
+    .btn-excluir-impressao {
+      border: 1px solid #c9d4e0;
+      background: #fff;
+      color: #5c6b7a;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      cursor: pointer;
+    }
 
     .condicoes-inline {
       display: block;
@@ -257,12 +339,29 @@
      BOTÕES VISÍVEIS APENAS NA TELA
 ============================================================ -->
 <div class="acoes-tela">
-  <button class="btn-imprimir" onclick="window.print()">👁️ Prévia/Imprimir Frente e Verso</button>
-  <button class="btn-voltar" onclick="sairDaImpressao()">✕ Fechar prévia</button>
-  <a class="btn-voltar" href="{% url 'transporte_pacientes:mapa_operacional' %}">← Voltar</a>
-  <span style="font-size:11px; color:#555;">
-    Modo operacional estrito: cada bloco sai em par frente/verso com numeração espelhada.
-  </span>
+  <div class="acoes-tela-grupo">
+    <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">Prévia/Imprimir</button>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="salvar_continuar">
+      <button type="submit" class="acao-btn acao-btn-neutro">Salvar e continuar</button>
+    </form>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="finalizar">
+      <button type="submit" class="acao-btn acao-btn-sucesso">Salvar e finalizar</button>
+    </form>
+    <button class="acao-btn acao-btn-neutro" type="button" onclick="restaurarPacientesRemovidosImpressao()">Restaurar pacientes removidos da prévia</button>
+  </div>
+
+  <div class="acoes-tela-grupo">
+    <button class="acao-btn acao-btn-neutro" type="button" onclick="sairDaImpressao()">Fechar prévia</button>
+    <a class="acao-btn acao-btn-neutro" href="{% url 'transporte_pacientes:mapa_operacional' %}">Voltar ao mapa</a>
+    <span class="acoes-tela-ajuda">Cada bloco sai em frente/verso com numeração da viagem.</span>
+  </div>
+  <span id="statusEdicaoImpressao" class="status-edicao-impressao">Nenhum paciente removido da prévia.</span>
 </div>
 
 <div class="folhas-wrapper" id="folhasWrapper">
@@ -273,14 +372,14 @@
 <div class="folha frente">
 
   <div class="cabecalho">
-    <div class="cel-data">{{ data_fmt }}</div>
+    <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
     <div class="cel-empresa">{{ empresa }}</div>
-    <div class="cel-viagem">{{ numero_viagem }} — BLOCO {{ forloop.counter }}</div>
-    <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
+    <div class="cel-viagem">{{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}</div>
+    <div class="cel-motorista">Motorista: {% if bloco.condutor_nome %}{{ bloco.condutor_nome }}{% elif condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
     <div class="cel-veiculo">
-      {% if origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
-      {% if frota_label %} — {{ frota_label }}{% elif veiculo %} — {% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}
-      {% if horario_consulta_base %} — {{ horario_consulta_base }}{% endif %}
+      {% if bloco.origem|default:origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
+      {% if bloco.frota_label %} — {{ bloco.frota_label }}{% elif frota_label %} — {{ frota_label }}{% elif veiculo %} — {% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}
+      {% if bloco.horario_consulta_base|default:horario_consulta_base %} — {{ bloco.horario_consulta_base|default:horario_consulta_base }}{% endif %}
     </div>
   </div>
 
@@ -297,6 +396,7 @@
         <th style="width:70px;">BAIRRO</th>
         <th style="width:90px;">PONTO REF.</th>
         <th style="width:46px;">CONSULTA</th>
+        <th class="col-acao-impressao no-print">AÇÃO</th>
       </tr>
     </thead>
     <tbody>
@@ -304,10 +404,10 @@
         {% for l in bloco.linhas %}
           {% if l.separador %}
             <tr class="linha-separador">
-              <td colspan="10"></td>
+              <td colspan="11"></td>
             </tr>
           {% else %}
-            <tr>
+            <tr data-paciente-id="{{ l.paciente_id }}">
               <td class="num">{{ l.ordem }}</td>
               <td>{{ l.nome }}</td>
               <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
@@ -318,19 +418,22 @@
               <td>{{ l.bairro }}</td>
               <td class="obs" style="white-space:normal;">{{ l.referencia|default:'-' }}</td>
               <td class="hor">{{ l.horario }}</td>
+              <td class="col-acao-impressao no-print">
+                <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">Remover</button>
+              </td>
             </tr>
           {% endif %}
         {% endfor %}
         {% if bloco.vazios %}
           {% for _ in bloco.vazios %}
             <tr class="linha-vazia">
-              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="no-print"></td>
             </tr>
           {% endfor %}
         {% endif %}
       {% else %}
         <tr>
-          <td colspan="10" style="text-align:center; padding:10px; color:#777;">
+          <td colspan="11" style="text-align:center; padding:10px; color:#777;">
             Nenhum transporte encontrado para os filtros selecionados.
           </td>
         </tr>
@@ -347,13 +450,13 @@
 <div class="folha verso">
 
   <div class="cabecalho">
-    <div class="cel-data">{{ data_fmt }}</div>
+    <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
     <div class="cel-empresa">{{ empresa }}</div>
-    <div class="cel-viagem">{{ numero_viagem }} — VERSO BLOCO {{ forloop.counter }}</div>
-    <div class="cel-motorista">Motorista: {% if condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
+    <div class="cel-viagem">{{ bloco.numero_viagem|default:numero_viagem }} — VERSO BLOCO {{ bloco.bloco_num|default:forloop.counter }}</div>
+    <div class="cel-motorista">Motorista: {% if bloco.condutor_nome %}{{ bloco.condutor_nome }}{% elif condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
     <div class="cel-veiculo">
-      {% if origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
-      {% if frota_label %} — {{ frota_label }}{% endif %}
+      {% if bloco.origem|default:origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
+      {% if bloco.frota_label %} — {{ bloco.frota_label }}{% elif frota_label %} — {{ frota_label }}{% endif %}
     </div>
   </div>
 
@@ -369,6 +472,7 @@
         {% else %}
         <th style="width:0; border:0; padding:0;"></th>
         {% endif %}
+        <th class="col-acao-impressao no-print">AÇÃO</th>
       </tr>
     </thead>
     <tbody>
@@ -376,10 +480,10 @@
         {% for l in bloco.linhas %}
           {% if l.separador %}
             <tr class="linha-separador">
-              <td colspan="{% if bloco.mostrar_coluna_observacao %}5{% else %}4{% endif %}"></td>
+              <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}"></td>
             </tr>
           {% else %}
-            <tr>
+            <tr data-paciente-id="{{ l.paciente_id }}">
               <td class="num">{{ l.ordem }}</td>
               <td style="white-space:normal;">
                 {{ l.destino|default:'-' }}{% if l.endereco_clinica %} — {{ l.endereco_clinica }}{% endif %}
@@ -395,19 +499,22 @@
               {% else %}
               <td style="border:0; padding:0;"></td>
               {% endif %}
+              <td class="col-acao-impressao no-print">
+                <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">Remover</button>
+              </td>
             </tr>
           {% endif %}
         {% endfor %}
         {% if bloco.vazios %}
           {% for _ in bloco.vazios %}
             <tr class="linha-vazia">
-              <td></td><td></td><td></td><td></td>{% if bloco.mostrar_coluna_observacao %}<td></td>{% endif %}
+              <td></td><td></td><td></td><td></td>{% if bloco.mostrar_coluna_observacao %}<td></td>{% endif %}<td class="no-print"></td>
             </tr>
           {% endfor %}
         {% endif %}
       {% else %}
         <tr>
-          <td colspan="{% if bloco.mostrar_coluna_observacao %}5{% else %}4{% endif %}" style="text-align:center; padding:10px; color:#777;">
+          <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}" style="text-align:center; padding:10px; color:#777;">
             Nenhum dado para o verso.
           </td>
         </tr>
@@ -421,6 +528,51 @@
 
 <script>
   var zoomAtual = 1;
+  var pacientesRemovidosPrevia = {};
+
+  function atualizarStatusEdicaoImpressao() {
+    var el = document.getElementById('statusEdicaoImpressao');
+    if (!el) return;
+    var total = Object.keys(pacientesRemovidosPrevia).length;
+    if (!total) {
+      el.textContent = 'Nenhum paciente removido da prévia.';
+      return;
+    }
+    el.textContent = total + ' paciente(s) removido(s) apenas desta prévia.';
+  }
+
+  function renumerarTabelasPrevia() {
+    var tbodies = document.querySelectorAll('table.mapa tbody');
+    Array.prototype.forEach.call(tbodies, function(tbody) {
+      var ordem = 0;
+      var linhas = tbody.querySelectorAll('tr');
+      Array.prototype.forEach.call(linhas, function(tr) {
+        if (tr.classList.contains('linha-separador') || tr.classList.contains('linha-vazia')) return;
+        var celNum = tr.querySelector('td.num');
+        if (!celNum) return;
+        ordem += 1;
+        celNum.textContent = ordem;
+      });
+    });
+  }
+
+  function removerPacienteDaPrevia(pacienteId) {
+    var id = String(pacienteId || '').trim();
+    if (!id) return;
+    var linhas = document.querySelectorAll('tr[data-paciente-id="' + id + '"]');
+    if (!linhas.length) return;
+
+    Array.prototype.forEach.call(linhas, function(tr) {
+      tr.parentNode.removeChild(tr);
+    });
+    pacientesRemovidosPrevia[id] = true;
+    renumerarTabelasPrevia();
+    atualizarStatusEdicaoImpressao();
+  }
+
+  function restaurarPacientesRemovidosImpressao() {
+    window.location.reload();
+  }
 
   function aplicarZoom() {
     var wrapper = document.getElementById('folhasWrapper');
@@ -456,7 +608,10 @@
     window.location.href = '{% url 'transporte_pacientes:mapa_operacional' %}';
   }
 
-  document.addEventListener('DOMContentLoaded', aplicarZoom);
+  document.addEventListener('DOMContentLoaded', function() {
+    aplicarZoom();
+    atualizarStatusEdicaoImpressao();
+  });
 </script>
 </body>
 </html>

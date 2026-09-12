@@ -10,6 +10,33 @@
     line-height: 1.1;
     box-sizing: border-box;
   }
+
+  .coluna-acoes {
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  .acoes-paciente-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .acoes-paciente-btn {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.78rem;
+    line-height: 1.15;
+  }
+
+  @media (max-width: 1200px) {
+    .acoes-paciente-btn .rotulo-acao {
+      display: none;
+    }
+
+    .acoes-paciente-btn {
+      padding: 0.26rem 0.42rem;
+    }
+  }
 </style>
 
 <div class="card mt-4">
@@ -31,8 +58,6 @@
         <i class="bi bi-info-circle me-2" style="font-size:1.3em;"></i>
         <span>
           Clique em
-          <i class="bi bi-truck" style="color:#0d6efd; margin:0 4px;"></i>
-          <b>Transportar</b>,
           <i class="bi bi-pencil-square" style="color:#ffc107; margin:0 4px;"></i>
           <b>Editar</b>, ou
           <i class="bi bi-trash" style="color:#dc3545; margin:0 4px;"></i>
@@ -75,15 +100,24 @@
                   </td>
                   <td>{{ paciente.data_cadastro|date:'d/m/Y H:i'|default:'-' }}</td>
                   <td class="coluna-acoes">
-                    <a href="{% url 'transporte_pacientes:cadastrar_transporte' %}?paciente_id={{ paciente.id }}" class="btn btn-primary btn-sm me-2">
-                      <i class="bi bi-truck"></i> Transportar
-                    </a>
-                    <a href="{% url 'transporte_pacientes:editar_paciente' paciente.id %}" class="btn btn-warning btn-sm me-2">
-                      <i class="bi bi-pencil-square"></i> Editar
-                    </a>
-                    <button class="btn btn-danger btn-sm btn-afunda" onclick="excluirPaciente({{ paciente.id }}, this)">
-                      <i class="bi bi-trash"></i> Excluir
-                    </button>
+                    <div class="acoes-paciente-group">
+                      <a
+                        href="{% url 'transporte_pacientes:editar_paciente' paciente.id %}"
+                        class="btn btn-warning btn-sm acoes-paciente-btn"
+                        title="Editar paciente"
+                        aria-label="Editar paciente"
+                      >
+                        <i class="bi bi-pencil-square"></i> <span class="rotulo-acao">Editar</span>
+                      </a>
+                      <button
+                        class="btn btn-danger btn-sm btn-afunda acoes-paciente-btn"
+                        onclick="excluirPaciente({{ paciente.id }}, this)"
+                        title="Excluir paciente"
+                        aria-label="Excluir paciente"
+                      >
+                        <i class="bi bi-trash"></i> <span class="rotulo-acao">Excluir</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
             {% endfor %}
@@ -100,13 +134,6 @@
         <a href="{% url 'transporte_pacientes:mapa_operacional' %}" id="btnMapasViagem" class="btn btn-success btn-lg btn-afunda rodape-acao-btn" style="border:none;" onclick="return abrirMapasViagemComSelecao(event);">
           <i class="bi bi-map me-1"></i> Mapas de Viagem
         </a>
-        <form id="formTransportarSelecionados" method="post" action="{% url 'transporte_pacientes:preparar_cadastro_transporte_lote' %}" class="d-inline">
-          {% csrf_token %}
-          <input type="hidden" name="paciente_ids" id="pacientesSelecionadosTransporte">
-          <button class="btn btn-lg btn-afunda rodape-acao-btn" style="background-color:#0d6efd; color:#fff; border:none;" type="button" onclick="transportarSelecionados()">
-            <i class="bi bi-truck"></i> Transportar Selecionados
-          </button>
-        </form>
         <button class="btn btn-lg btn-afunda rodape-acao-btn" style="background-color:#ff9800; color:#fff; border:none;" onclick="excluirSelecionadosPacientes()" type="button">
           <i class="bi bi-trash"></i> Excluir Selecionados
         </button>
@@ -202,23 +229,6 @@
       function toggleAllPacientes(master) {
         var checkboxes = document.querySelectorAll('.paciente-checkbox');
         checkboxes.forEach(cb => cb.checked = master.checked);
-      }
-
-      function transportarSelecionados() {
-          var form = document.getElementById('formTransportarSelecionados');
-          var campoIds = document.getElementById('pacientesSelecionadosTransporte');
-          var checkboxes = document.querySelectorAll('.paciente-checkbox:checked');
-          if (checkboxes.length === 0) {
-            alert('Selecione pelo menos um paciente para transportar.');
-            return;
-          }
-          var ids = Array.from(checkboxes).map(cb => cb.value);
-          if (campoIds) {
-            campoIds.value = ids.join(',');
-          }
-          if (form) {
-            form.submit();
-          }
       }
 
       function abrirMapasViagemComSelecao(event) {

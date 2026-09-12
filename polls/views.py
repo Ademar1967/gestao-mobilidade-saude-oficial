@@ -5,6 +5,7 @@ import unicodedata
 
 import pandas as pd
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
 # Cache em memoria para autocomplete de clinicas
@@ -123,6 +124,7 @@ def _mover_arquivo_recebido(nome_arquivo, destino_subpasta="processados"):
     return destino
 
 
+@login_required
 def arquivos_recebidos_pacientes(request):
     """Lista os arquivos da pasta de entrada configurada em DADOS_RECEBIDOS_DIR."""
     base_dir = Path(
@@ -147,6 +149,7 @@ from django.http import JsonResponse
 
 
 @require_GET
+@login_required
 def autocomplete_pacientes(request):
     """Retorna pacientes filtrados por nome, CPF (cartao_sis) ou endereco para autocomplete."""
     termo = request.GET.get("q", "").strip()
@@ -226,12 +229,14 @@ def editar_transporte(request, transporte_id):
 from django.shortcuts import render
 
 
+@login_required
 def mapa_pacientes(request):
     """Exibe o mapa interativo de pacientes usando Leaflet."""
     return render(request, "transporte_pacientes/mapa_pacientes.html")
 
 
 # Stub seguro para a view pacientes_json
+@login_required
 def pacientes_json(request):
     """Retorna pacientes para o mapa e para busca no formulario simples."""
     from .models import Paciente
@@ -405,10 +410,7 @@ def cadastrar_transporte_lote(request):
         }
         return request.session["fluxo_lote"]
 
-    logger.info(f"Metodo da requisicao: {request.method}")
-    logger.info(f"GET params: {request.GET}")
-    logger.info(f"POST params: {request.POST}")
-    logger.info(f"Iniciando processamento da view cadastrar_transporte_lote")
+    logger.info("Iniciando processamento da view cadastrar_transporte_lote", extra={"metodo": request.method})
     paciente_ids_sessao = request.session.get("paciente_ids_lote", [])
     numero_viagem_atual, numero_bloco_atual = _estado_fluxo_lote(request)
     if request.method == "POST":
@@ -428,7 +430,7 @@ def cadastrar_transporte_lote(request):
         modo_lote = determinar_modo_lote(
             pacientes_ids, request.POST.get("modo_lote", "")
         )
-        logger.info(f"POST - pacientes_ids recebidos: {pacientes_ids}")
+        logger.info("POST de cadastro em lote recebido", extra={"quantidade_pacientes": len(pacientes_ids)})
         nomes = []
         total_acompanhantes = 0
         forms_validos = True
@@ -1753,40 +1755,35 @@ import logging
 
 # --- API: Detalhes completos do paciente para busca global ---
 @require_GET
+@login_required
 def paciente_detalhes_api(request, paciente_id):
-    # print(f"[DEBUG] Requisicao detalhes paciente id={paciente_id}")
+    logger = logging.getLogger("polls.security")
     try:
         p = Paciente.objects.get(id=paciente_id)
-        print(f"[DEBUG] Paciente encontrado: {p.nome} (id={p.id})")
     except Paciente.DoesNotExist:
-        print(f"[DEBUG] Paciente id={paciente_id} NAO encontrado!")
+        logger.warning("Paciente nao encontrado na API de detalhes", extra={"paciente_id": paciente_id})
         return JsonResponse({"erro": "Paciente nao encontrado."}, status=404)
     except Exception as exc:
-        print(f"[DEBUG] Erro inesperado ao buscar paciente id={paciente_id}: {exc}")
-        return JsonResponse({"erro": f"Erro inesperado: {exc}"}, status=500)
+        logger.exception("Erro inesperado ao buscar paciente na API de detalhes", extra={"paciente_id": paciente_id})
+        return JsonResponse({"erro": "Erro interno ao consultar paciente."}, status=500)
     atualizacoes = []
     try:
         transportes = Transporte.objects.filter(paciente=p).order_by(
             "-data_transporte"
         )[:5]
-        print(f"[DEBUG] Transportes encontrados: {len(transportes)}")
         for t in transportes:
             if not t.data_transporte:
-                print(f"[DEBUG] Transporte id={t.id} ignorado (data_transporte nula)")
                 continue
             clinica_nome = t.clinica.nome if t.clinica else ""
             veiculo_nome = str(t.veiculo) if t.veiculo else ""
             try:
                 data_str = t.data_transporte.strftime("%d/%m/%Y")
                 atualizacoes.append(f"{data_str} - {clinica_nome} - {veiculo_nome}")
-                print(
-                    f"[DEBUG] Atualizacao adicionada: {data_str} - {clinica_nome} - {veiculo_nome}"
-                )
             except Exception as exc:
-                print(f"[DEBUG] Erro ao montar atualizacao transporte id={t.id}: {exc}")
+                logger.exception("Erro ao montar atualizacao de transporte", extra={"transporte_id": t.id, "paciente_id": paciente_id})
                 continue
     except Exception as exc:
-        print(f"[DEBUG] Erro ao buscar transportes: {exc}")
+        logger.exception("Erro ao consultar transportes do paciente", extra={"paciente_id": paciente_id})
 
     dados = {
         "id": p.id,
@@ -1830,11 +1827,10 @@ def paciente_detalhes_api(request, paciente_id):
         "atualizacoes": atualizacoes,
     }
     try:
-        print(f"[DEBUG] JSON de resposta: {dados}")
         return JsonResponse(dados)
     except Exception as exc:
-        print(f"[DEBUG] ERRO AO SERIALIZAR JSON: {exc}")
-        return JsonResponse({"erro": f"Erro ao serializar resposta: {exc}"}, status=500)
+        logger.exception("Erro ao serializar resposta da API de detalhes", extra={"paciente_id": paciente_id})
+        return JsonResponse({"erro": "Erro interno ao serializar resposta."}, status=500)
 
 
 @require_GET
@@ -1997,8 +1993,7 @@ def whatsapp_webhook(request):
 
         body = request.POST.get("Body", "")
         from_number = request.POST.get("From", "")
-        # Log da mensagem recebida
-        print(f"Mensagem recebida de {from_number}: {body}")
+
 
         # Salvar mensagem no banco de dados
         from .models import MensagemWhatsApp
@@ -2175,6 +2170,7 @@ from .models import Transporte
 from django.shortcuts import render, redirect
 
 
+@login_required
 def buscar_clinicas_sugestoes(request):
     """Retorna sugestoes de clinicas por nome: primeiro do banco, depois do CNES."""
     from django.http import JsonResponse
@@ -2381,6 +2377,7 @@ def buscar_enfermagem_sugestoes(request):
 
 
 @require_GET
+@login_required
 def buscar_pacientes_sugestoes(request):
     """Retorna pacientes para autocomplete e reaproveitamento de cadastro."""
     from django.db.models import Q, Case, When, Value, IntegerField
@@ -2474,12 +2471,10 @@ def buscar_pacientes_sugestoes(request):
             )
         return JsonResponse({"sucesso": True, "resultados": resultados})
     except Exception as exc:
-        import traceback
-
-        print(f"[ERRO buscar_pacientes_sugestoes] {exc}", file=sys.stderr)
-        traceback.print_exc()
+        logger = logging.getLogger("polls.security")
+        logger.exception("Falha em buscar_pacientes_sugestoes")
         return JsonResponse(
-            {"sucesso": False, "erro": str(exc), "traceback": traceback.format_exc()},
+            {"sucesso": False, "erro": "Erro interno ao buscar pacientes."},
             status=500,
         )
 

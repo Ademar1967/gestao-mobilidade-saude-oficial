@@ -1,9 +1,31 @@
 from django.urls import path
 from . import views
+from .views_mapa_operacional import (
+    mapa_operacional,
+    pacientes_alocados_por_data,
+    mapa_operacional_imprimir,
+    mapa_operacional_impressao,
+    rotinas_mapa_api,
+    salvar_viagem,
+)
+
+urlpatterns = [
+    path("mapa-operacional/", mapa_operacional, name="mapa_operacional"),
+    path("mapa-operacional/imprimir/", mapa_operacional_imprimir, name="mapa_operacional_imprimir"),
+    path("mapa-operacional/impressao/", mapa_operacional_impressao, name="mapa_operacional_impressao"),
+    path("mapa-operacional/salvar/", salvar_viagem, name="salvar_viagem"),
+]
+
+from django.urls import path
+from . import views
 from . import views_condutor_delete
 from . import views_condutor_delete_lote
 from .views import editar_paciente, login_view
-from .views_mapa_operacional import mapa_operacional, mapa_operacional_imprimir
+from .views_mapa_operacional import (
+    mapa_operacional,
+    mapa_operacional_imprimir,
+    salvar_viagem,
+)
 
 app_name = "transporte_pacientes"
 urlpatterns = [
@@ -253,5 +275,20 @@ urlpatterns = [
         "mapas-viagem/imprimir/",
         mapa_operacional_imprimir,
         name="mapa_operacional_imprimir",
+    ),
+    path(
+        "mapas-viagem/salvar/",
+        salvar_viagem,
+        name="salvar_viagem",
+    ),
+    path(
+        "mapas-viagem/alocados-por-data/",
+        pacientes_alocados_por_data,
+        name="pacientes_alocados_por_data",
+    ),
+    path(
+        "mapas-viagem/rotinas/",
+        rotinas_mapa_api,
+        name="rotinas_mapa_api",
     ),
 ]
