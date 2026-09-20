@@ -79,6 +79,16 @@
       color: #243b53;
       border-color: #9fb3c8;
     }
+    .acao-btn-entrada {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+    .acao-btn-agrupar {
+      background: #7c3aed;
+      color: #fff;
+      border-color: #7c3aed;
+    }
     .acoes-tela-ajuda {
       font-size: 11px;
       color: #486581;
@@ -244,8 +254,21 @@
       line-height: 1.1;
     }
 
+    /* ============================================================
+       ALTURA DE LINHA FIXA — GARANTE ALINHAMENTO FRENTE/VERSO
+    ============================================================ */
+    table.mapa tbody tr:not(.linha-vazia):not(.linha-separador) {
+      height: 22px;
+      max-height: 22px;
+    }
+    table.mapa tbody tr:not(.linha-vazia):not(.linha-separador) td {
+      height: 22px;
+      max-height: 22px;
+      overflow: hidden;
+    }
+
     /* linha vazia para margem extra (visível só na tela) */
-    tr.linha-vazia td { height: 11px; background: #fff; }
+    tr.linha-vazia td { height: 22px; background: #fff; }
     tr.linha-separador td {
       height: 12px;
       border: none !important;
@@ -267,12 +290,32 @@
     }
 
     /* ============================================================
+       RODAPÉ DO BLOCO (VERSO) — BOTÕES DE AÇÃO
+    ============================================================ */
+    .rodape-bloco-verso {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 0;
+      border-top: 2px solid #e5e7eb;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .rodape-bloco-verso .separador-btn {
+      width: 2px;
+      height: 28px;
+      background: #cbd5e1;
+      margin: 0 8px;
+    }
+
+    /* ============================================================
        IMPRESSÃO
     ============================================================ */
     @media print {
       /* Esconde controles de tela */
       .zoom-bar,
       .acoes-tela,
+      .rodape-bloco-verso,
       .no-print {
         display: none !important;
       }
@@ -341,7 +384,6 @@
 <div class="acoes-tela">
   <div class="acoes-tela-grupo">
     <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">Prévia/Imprimir</button>
-
     <form method="post">
       {% csrf_token %}
       <input type="hidden" name="acao" value="salvar_continuar">
@@ -522,6 +564,21 @@
     </tbody>
   </table>
 
+  <!-- ============================================================
+       RODAPÉ DO BLOCO — BOTÕES DE AÇÃO (FLUXO INTUITIVO)
+  ============================================================ -->
+  <div class="rodape-bloco-verso no-print">
+    <button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaVerso(this)">＋ Adicionar Linha</button>
+    <button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco()">＋ Novo Bloco</button>
+    <span class="separador-btn"></span>
+    <form method="post" style="display:inline;">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="salvar_continuar">
+      <button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>
+    </form>
+    <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+
 </div><!-- /folha verso -->
 {% endfor %}
 </div>
@@ -606,6 +663,50 @@
       return;
     }
     window.location.href = '{% url 'transporte_pacientes:mapa_operacional' %}';
+  }
+
+  // ============================================================
+  // NOVAS FUNÇÕES — ADICIONAR LINHA E NOVO BLOCO
+  // ============================================================
+  
+  function adicionarLinhaVerso(botao) {
+    // Encontra a tabela do verso mais próxima
+    var folhaVerso = botao.closest('.folha.verso');
+    if (!folhaVerso) return;
+    
+    var tbody = folhaVerso.querySelector('table.mapa tbody');
+    if (!tbody) return;
+    
+    // Conta linhas existentes
+    var linhasExistentes = tbody.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
+    var novaOrdem = linhasExistentes + 1;
+    
+    // Verifica se tem coluna de observação
+    var temObservacao = folhaVerso.querySelector('th[style*="OBSERVAÇÃO"]') !== null;
+    var colspan = temObservacao ? 6 : 5;
+    
+    // Cria nova linha
+    var novaLinha = document.createElement('tr');
+    novaLinha.innerHTML = `
+      <td class="num">${novaOrdem}</td>
+      <td style="white-space:normal;">-</td>
+      <td class="ac">SO</td>
+      <td class="cond">-</td>
+      ${temObservacao ? '<td class="obs obs-vazia" style="white-space:normal;"></td>' : ''}
+      <td class="col-acao-impressao no-print"></td>
+    `;
+    
+    // Remove mensagem de "nenhum dado" se existir
+    var linhaVaziaMsg = tbody.querySelector('tr td[colspan]');
+    if (linhaVaziaMsg && linhaVaziaMsg.textContent.includes('Nenhum dado')) {
+      linhaVaziaMsg.parentNode.remove();
+    }
+    
+    tbody.appendChild(novaLinha);
+  }
+
+  function novoBloco() {
+    alert('Função "Novo Bloco" será implementada com integração ao backend.\n\nPor enquanto, use o botão "Salvar e continuar" no topo da página para criar um novo bloco.');
   }
 
   document.addEventListener('DOMContentLoaded', function() {
