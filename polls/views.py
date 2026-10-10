@@ -1,4 +1,6 @@
 # View stub para arquivos recebidos de pacientes
+from . import views_mapa_operacional
+
 from pathlib import Path
 import logging
 import unicodedata
@@ -1202,7 +1204,9 @@ def cadastrar_paciente(request):
     limpar_rascunho_paciente = bool(
         request.session.pop("limpar_rascunho_paciente", False)
     )
-    pacientes = Paciente.objects.all().order_by("-id")
+    from django.db.models.functions import Lower
+
+    pacientes = Paciente.objects.all().order_by(Lower("nome"))
     # Calculo robusto dos totais
     total_pacientes = pacientes.count()
     total_acompanhantes = sum([p.acompanhantes for p in pacientes])

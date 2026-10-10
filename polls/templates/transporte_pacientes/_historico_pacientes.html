@@ -236,15 +236,25 @@
         if (!link) return true;
 
         var checkboxes = document.querySelectorAll('.paciente-checkbox:checked');
-        if (checkboxes.length === 0) return true;
-
-        event.preventDefault();
-        var ids = Array.from(checkboxes).map(function(cb) { return cb.value; }).filter(Boolean);
         var destino = link.getAttribute('href') || '';
         if (!destino) return false;
 
+        event.preventDefault();
+        var ids = Array.from(checkboxes).map(function(cb) { return cb.value; }).filter(Boolean);
         var separador = destino.indexOf('?') >= 0 ? '&' : '?';
-        window.location.href = destino + separador + 'paciente_ids=' + encodeURIComponent(ids.join(','));
+
+        // Garante sincronização imediata no localStorage com chave do mapa operacional
+        try {
+          if (ids.length > 0) {
+            localStorage.setItem('mapa_operacional_selecao_paciente_ids_v1', ids.join(','));
+          }
+        } catch (e) {}
+
+        if (ids.length > 0) {
+          window.location.href = destino + separador + 'paciente_ids=' + encodeURIComponent(ids.join(','));
+        } else {
+          window.location.href = destino;
+        }
         return false;
       }
       </script>

@@ -237,32 +237,40 @@
     <div class="card-body">
       <div class="mb-3">
         <button type="button" id="btnToggleInstrucoes" class="btn btn-outline-primary btn-sm fw-bold">
-          Exibir instruções de uso
+          <i class="bi bi-info-circle me-1"></i>Exibir fluxo e instruções de uso
         </button>
       </div>
 
-      <div class="alert alert-secondary" role="alert">
-        <h6 class="fw-bold mb-2">Fluxo do sistema em 3 etapas</h6>
-        <ol class="mb-2 ps-3">
-          <li><strong>Pacientes:</strong> cadastre os dados do paciente (nome, endereço, bairro, telefone).</li>
-          <li><strong>Transportes:</strong> vincule o paciente à viagem (data, destino/clínica, motorista e veículo).</li>
-          <li><strong>Mapas de Viagem:</strong> gere a folha frente/verso pronta para impressão.</li>
-        </ol>
-        <div class="d-flex gap-2 flex-wrap mt-2">
-          <a href="{% url 'transporte_pacientes:cadastrar_paciente' %}" class="btn btn-sm btn-outline-primary">Ir para Pacientes</a>
-          <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-sm btn-outline-primary">Ir para Transportes</a>
+      <div id="boxInstrucoes" style="display:none;">
+        <div class="alert alert-primary border-primary-subtle shadow-sm mb-3" role="alert">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold mb-0 text-primary">
+              <i class="bi bi-diagram-3-fill me-2"></i>Fluxo Recomendado para Organização (Passo a Passo)
+            </h6>
+            <span class="badge bg-primary">Sem acúmulo de dados</span>
+          </div>
+          <ol class="mb-2 ps-3 small text-dark lh-base">
+            <li class="mb-1"><strong>1. Definir a Data da Viagem:</strong> O sistema checa em tempo real no banco quem já possui agendamento no dia, destacando em amarelo quem já está alocado.</li>
+            <li class="mb-1"><strong>2. Limpar Seleção (caso necessário):</strong> Clique no botão <em>"Remover selecionados do mapa"</em> para zerar rascunhos ou memórias de listas anteriores antes de montar a nova escala.</li>
+            <li class="mb-1"><strong>3. Filtrar e Selecionar Pacientes:</strong> Use o campo de busca rápida ou o filtro por clínica para selecionar apenas os pacientes da rota/bloco.</li>
+            <li class="mb-1"><strong>4. Ocultar Selecionados da Lista:</strong> Ao clicar em <em>"Ocultar selecionados"</em>, a tabela esconde quem já foi marcado, permitindo você visualizar somente quem ainda falta escalar.</li>
+            <li class="mb-1"><strong>5. Gerar ou Salvar:</strong> Clique em <em>"Salvar e continuar editando"</em> para salvar a viagem no sistema ou <em>"Abrir Prévia do Mapa"</em> para conferir e imprimir a folha frente/verso.</li>
+          </ol>
+          <div class="d-flex gap-2 flex-wrap mt-3 pt-2 border-top border-primary-subtle">
+            <span class="small fw-bold text-muted align-self-center">Acessos rápidos:</span>
+            <a href="{% url 'transporte_pacientes:cadastrar_paciente' %}" class="btn btn-xs btn-sm btn-outline-primary"><i class="bi bi-person-plus me-1"></i>Novo Paciente</a>
+            <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-xs btn-sm btn-outline-primary"><i class="bi bi-list-check me-1"></i>Histórico de Transportes</a>
+          </div>
         </div>
-      </div>
 
-      <div id="boxInstrucoes" class="alert alert-info" style="display:none;">
-        <h6 class="fw-bold mb-2">Como usar este módulo</h6>
-        <ol class="mb-2 ps-3">
-          <li>Preencha empresa, data, viagem e motorista (quando desejar filtrar).</li>
-          <li>Clique em <strong>Abrir Prévia do Mapa</strong> para gerar a folha frente/verso em nova aba.</li>
-          <li>Na tela de prévia, use o botão <strong>Prévia/Imprimir</strong> para abrir a impressão do navegador.</li>
-          <li>Para economia de papel e tinta, configure sua impressora em frente e verso.</li>
-        </ol>
-        <small class="text-muted">A abreviação da empresa (ex: NEM) é livre e pode ser alterada a qualquer momento.</small>
+        <div class="alert alert-secondary mb-3 small" role="alert">
+          <h6 class="fw-bold mb-1 small text-dark"><i class="bi bi-printer me-1"></i>Dicas para Impressão e Edição Rápida</h6>
+          <ul class="mb-0 ps-3 text-secondary">
+            <li>Na tela de prévia, use <strong>Transferir</strong> para trocar pacientes de bloco sem precisar recriar a lista.</li>
+            <li>Configure sua impressora no modo <strong>Frente e Verso</strong> para economizar folhas e manter a ficha compacta.</li>
+            <li>A identificação da empresa (ex: NEM, PREFEITURA) pode ser ajustada diretamente nos campos ou na própria prévia.</li>
+          </ul>
+        </div>
       </div>
 
       <form method="get" action="{% url 'transporte_pacientes:mapa_operacional_imprimir' %}" id="formMapa" target="_blank">
@@ -439,7 +447,8 @@
             <div class="toolbar-linha">
               <input type="text" id="filtroPacientesMapa" class="form-control campo-filtro-mapa" placeholder="Filtrar por nome, bairro ou cidade...">
               <button type="button" class="btn btn-outline-dark btn-sm btn-toolbar-mapa" id="btnLimparBuscaPacientes"><i class="bi bi-x-circle me-1"></i>Limpar busca</button>
-              <button type="button" class="btn btn-outline-primary btn-sm btn-toolbar-mapa" id="btnSelecionarVisiveis"><i class="bi bi-check2-square me-1"></i>Selecionar visiveis</button>
+              <button type="button" class="btn btn-outline-primary btn-sm btn-toolbar-mapa" id="btnSelecionarVisiveis"><i class="bi bi-check2-square me-1"></i>Selecionar visíveis</button>
+              <button type="button" class="btn btn-primary btn-sm btn-toolbar-mapa" id="btnSelecionarTodosBanco"><i class="bi bi-check-all me-1"></i>Selecionar todos (total)</button>
               <button type="button" class="btn btn-outline-warning btn-sm btn-toolbar-mapa" id="btnOcultarSelecionadosLista"><i class="bi bi-eye-slash me-1"></i>Ocultar selecionados da lista</button>
               <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnMostrarSomenteOcultos"><i class="bi bi-funnel me-1"></i>Mostrar apenas ocultos</button>
               <button type="button" class="btn btn-outline-info btn-sm btn-toolbar-mapa" id="btnMostrarOcultosLista"><i class="bi bi-eye me-1"></i>Mostrar ocultos</button>
@@ -613,13 +622,13 @@
       btn,
       box,
       lerPreferencia(STORAGE_KEY_INSTRUCOES, false),
-      'Ocultar instruções de uso',
-      'Exibir instruções de uso'
+      'Ocultar fluxo e instruções de uso',
+      'Exibir fluxo e instruções de uso'
     );
 
     btn.addEventListener('click', function() {
       var abrir = box.style.display === 'none';
-      aplicarEstadoToggle(btn, box, abrir, 'Ocultar instruções de uso', 'Exibir instruções de uso');
+      aplicarEstadoToggle(btn, box, abrir, 'Ocultar fluxo e instruções de uso', 'Exibir fluxo e instruções de uso');
       salvarPreferencia(STORAGE_KEY_INSTRUCOES, abrir);
     });
 
@@ -992,7 +1001,7 @@
 
         var url;
         try {
-          url = new URL(href, window.location.origin);
+          url = new URL(href, window.location.href);
         } catch (e) {
           return;
         }
@@ -1009,17 +1018,24 @@
     }
 
     function atualizarResumoSelecao() {
+      var hidden = document.getElementById('pacienteIdsHidden');
+      var idsGlobais = parseIdsCsv(hidden ? hidden.value : '').concat(carregarSelecaoLocal());
+      idsGlobais = dedupeIds(idsGlobais);
+
       var checks = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check'));
-      var selecionados = checks.filter(function(c) { return c.checked; });
-      var badge = document.getElementById('badgeSelecionados');
-      var resumo = document.getElementById('resumoPessoasSelecionadas');
-      var totalPacientes = selecionados.length;
-      var totalAcompanhantes = selecionados.reduce(function(acc, c) {
-        var qtd = parseInt(c.dataset.acompanhantes || '0', 10);
+      var mapaChecks = {};
+      checks.forEach(function(c) { mapaChecks[String(c.value)] = c; });
+
+      var totalPacientes = idsGlobais.length;
+      var totalAcompanhantes = idsGlobais.reduce(function(acc, id) {
+        var c = mapaChecks[String(id)];
+        var qtd = c ? parseInt(c.dataset.acompanhantes || '0', 10) : 0;
         return acc + (isNaN(qtd) ? 0 : qtd);
       }, 0);
       var totalPessoas = totalPacientes + totalAcompanhantes;
 
+      var badge = document.getElementById('badgeSelecionados');
+      var resumo = document.getElementById('resumoPessoasSelecionadas');
       if (badge) {
         badge.textContent = totalPacientes + ' selecionado(s)';
       }
@@ -1107,8 +1123,18 @@
     function syncPacienteIdsHidden() {
       var hidden = document.getElementById('pacienteIdsHidden');
       if (!hidden) return;
-      var ids = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check:checked'))
-        .map(function(c) { return c.value; });
+      var checks = Array.prototype.slice.call(document.querySelectorAll('.paciente-mapa-check'));
+      var selecionadosPagina = checks.filter(function(c) { return c.checked; }).map(function(c) { return String(c.value); });
+      var desmarcadosPagina = checks.filter(function(c) { return !c.checked; }).map(function(c) { return String(c.value); });
+
+      // Mantém todos os IDs já conhecidos (mesmo de outras páginas), aplicando as alterações feitas na página atual
+      var idsAtuais = parseIdsCsv(hidden.value || '').concat(carregarSelecaoLocal());
+      var setFinal = {};
+      idsAtuais.forEach(function(id) { setFinal[String(id)] = true; });
+      selecionadosPagina.forEach(function(id) { setFinal[String(id)] = true; });
+      desmarcadosPagina.forEach(function(id) { delete setFinal[String(id)]; });
+
+      var ids = Object.keys(setFinal);
       ids = dedupeIds(ids);
       hidden.value = ids.join(',');
       salvarSelecaoLocal(ids);
@@ -1248,6 +1274,7 @@
     var filtro = document.getElementById('filtroPacientesMapa');
     var btnLimparBuscaPacientes = document.getElementById('btnLimparBuscaPacientes');
     var btnSelecionarVisiveis = document.getElementById('btnSelecionarVisiveis');
+    var btnSelecionarTodosBanco = document.getElementById('btnSelecionarTodosBanco');
     var btnLimparSelecao = document.getElementById('btnLimparSelecao');
     var btnOcultarSelecionadosLista = document.getElementById('btnOcultarSelecionadosLista');
     var btnMostrarSomenteOcultos = document.getElementById('btnMostrarSomenteOcultos');
@@ -1313,12 +1340,78 @@
       });
     }
 
+    if (btnSelecionarTodosBanco) {
+      btnSelecionarTodosBanco.addEventListener('click', function() {
+        var params = new URLSearchParams(window.location.search);
+        var somenteAtivosParam = params.get('somente_ativos');
+        var urlApi = '{% url "transporte_pacientes:todos_pacientes_ids_api" %}';
+        if (somenteAtivosParam !== null) {
+          urlApi += '?somente_ativos=' + encodeURIComponent(somenteAtivosParam);
+        }
+
+        btnSelecionarTodosBanco.disabled = true;
+        var textoOriginal = btnSelecionarTodosBanco.innerHTML;
+        btnSelecionarTodosBanco.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Carregando...';
+
+        fetch(urlApi, { credentials: 'same-origin' })
+          .then(function(resp) { return resp.json(); })
+          .then(function(data) {
+            if (data && data.ok && Array.isArray(data.pacientes)) {
+              var todosIds = data.pacientes.map(function(p) { return String(p.id); });
+              aplicarChecksPorIds(todosIds);
+              var hidden = document.getElementById('pacienteIdsHidden');
+              if (hidden) {
+                hidden.value = dedupeIds(todosIds).join(',');
+              }
+              salvarSelecaoLocal(todosIds);
+              atualizarLinksComSelecao(todosIds);
+              var totalAcompanhantes = data.pacientes.reduce(function(acc, p) {
+                var qtd = parseInt(p.acompanhantes || 0, 10);
+                return acc + (isNaN(qtd) ? 0 : qtd);
+              }, 0);
+              var totalPacientes = todosIds.length;
+              var totalPessoas = totalPacientes + totalAcompanhantes;
+
+              var badge = document.getElementById('badgeSelecionados');
+              var resumo = document.getElementById('resumoPessoasSelecionadas');
+              var resumoRapidoSelecionados = document.getElementById('resumoRapidoSelecionados');
+              var resumoRapidoPessoas = document.getElementById('resumoRapidoPessoas');
+
+              if (badge) badge.textContent = totalPacientes + ' selecionado(s)';
+              if (resumo) resumo.textContent = 'Total de pessoas selecionadas: ' + totalPessoas + ' (Pacientes: ' + totalPacientes + ' | Acompanhantes: ' + totalAcompanhantes + ')';
+              if (resumoRapidoSelecionados) resumoRapidoSelecionados.textContent = 'Selecionados: ' + totalPacientes;
+              if (resumoRapidoPessoas) resumoRapidoPessoas.textContent = 'Pessoas: ' + totalPessoas;
+              atualizarCoresLinhasPacientes();
+              registrarAvisoAutoOcultar('Todos os ' + totalPacientes + ' pacientes do sistema foram selecionados para o mapa.', 'ok');
+            }
+          })
+          .catch(function(err) {
+            console.error('Erro ao buscar todos os IDs:', err);
+            // Fallback: seleciona todos que estiverem no DOM
+            var todosChecks = document.querySelectorAll('.paciente-mapa-check');
+            Array.prototype.forEach.call(todosChecks, function(c) { c.checked = true; });
+            syncPacienteIdsHidden();
+          })
+          .finally(function() {
+            btnSelecionarTodosBanco.disabled = false;
+            btnSelecionarTodosBanco.innerHTML = textoOriginal;
+          });
+      });
+    }
+
     if (btnLimparSelecao) {
       btnLimparSelecao.addEventListener('click', function() {
         Array.prototype.forEach.call(checks, function(check) {
           check.checked = false;
         });
-        syncPacienteIdsHidden();
+        var hidden = document.getElementById('pacienteIdsHidden');
+        if (hidden) {
+          hidden.value = '';
+        }
+        salvarSelecaoLocal([]);
+        atualizarLinksComSelecao([]);
+        atualizarResumoSelecao();
+        atualizarCoresLinhasPacientes();
       });
     }
 

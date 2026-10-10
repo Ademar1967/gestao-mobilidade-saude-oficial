@@ -4,10 +4,14 @@
   <meta charset="UTF-8">
   <title>Mapa de Viagem — {{ data_fmt }}</title>
   <style>
-    /* ============================================================
-       RESET E BASE
-    ============================================================ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ---------- RESET E BASE ---------- */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: Arial, Helvetica, sans-serif;
@@ -17,9 +21,45 @@
       line-height: 1.2;
     }
 
-    /* ============================================================
-       BOTÕES DE AÇÃO — visíveis apenas na tela
-    ============================================================ */
+    /* ---------- BARRA DE ZOOM ---------- */
+    .zoom-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: #f7f9fc;
+      border-bottom: 1px solid #d9e2ec;
+      flex-wrap: wrap;
+    }
+
+    .zoom-bar .zoom-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334e68;
+    }
+
+    .zoom-bar button {
+      padding: 6px 12px;
+      border: 1px solid #9fb3c8;
+      background: #fff;
+      color: #102a43;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .zoom-bar button:active {
+      transform: translateY(1px);
+    }
+
+    .zoom-bar .zoom-percent {
+      min-width: 52px;
+      text-align: center;
+      font-weight: 700;
+      color: #102a43;
+    }
+
+    /* ---------- AÇÕES DA TELA ---------- */
     .acoes-tela {
       display: flex;
       justify-content: space-between;
@@ -32,15 +72,18 @@
       top: 0;
       z-index: 10;
     }
+
     .acoes-tela-grupo {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
+
     .acoes-tela form {
       margin: 0;
     }
+
     .acao-btn {
       display: inline-flex;
       align-items: center;
@@ -56,70 +99,86 @@
       transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
       line-height: 1;
     }
+
     .acao-btn:hover {
       filter: brightness(1.02);
       box-shadow: 0 2px 8px rgba(16, 42, 67, 0.14);
     }
+
     .acao-btn:active {
       transform: translateY(1px);
       box-shadow: none;
     }
+
     .acao-btn-primario {
       background: #0b66c3;
       color: #fff;
       border-color: #0b66c3;
     }
+
     .acao-btn-sucesso {
       background: #1c7c54;
       color: #fff;
       border-color: #1c7c54;
     }
+
     .acao-btn-neutro {
       background: #ffffff;
       color: #243b53;
       border-color: #9fb3c8;
     }
+
     .acao-btn-entrada {
       background: #2563eb;
       color: #fff;
       border-color: #2563eb;
     }
+
     .acao-btn-agrupar {
       background: #7c3aed;
       color: #fff;
       border-color: #7c3aed;
     }
+
     .acoes-tela-ajuda {
       font-size: 11px;
       color: #486581;
       font-weight: 600;
       white-space: nowrap;
     }
+
     .status-edicao-impressao {
       font-size: 11px;
       color: #334e68;
       font-weight: 700;
     }
+
     @media (max-width: 900px) {
       .acoes-tela {
         flex-direction: column;
         align-items: stretch;
       }
+
       .acoes-tela-grupo {
         width: 100%;
       }
+
       .acao-btn {
         flex: 1 1 calc(50% - 8px);
         min-width: 180px;
       }
+
       .acoes-tela-ajuda {
         white-space: normal;
       }
     }
 
-    /* ============================================================
-       FOLHA — simula A4 em tela
-    ============================================================ */
+    /* ---------- FOLHAS ---------- */
+    .folhas-wrapper {
+      transform-origin: top center;
+      will-change: transform;
+    }
+
     .folha {
       width: 210mm;
       min-height: 148mm;
@@ -130,47 +189,7 @@
       box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
     }
 
-    .zoom-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 20px;
-      background: #f7f9fc;
-      border-bottom: 1px solid #d9e2ec;
-      flex-wrap: wrap;
-    }
-    .zoom-bar .zoom-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: #334e68;
-    }
-    .zoom-bar button {
-      padding: 6px 12px;
-      border: 1px solid #9fb3c8;
-      background: #fff;
-      color: #102a43;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 700;
-    }
-    .zoom-bar button:active {
-      transform: translateY(1px);
-    }
-    .zoom-bar .zoom-percent {
-      min-width: 52px;
-      text-align: center;
-      font-weight: 700;
-      color: #102a43;
-    }
-
-    .folhas-wrapper {
-      transform-origin: top center;
-      will-change: transform;
-    }
-
-    /* ============================================================
-       CABEÇALHO DA FOLHA
-    ============================================================ */
+    /* ---------- CABEÇALHO ---------- */
     .cabecalho {
       display: flex;
       align-items: center;
@@ -178,15 +197,62 @@
       margin-bottom: 4px;
       background: #f8fbff;
     }
-    .cabecalho .cel-data      { padding: 3px 6px; font-weight: 700; white-space: nowrap; border-right: 1px solid #000; font-size: 8pt; }
-    .cabecalho .cel-empresa   { padding: 3px 8px; font-weight: 700; font-size: 8pt; min-width: 60px; border-right: 1px solid #000; text-align: center; }
-    .cabecalho .cel-viagem    { padding: 3px 8px; font-weight: 700; font-size: 8pt; border-right: 1px solid #000; white-space: nowrap; }
-    .cabecalho .cel-motorista { padding: 3px 8px; font-size: 8pt; flex: 1; border-right: 1px solid #000; }
-    .cabecalho .cel-veiculo   { padding: 3px 8px; font-size: 8pt; white-space: nowrap; }
 
-    /* ============================================================
-       TABELA FRENTE / VERSO
-    ============================================================ */
+    .cabecalho .cel-data,
+    .cabecalho .cel-empresa,
+    .cabecalho .cel-viagem,
+    .cabecalho .cel-motorista {
+      border-right: 1px solid #000;
+    }
+
+    .cabecalho .cel-data {
+      padding: 3px 6px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-size: 8pt;
+    }
+
+    .cabecalho .cel-empresa {
+      padding: 3px 8px;
+      font-weight: 700;
+      font-size: 8pt;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .cabecalho .cel-viagem {
+      padding: 3px 8px;
+      font-weight: 700;
+      font-size: 8pt;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .cabecalho .cel-viagem:hover {
+      background-color: #e2eeff;
+      outline: 1px dashed #0056b3;
+    }
+
+    @media print {
+      .cabecalho .cel-viagem:hover {
+        background: transparent !important;
+        outline: none !important;
+      }
+    }
+
+    .cabecalho .cel-motorista {
+      padding: 3px 8px;
+      font-size: 8pt;
+      flex: 1;
+    }
+
+    .cabecalho .cel-veiculo {
+      padding: 3px 8px;
+      font-size: 8pt;
+      white-space: nowrap;
+    }
+
+    /* ---------- TABELAS ---------- */
     .titulo-secao {
       font-weight: bold;
       font-size: 7.5pt;
@@ -197,12 +263,14 @@
       background: #fff;
       letter-spacing: 0.5px;
     }
+
     table.mapa {
       width: 100%;
       border-collapse: collapse;
       font-size: 7.5pt;
       table-layout: fixed;
     }
+
     table.mapa th {
       background: #f4f7fb;
       border: 1px solid #000;
@@ -211,64 +279,123 @@
       font-size: 7pt;
       font-weight: 700;
     }
+
     table.mapa th,
     table.mapa td {
       overflow-wrap: anywhere;
       word-break: break-word;
     }
+
     table.mapa td {
       border: 1px solid #000;
       padding: 2px 3px;
       vertical-align: middle;
       line-height: 1.15;
     }
-    table.mapa td.num    { text-align: center; width: 18px; }
-    table.mapa td.ac     { text-align: center; width: 22px; }
-    table.mapa td.hor    { text-align: center; width: 34px; white-space: nowrap; }
-    table.mapa td.ident  { text-align: center; width: 24px; }
-    table.mapa td.obs    { font-size: 6.1pt; color: #000; line-height: 1.05; vertical-align: top; white-space: normal; }
-    table.mapa td.obs-vazia { color: #000; }
-    table.mapa td.cond   { font-size: 6.2pt; color: #000; font-weight: bold; line-height: 1.1; }
-    table.mapa th.col-acao-impressao,
-    table.mapa td.col-acao-impressao {
-      width: 58px;
+
+    table.mapa td.num {
       text-align: center;
-    }
-    .btn-excluir-impressao {
-      border: 1px solid #c9d4e0;
-      background: #fff;
-      color: #5c6b7a;
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 3px 7px;
-      cursor: pointer;
+      width: 18px;
     }
 
-    .condicoes-inline {
-      display: block;
-      margin-top: 1px;
+    table.mapa td.ac {
+      text-align: center;
+      width: 22px;
+    }
+
+    table.mapa td.hor {
+      text-align: center;
+      width: 34px;
+      white-space: nowrap;
+    }
+
+    table.mapa td.ident {
+      text-align: center;
+      width: 24px;
+    }
+
+    table.mapa td.obs {
+      font-size: 6.1pt;
+      color: #000;
+      line-height: 1.05;
+      vertical-align: top;
+      white-space: normal;
+    }
+
+    table.mapa td.obs-vazia {
+      color: #000;
+    }
+
+    table.mapa td.cond {
       font-size: 6.2pt;
       color: #000;
       font-weight: bold;
       line-height: 1.1;
     }
 
-    /* ============================================================
-       ALTURA DE LINHA FIXA — GARANTE ALINHAMENTO FRENTE/VERSO
-    ============================================================ */
+    table.mapa th.col-acao-impressao,
+    table.mapa td.col-acao-impressao {
+      width: 125px;
+      text-align: center;
+    }
+
+    /* ---------- BOTÕES DE AÇÃO DAS LINHAS ---------- */
+    .btn-excluir-impressao,
+    .btn-transferir-impressao {
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.12s ease;
+    }
+
+    .btn-excluir-impressao {
+      border: 1px solid #c9d4e0;
+      background: #fff;
+      color: #5c6b7a;
+    }
+
+    .btn-excluir-impressao:hover {
+      background: #f8fafc;
+      filter: brightness(0.98);
+    }
+
+    .btn-transferir-impressao {
+      border: 1px solid #f59e0b;
+      background: #fff7ed;
+      color: #b45309;
+      margin-left: 2px;
+    }
+
+    .btn-transferir-impressao:hover {
+      background: #ffedd5;
+      filter: brightness(0.98);
+    }
+
+    .btn-excluir-impressao:active,
+    .btn-transferir-impressao:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    /* ---------- LINHAS ESPECIAIS ---------- */
     table.mapa tbody tr:not(.linha-vazia):not(.linha-separador) {
       height: 22px;
       max-height: 22px;
     }
+
     table.mapa tbody tr:not(.linha-vazia):not(.linha-separador) td {
       height: 22px;
       max-height: 22px;
       overflow: hidden;
     }
 
-    /* linha vazia para margem extra (visível só na tela) */
-    tr.linha-vazia td { height: 22px; background: #fff; }
+    tr.linha-vazia td {
+      height: 22px;
+      background: #fff;
+    }
+
     tr.linha-separador td {
       height: 12px;
       border: none !important;
@@ -276,9 +403,6 @@
       padding: 0 !important;
     }
 
-    /* ============================================================
-       SEPARADOR FRENTE/VERSO
-    ============================================================ */
     .separador {
       text-align: center;
       font-size: 7.5pt;
@@ -289,9 +413,7 @@
       letter-spacing: 1px;
     }
 
-    /* ============================================================
-       RODAPÉ DO BLOCO (VERSO) — BOTÕES DE AÇÃO
-    ============================================================ */
+    /* ---------- RODAPÉ DO VERSO ---------- */
     .rodape-bloco-verso {
       display: flex;
       gap: 8px;
@@ -301,6 +423,7 @@
       margin-top: 12px;
       flex-wrap: wrap;
     }
+
     .rodape-bloco-verso .separador-btn {
       width: 2px;
       height: 28px;
@@ -308,11 +431,118 @@
       margin: 0 8px;
     }
 
-    /* ============================================================
-       IMPRESSÃO
-    ============================================================ */
+    /* ---------- MODAL DE TRANSFERÊNCIA ---------- */
+    .modal-transferencia-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-transferencia-overlay.ativo {
+      display: flex;
+    }
+
+    .modal-transferencia-conteudo {
+      background: white;
+      padding: 24px;
+      border-radius: 10px;
+      min-width: 420px;
+      max-width: 90%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-transferencia-conteudo h3 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: #102a43;
+      font-size: 16pt;
+    }
+
+    .modal-transferencia-conteudo p {
+      margin: 8px 0;
+      font-size: 11pt;
+      color: #334e68;
+    }
+
+    .modal-transferencia-conteudo label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 6px;
+      font-weight: 700;
+      color: #102a43;
+      font-size: 11pt;
+    }
+
+    .modal-transferencia-conteudo select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #9fb3c8;
+      border-radius: 6px;
+      font-size: 11pt;
+    }
+
+    .modal-transferencia-botoes {
+      margin-top: 24px;
+      text-align: right;
+    }
+
+    .modal-btn-cancelar,
+    .modal-btn-confirmar {
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 11pt;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.12s ease;
+    }
+
+    .modal-btn-cancelar {
+      background: #fff;
+      color: #334e68;
+      border-color: #9fb3c8;
+      margin-right: 10px;
+    }
+
+    .modal-btn-cancelar:hover {
+      background: #f1f5f9;
+    }
+
+    .modal-btn-cancelar:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    .modal-btn-confirmar {
+      background: #0b66c3;
+      color: #fff;
+      border-color: #0b66c3;
+    }
+
+    .modal-btn-confirmar:hover {
+      filter: brightness(1.05);
+    }
+
+    .modal-btn-confirmar:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    .modal-btn-confirmar:disabled {
+      background: #94a3b8;
+      border-color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    /* ---------- IMPRESSÃO ---------- */
     @media print {
-      /* Esconde controles de tela */
       .zoom-bar,
       .acoes-tela,
       .rodape-bloco-verso,
@@ -320,19 +550,19 @@
         display: none !important;
       }
 
-      /* Remove zoom da prévia */
-      .folhas-wrapper { transform: none !important; }
+      .folhas-wrapper {
+        transform: none !important;
+      }
 
-      /* Ajuste base para impressão */
-      body { font-size: 7.2pt; }
+      body {
+        font-size: 7.2pt;
+      }
 
-      /* ✅ Esconde linhas vazias e separadores na impressão */
       tr.linha-vazia,
       tr.linha-separador {
         display: none !important;
       }
 
-      /* Cada folha ocupa a página toda */
       .folha {
         width: 100%;
         min-height: auto;
@@ -343,376 +573,1094 @@
         page-break-after: always;
       }
 
-      /* Evita quebrar uma linha de paciente no meio */
-      tr { page-break-inside: avoid; }
+      tr {
+        page-break-inside: avoid;
+      }
 
-      /* Repete cabeçalho da tabela em cada página */
-      thead { display: table-header-group; }
+      thead {
+        display: table-header-group;
+      }
 
-      /* Força cores e fundo na impressão */
       .titulo-secao,
       table.mapa th {
         background: #fff !important;
         color: #000 !important;
       }
 
-      /* Garante cores de gráficos/botões internos */
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
 
-      /* Remove quebras desnecessárias na última folha e verso */
-      .folha:last-of-type { page-break-after: auto; }
-      .folha.verso { page-break-before: auto; }
+      .folha:last-of-type {
+        page-break-after: auto;
+      }
+
+      .folha.verso {
+        page-break-before: auto;
+      }
     }
   </style>
 </head>
 <body>
 
-<div class="zoom-bar no-print">
-  <span class="zoom-label">Zoom da prévia:</span>
-  <button type="button" onclick="ajustarZoom(-0.1)">-</button>
-  <button type="button" onclick="ajustarZoom(0.1)">+</button>
-  <button type="button" onclick="restaurarZoom()">100%</button>
-  <span class="zoom-percent" id="zoomPercent">100%</span>
-</div>
-
-<!-- ============================================================
-     BOTÕES VISÍVEIS APENAS NA TELA
-============================================================ -->
-<div class="acoes-tela">
-  <div class="acoes-tela-grupo">
-    <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">Prévia/Imprimir</button>
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="acao" value="salvar_continuar">
-      <button type="submit" class="acao-btn acao-btn-neutro">Salvar e continuar</button>
-    </form>
-
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="acao" value="finalizar">
-      <button type="submit" class="acao-btn acao-btn-sucesso">Salvar e finalizar</button>
-    </form>
-    <button class="acao-btn acao-btn-neutro" type="button" onclick="restaurarPacientesRemovidosImpressao()">Restaurar pacientes removidos da prévia</button>
+  <!-- BARRA DE ZOOM -->
+  <div class="zoom-bar no-print">
+    <span class="zoom-label">Zoom da prévia:</span>
+    <button type="button" onclick="ajustarZoom(-0.1)">-</button>
+    <button type="button" onclick="ajustarZoom(0.1)">+</button>
+    <button type="button" onclick="restaurarZoom()">100%</button>
+    <span class="zoom-percent" id="zoomPercent">100%</span>
   </div>
 
-  <div class="acoes-tela-grupo">
-    <button class="acao-btn acao-btn-neutro" type="button" onclick="sairDaImpressao()">Fechar prévia</button>
-    <a class="acao-btn acao-btn-neutro" href="{% url 'transporte_pacientes:mapa_operacional' %}">Voltar ao mapa</a>
-    <span class="acoes-tela-ajuda">Cada bloco sai em frente/verso com numeração da viagem.</span>
-  </div>
-  <span id="statusEdicaoImpressao" class="status-edicao-impressao">Nenhum paciente removido da prévia.</span>
-</div>
+  <!-- AÇÕES DA TELA -->
+  <div class="acoes-tela">
+    <div class="acoes-tela-grupo">
+      <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">Prévia/Imprimir</button>
 
-<div class="folhas-wrapper" id="folhasWrapper">
-{% for bloco in blocos %}
-<!-- ============================================================
-     FOLHA FRENTE - BLOCO {{ forloop.counter }}
-============================================================ -->
-<div class="folha frente">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="salvar_continuar">
+        <button type="submit" class="acao-btn acao-btn-neutro">Salvar e continuar</button>
+      </form>
 
-  <div class="cabecalho">
-    <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
-    <div class="cel-empresa">{{ empresa }}</div>
-    <div class="cel-viagem">{{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}</div>
-    <div class="cel-motorista">Motorista: {% if bloco.condutor_nome %}{{ bloco.condutor_nome }}{% elif condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
-    <div class="cel-veiculo">
-      {% if bloco.origem|default:origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
-      {% if bloco.frota_label %} — {{ bloco.frota_label }}{% elif frota_label %} — {{ frota_label }}{% elif veiculo %} — {% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}
-      {% if bloco.horario_consulta_base|default:horario_consulta_base %} — {{ bloco.horario_consulta_base|default:horario_consulta_base }}{% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="finalizar">
+        <button type="submit" class="acao-btn acao-btn-sucesso">Salvar e finalizar</button>
+      </form>
+
+      <button class="acao-btn acao-btn-neutro" type="button" onclick="restaurarPacientesRemovidosImpressao()">
+        Restaurar pacientes removidos da prévia
+      </button>
     </div>
+
+    <div class="acoes-tela-grupo">
+      <button class="acao-btn acao-btn-neutro" type="button" onclick="sairDaImpressao()">Fechar prévia</button>
+      <a class="acao-btn acao-btn-neutro" href="{% url 'transporte_pacientes:mapa_operacional' %}">Voltar ao mapa</a>
+      <span class="acoes-tela-ajuda">Cada bloco sai em frente/verso com numeração da viagem.</span>
+    </div>
+
+    <span id="statusEdicaoImpressao" class="status-edicao-impressao">
+      Nenhum paciente removido da prévia.
+    </span>
   </div>
 
-  <table class="mapa">
-    <thead>
-      <tr>
-        <th style="width:18px;">#</th>
-        <th>PACIENTE</th>
-        <th style="width:82px;">CONDIÇÕES ESPECIAIS</th>
-        <th style="width:24px;">ID</th>
-        <th style="width:90px;">TEL</th>
-        <th style="width:36px;">IDADE</th>
-        <th>ENDEREÇO</th>
-        <th style="width:70px;">BAIRRO</th>
-        <th style="width:90px;">PONTO REF.</th>
-        <th style="width:46px;">CONSULTA</th>
-        <th class="col-acao-impressao no-print">AÇÃO</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if bloco.linhas %}
-        {% for l in bloco.linhas %}
-          {% if l.separador %}
-            <tr class="linha-separador">
-              <td colspan="11"></td>
-            </tr>
+  <!-- FOLHAS -->
+  <div class="folhas-wrapper" id="folhasWrapper">
+    {% for bloco in blocos %}
+
+    <!-- FRENTE -->
+    <div class="folha frente">
+      <div class="cabecalho">
+        <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
+        <div class="cel-empresa">{{ empresa }}</div>
+        <div class="cel-viagem" onclick="editarTextoViagem(this)" title="Clique para alterar o número da viagem ou bloco">
+          {{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}
+        </div>
+        <div class="cel-motorista">
+          Motorista:
+          {% if bloco.condutor_nome %}
+            {{ bloco.condutor_nome }}
+          {% elif condutor %}
+            {{ condutor.nome }}
           {% else %}
-            <tr data-paciente-id="{{ l.paciente_id }}">
-              <td class="num">{{ l.ordem }}</td>
-              <td>{{ l.nome }}</td>
-              <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
-              <td class="ident">{{ l.paciente_id }}</td>
-              <td>{{ l.telefone|default:'-' }}</td>
-              <td>{{ l.idade|default:'-' }}</td>
-              <td>{{ l.endereco }}</td>
-              <td>{{ l.bairro }}</td>
-              <td class="obs" style="white-space:normal;">{{ l.referencia|default:'-' }}</td>
-              <td class="hor">{{ l.horario }}</td>
-              <td class="col-acao-impressao no-print">
-                <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">Remover</button>
-              </td>
-            </tr>
+            —
           {% endif %}
-        {% endfor %}
-        {% if bloco.vazios %}
-          {% for _ in bloco.vazios %}
-            <tr class="linha-vazia">
-              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="no-print"></td>
-            </tr>
-          {% endfor %}
-        {% endif %}
-      {% else %}
-        <tr>
-          <td colspan="11" style="text-align:center; padding:10px; color:#777;">
-            Nenhum transporte encontrado para os filtros selecionados.
-          </td>
-        </tr>
-      {% endif %}
-    </tbody>
-  </table>
-
-</div><!-- /folha frente -->
-
-
-<!-- ============================================================
-     FOLHA VERSO - BLOCO {{ forloop.counter }}
-============================================================ -->
-<div class="folha verso">
-
-  <div class="cabecalho">
-    <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
-    <div class="cel-empresa">{{ empresa }}</div>
-    <div class="cel-viagem">{{ bloco.numero_viagem|default:numero_viagem }} — VERSO BLOCO {{ bloco.bloco_num|default:forloop.counter }}</div>
-    <div class="cel-motorista">Motorista: {% if bloco.condutor_nome %}{{ bloco.condutor_nome }}{% elif condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
-    <div class="cel-veiculo">
-      {% if bloco.origem|default:origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
-      {% if bloco.frota_label %} — {{ bloco.frota_label }}{% elif frota_label %} — {{ frota_label }}{% endif %}
-    </div>
-  </div>
-
-  <table class="mapa">
-    <thead>
-      <tr>
-        <th style="width:18px;">#</th>
-        <th>DESTINO</th>
-        <th style="width:22px;">AC</th>
-        <th style="width:80px;">CONDIÇÕES ESPECIAIS</th>
-        {% if bloco.mostrar_coluna_observacao %}
-        <th style="width:86px;">OBSERVAÇÃO</th>
-        {% else %}
-        <th style="width:0; border:0; padding:0;"></th>
-        {% endif %}
-        <th class="col-acao-impressao no-print">AÇÃO</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% if bloco.linhas %}
-        {% for l in bloco.linhas %}
-          {% if l.separador %}
-            <tr class="linha-separador">
-              <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}"></td>
-            </tr>
+        </div>
+        <div class="cel-veiculo">
+          {% if bloco.origem|default:origem == 'prefeitura' %}
+            Frota Prefeitura
           {% else %}
-            <tr data-paciente-id="{{ l.paciente_id }}">
-              <td class="num">{{ l.ordem }}</td>
-              <td style="white-space:normal;">
-                {{ l.destino|default:'-' }}{% if l.endereco_clinica %} — {{ l.endereco_clinica }}{% endif %}
-              </td>
-              <td class="ac">{{ l.acompanhante_marca|default:'SO' }}</td>
-              <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
-              {% if bloco.mostrar_coluna_observacao %}
-                {% if l.observacao %}
-                <td class="obs" style="white-space:normal;">{{ l.observacao }}</td>
-                {% else %}
-                <td class="obs obs-vazia" style="white-space:normal;"></td>
-                {% endif %}
+            Terceirizada
+          {% endif %}
+
+          {% if bloco.frota_label %}
+            — {{ bloco.frota_label }}
+          {% elif frota_label %}
+            — {{ frota_label }}
+          {% elif veiculo %}
+            —
+            {% if veiculo.tipo_veiculo == 'ambulancia' %}
+              AMB {{ veiculo.patrimonio }}
+            {% else %}
+              VAN {{ veiculo.placa }}
+            {% endif %}
+          {% endif %}
+
+          {% if bloco.horario_consulta_base|default:horario_consulta_base %}
+            — {{ bloco.horario_consulta_base|default:horario_consulta_base }}
+          {% endif %}
+        </div>
+      </div>
+
+      <table class="mapa">
+        <thead>
+          <tr>
+            <th style="width:18px;">#</th>
+            <th>PACIENTE</th>
+            <th style="width:82px;">CONDIÇÕES ESPECIAIS</th>
+            <th style="width:24px;">ID</th>
+            <th style="width:90px;">TEL</th>
+            <th style="width:36px;">IDADE</th>
+            <th>ENDEREÇO</th>
+            <th style="width:70px;">BAIRRO</th>
+            <th style="width:90px;">PONTO REF.</th>
+            <th style="width:46px;">CONSULTA</th>
+            <th class="col-acao-impressao no-print">AÇÃO</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if bloco.linhas %}
+            {% for l in bloco.linhas %}
+              {% if l.separador %}
+                <tr class="linha-separador">
+                  <td colspan="11"></td>
+                </tr>
               {% else %}
-              <td style="border:0; padding:0;"></td>
+                <tr data-paciente-id="{{ l.paciente_id }}" data-transporte-id="{{ l.transporte_id }}">
+                  <td class="num">{{ l.ordem }}</td>
+                  <td>{{ l.nome }}</td>
+                  <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
+                  <td class="ident">{{ l.paciente_id }}</td>
+                  <td>{{ l.telefone|default:'-' }}</td>
+                  <td>{{ l.idade|default:'-' }}</td>
+                  <td>{{ l.endereco }}</td>
+                  <td>{{ l.bairro }}</td>
+                  <td class="obs" style="white-space:normal;">{{ l.referencia|default:'-' }}</td>
+                  <td class="hor">{{ l.horario }}</td>
+                  <td class="col-acao-impressao no-print">
+                    <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">
+                      Remover
+                    </button>
+                    <button type="button" class="btn-transferir-impressao" onclick="abrirModalTransferencia(
+                      '{{ l.transporte_id }}',
+                      '{{ l.nome|escapejs }}',
+                      'VIAGEM {{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}',
+                      '{{ bloco.bloco_id|default:'' }}',
+                      '{{ bloco.data_fmt|default:data_fmt }}'
+                    )">
+                      Transferir
+                    </button>
+                  </td>
+                </tr>
               {% endif %}
-              <td class="col-acao-impressao no-print">
-                <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">Remover</button>
+            {% endfor %}
+
+            {% if bloco.vazios %}
+              {% for _ in bloco.vazios %}
+                <tr class="linha-vazia">
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td class="no-print"></td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          {% else %}
+            <tr>
+              <td colspan="11" style="text-align:center; padding:10px; color:#777;">
+                Nenhum transporte encontrado para os filtros selecionados.
               </td>
             </tr>
           {% endif %}
-        {% endfor %}
-        {% if bloco.vazios %}
-          {% for _ in bloco.vazios %}
-            <tr class="linha-vazia">
-              <td></td><td></td><td></td><td></td>{% if bloco.mostrar_coluna_observacao %}<td></td>{% endif %}<td class="no-print"></td>
-            </tr>
-          {% endfor %}
-        {% endif %}
-      {% else %}
-        <tr>
-          <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}" style="text-align:center; padding:10px; color:#777;">
-            Nenhum dado para o verso.
-          </td>
-        </tr>
-      {% endif %}
-    </tbody>
-  </table>
+        </tbody>
+      </table>
 
-  <!-- ============================================================
-       RODAPÉ DO BLOCO — BOTÕES DE AÇÃO (FLUXO INTUITIVO)
-  ============================================================ -->
-  <div class="rodape-bloco-verso no-print">
-    <button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaVerso(this)">＋ Adicionar Linha</button>
-    <button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco()">＋ Novo Bloco</button>
-    <span class="separador-btn"></span>
-    <form method="post" style="display:inline;">
-      {% csrf_token %}
-      <input type="hidden" name="acao" value="salvar_continuar">
-      <button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>
-    </form>
-    <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>
+      <div class="rodape-bloco-verso no-print">
+        <button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaFrente(this)">
+          ＋ Adicionar Linha
+        </button>
+        <button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco(this)">
+          ＋ Novo Bloco
+        </button>
+        <span class="separador-btn"></span>
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="salvar_continuar">
+          <button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>
+        </form>
+        <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+    </div>
+
+    <!-- VERSO -->
+    <div class="folha verso">
+      <div class="cabecalho">
+        <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
+        <div class="cel-empresa">{{ empresa }}</div>
+        <div class="cel-viagem" onclick="editarTextoViagem(this)" title="Clique para alterar o número da viagem ou bloco">
+          {{ bloco.numero_viagem|default:numero_viagem }} — VERSO BLOCO {{ bloco.bloco_num|default:forloop.counter }}
+        </div>
+        <div class="cel-motorista">
+          Motorista:
+          {% if bloco.condutor_nome %}
+            {{ bloco.condutor_nome }}
+          {% elif condutor %}
+            {{ condutor.nome }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="cel-veiculo">
+          {% if bloco.origem|default:origem == 'prefeitura' %}
+            Frota Prefeitura
+          {% else %}
+            Terceirizada
+          {% endif %}
+
+          {% if bloco.frota_label %}
+            — {{ bloco.frota_label }}
+          {% elif frota_label %}
+            — {{ frota_label }}
+          {% endif %}
+        </div>
+      </div>
+
+      <table class="mapa">
+        <thead>
+          <tr>
+            <th style="width:18px;">#</th>
+            <th>DESTINO</th>
+            <th style="width:22px;">AC</th>
+            <th style="width:80px;">CONDIÇÕES ESPECIAIS</th>
+            {% if bloco.mostrar_coluna_observacao %}
+              <th style="width:86px;">OBSERVAÇÃO</th>
+            {% else %}
+              <th style="width:0; border:0; padding:0;"></th>
+            {% endif %}
+            <th class="col-acao-impressao no-print">AÇÃO</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if bloco.linhas %}
+            {% for l in bloco.linhas %}
+              {% if l.separador %}
+                <tr class="linha-separador">
+                  <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}"></td>
+                </tr>
+              {% else %}
+                <tr data-paciente-id="{{ l.paciente_id }}" data-transporte-id="{{ l.transporte_id }}">
+                  <td class="num">{{ l.ordem }}</td>
+                  <td style="white-space:normal;">
+                    {{ l.destino|default:'-' }}
+                    {% if l.endereco_clinica %}
+                      — {{ l.endereco_clinica }}
+                    {% endif %}
+                  </td>
+                  <td class="ac">{{ l.acompanhante_marca|default:'SO' }}</td>
+                  <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
+                  {% if bloco.mostrar_coluna_observacao %}
+                    {% if l.observacao %}
+                      <td class="obs" style="white-space:normal;">{{ l.observacao }}</td>
+                    {% else %}
+                      <td class="obs obs-vazia" style="white-space:normal;"></td>
+                    {% endif %}
+                  {% else %}
+                    <td style="border:0; padding:0;"></td>
+                  {% endif %}
+                  <td class="col-acao-impressao no-print">
+                    <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">
+                      Remover
+                    </button>
+                    <button type="button" class="btn-transferir-impressao" onclick="abrirModalTransferencia(
+                      '{{ l.transporte_id }}',
+                      '{{ l.nome|escapejs }}',
+                      'VIAGEM {{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}',
+                      '{{ bloco.bloco_id|default:'' }}',
+                      '{{ bloco.data_fmt|default:data_fmt }}'
+                    )">
+                      Transferir
+                    </button>
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+
+            {% if bloco.vazios %}
+              {% for _ in bloco.vazios %}
+                <tr class="linha-vazia">
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  {% if bloco.mostrar_coluna_observacao %}
+                    <td></td>
+                  {% endif %}
+                  <td class="no-print"></td>
+                </tr>
+              {% endfor %}
+            {% endif %}
+          {% else %}
+            <tr>
+              <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}" style="text-align:center; padding:10px; color:#777;">
+                Nenhum dado para o verso.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <div class="rodape-bloco-verso no-print">
+        <button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaVerso(this)">
+          ＋ Adicionar Linha
+        </button>
+        <button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco(this)">
+          ＋ Novo Bloco
+        </button>
+        <span class="separador-btn"></span>
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="salvar_continuar">
+          <button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>
+        </form>
+        <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+    </div>
+
+    {% endfor %}
   </div>
 
-</div><!-- /folha verso -->
-{% endfor %}
-</div>
+  <!-- MODAL DE TRANSFERÊNCIA -->
+  <div id="modalTransferencia" class="modal-transferencia-overlay">
+    <div class="modal-transferencia-conteudo">
+      <h3>Transferir Paciente</h3>
+      <p>Paciente: <strong id="modalPacienteNome">-</strong></p>
+      <p>Bloco atual: <strong id="modalBlocoAtual">-</strong></p>
 
-<script>
-  var zoomAtual = 1;
-  var pacientesRemovidosPrevia = {};
+      <label for="selectBlocoDestino">Selecione o bloco de destino:</label>
+      <div style="display:flex; gap:6px; margin-bottom:12px;">
+        <select id="selectBlocoDestino" style="flex:1;">
+          <option value="">Carregando blocos...</option>
+        </select>
+        <button type="button" class="acao-btn acao-btn-agrupar" style="padding:4px 10px; font-size:12px;" onclick="criarNovoBlocoETransferir()">
+          ＋ Criar Novo Bloco
+        </button>
+      </div>
 
-  function atualizarStatusEdicaoImpressao() {
-    var el = document.getElementById('statusEdicaoImpressao');
-    if (!el) return;
-    var total = Object.keys(pacientesRemovidosPrevia).length;
-    if (!total) {
-      el.textContent = 'Nenhum paciente removido da prévia.';
-      return;
+      <div class="modal-transferencia-botoes">
+        <button type="button" class="modal-btn-cancelar" onclick="fecharModalTransferencia()">
+          Cancelar
+        </button>
+        <button type="button" class="modal-btn-confirmar" id="btnConfirmarTransferencia" onclick="confirmarTransferencia()">
+          Transferir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE SELEÇÃO DE VIAGEM -->
+  <div id="modalNumeroViagem" class="modal-transferencia-overlay">
+    <div class="modal-transferencia-conteudo" style="min-width:320px; max-width:400px;">
+      <h3 id="modalNumeroViagemTitulo">Número da Viagem</h3>
+      <p style="font-size:10pt; color:#627d98; margin-bottom:12px;">Selecione uma viagem ou digite o número desejado:</p>
+      
+      <label for="inputNumeroViagem" style="margin-top:0;">Viagem:</label>
+      <input type="text" id="inputNumeroViagem" list="listaSugestoesViagem" class="form-control" style="width:100%; padding:10px; border:1px solid #9fb3c8; border-radius:6px; font-size:12pt; font-weight:bold; color:#102a43; margin-bottom:12px;" placeholder="Ex: 2 ou 2ª Viagem" autocomplete="off">
+      <datalist id="listaSugestoesViagem">
+        <option value="1ª Viagem"></option>
+        <option value="2ª Viagem"></option>
+        <option value="3ª Viagem"></option>
+        <option value="4ª Viagem"></option>
+        <option value="5ª Viagem"></option>
+        <option value="6ª Viagem"></option>
+        <option value="7ª Viagem"></option>
+        <option value="8ª Viagem"></option>
+        <option value="9ª Viagem"></option>
+        <option value="10ª Viagem"></option>
+      </datalist>
+
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;">
+        <button type="button" class="acao-btn acao-btn-agrupar" style="padding:4px 8px; font-size:11px;" onclick="selecionarAtalhoViagem('1ª Viagem')">1ª Viagem</button>
+        <button type="button" class="acao-btn acao-btn-agrupar" style="padding:4px 8px; font-size:11px;" onclick="selecionarAtalhoViagem('2ª Viagem')">2ª Viagem</button>
+        <button type="button" class="acao-btn acao-btn-agrupar" style="padding:4px 8px; font-size:11px;" onclick="selecionarAtalhoViagem('3ª Viagem')">3ª Viagem</button>
+        <button type="button" class="acao-btn acao-btn-agrupar" style="padding:4px 8px; font-size:11px;" onclick="selecionarAtalhoViagem('4ª Viagem')">4ª Viagem</button>
+      </div>
+
+      <div class="modal-transferencia-botoes" style="margin-top:12px;">
+        <button type="button" class="modal-btn-cancelar" onclick="fecharModalNumeroViagem()">
+          Cancelar
+        </button>
+        <button type="button" class="modal-btn-confirmar" id="btnConfirmarNumeroViagem" onclick="confirmarModalNumeroViagem()">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script>
+    /* ---------- VARIÁVEIS GLOBAIS ---------- */
+    var zoomAtual = 1;
+    var pacientesRemovidosPrevia = {};
+    var transporteIdAtual = null;
+    var blocoAtualId = null;
+    var dataViagemAtual = null;
+
+    /* ---------- STATUS E RENUMERAÇÃO ---------- */
+    function atualizarStatusEdicaoImpressao() {
+      var el = document.getElementById('statusEdicaoImpressao');
+      if (!el) return;
+
+      var total = Object.keys(pacientesRemovidosPrevia).length;
+      el.textContent = total
+        ? total + ' paciente(s) removido(s) apenas desta prévia.'
+        : 'Nenhum paciente removido da prévia.';
     }
-    el.textContent = total + ' paciente(s) removido(s) apenas desta prévia.';
-  }
 
-  function renumerarTabelasPrevia() {
-    var tbodies = document.querySelectorAll('table.mapa tbody');
-    Array.prototype.forEach.call(tbodies, function(tbody) {
-      var ordem = 0;
-      var linhas = tbody.querySelectorAll('tr');
+    function renumerarTabelasPrevia() {
+      var tbodies = document.querySelectorAll('table.mapa tbody');
+
+      Array.prototype.forEach.call(tbodies, function(tbody) {
+        var ordem = 0;
+
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr) {
+          if (tr.classList.contains('linha-separador') || tr.classList.contains('linha-vazia')) {
+            return;
+          }
+
+          var celNum = tr.querySelector('td.num');
+          if (!celNum) return;
+
+          ordem += 1;
+          celNum.textContent = ordem;
+        });
+      });
+    }
+
+    /* ---------- REMOVER PACIENTE DA PRÉVIA ---------- */
+    function removerPacienteDaPrevia(pacienteId) {
+      var id = String(pacienteId || '').trim();
+      if (!id) return;
+
+      var linhas = document.querySelectorAll('tr[data-paciente-id="' + id + '"]');
+      if (!linhas.length) return;
+
       Array.prototype.forEach.call(linhas, function(tr) {
-        if (tr.classList.contains('linha-separador') || tr.classList.contains('linha-vazia')) return;
-        var celNum = tr.querySelector('td.num');
-        if (!celNum) return;
-        ordem += 1;
-        celNum.textContent = ordem;
+        tr.parentNode.removeChild(tr);
+      });
+
+      pacientesRemovidosPrevia[id] = true;
+      renumerarTabelasPrevia();
+      atualizarStatusEdicaoImpressao();
+    }
+
+    function removerLinhaDinamica(btn) {
+      if (!btn) return;
+      var tr = btn.closest('tr');
+      if (!tr) return;
+
+      var tbody = tr.parentNode;
+      tr.remove();
+
+      if (tbody) {
+        var linhasRestantes = tbody.querySelectorAll('tr:not(.linha-separador):not(.linha-vazia)');
+        if (linhasRestantes.length === 0) {
+          var ehVerso = tbody.closest('.folha.verso') !== null;
+          var colSpan = ehVerso ? 6 : 11;
+          var msg = ehVerso ? 'Nenhum dado para o verso.' : 'Nenhum transporte encontrado para os filtros selecionados.';
+          var trVazia = document.createElement('tr');
+          trVazia.innerHTML = '<td colspan="' + colSpan + '" style="text-align:center; padding:10px; color:#777;">' + msg + '</td>';
+          tbody.appendChild(trVazia);
+        }
+      }
+
+      renumerarTabelasPrevia();
+    }
+
+    function restaurarPacientesRemovidosImpressao() {
+      window.location.reload();
+    }
+
+    /* ---------- ZOOM ---------- */
+    function aplicarZoom() {
+      var wrapper = document.getElementById('folhasWrapper');
+      var indicador = document.getElementById('zoomPercent');
+      if (!wrapper) return;
+
+      zoomAtual = Math.max(0.6, Math.min(1.6, zoomAtual));
+      wrapper.style.transform = 'scale(' + zoomAtual + ')';
+
+      if (indicador) {
+        indicador.textContent = Math.round(zoomAtual * 100) + '%';
+      }
+    }
+
+    function ajustarZoom(delta) {
+      zoomAtual += delta;
+      aplicarZoom();
+    }
+
+    function restaurarZoom() {
+      zoomAtual = 1;
+      aplicarZoom();
+    }
+
+    /* ---------- NAVEGAÇÃO ---------- */
+    function sairDaImpressao() {
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
+      }
+
+      if (window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
+      window.location.href = "{% url 'transporte_pacientes:mapa_operacional' %}";
+    }
+
+    /* ---------- ADICIONAR LINHA (FRENTE E VERSO) ---------- */
+    function adicionarLinhaFrente(botao) {
+      var folhaFrente = botao.closest('.folha.frente');
+      if (!folhaFrente) return;
+
+      var tbody = folhaFrente.querySelector('table.mapa tbody');
+      if (!tbody) return;
+
+      var linhasExistentes = tbody.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
+      var novaOrdem = linhasExistentes + 1;
+
+      var novaLinha = document.createElement('tr');
+      novaLinha.innerHTML =
+        '<td class="num">' + novaOrdem + '</td>' +
+        '<td>-</td>' +
+        '<td class="cond">-</td>' +
+        '<td class="ident">-</td>' +
+        '<td>-</td>' +
+        '<td>-</td>' +
+        '<td>-</td>' +
+        '<td>-</td>' +
+        '<td class="obs" style="white-space:normal;">-</td>' +
+        '<td class="hor">-</td>' +
+        '<td class="col-acao-impressao no-print">' +
+          '<button type="button" class="btn-excluir-impressao" onclick="removerLinhaDinamica(this)">Remover</button>' +
+        '</td>';
+
+      var linhaVaziaMsg = tbody.querySelector('tr td[colspan]');
+      if (linhaVaziaMsg && (linhaVaziaMsg.textContent.includes('Nenhum transporte') || linhaVaziaMsg.textContent.includes('Novo bloco'))) {
+        linhaVaziaMsg.parentNode.remove();
+      }
+
+      tbody.appendChild(novaLinha);
+
+      // Também adiciona no verso correspondente se existir
+      var folhaVerso = folhaFrente.nextElementSibling;
+      if (folhaVerso && folhaVerso.classList.contains('verso')) {
+        var btnVerso = folhaVerso.querySelector('.rodape-bloco-verso button.acao-btn-entrada');
+        if (btnVerso) {
+          adicionarLinhaVerso(btnVerso, false);
+        }
+      }
+    }
+
+    function adicionarLinhaVerso(botao, sincronizarFrente) {
+      var folhaVerso = botao.closest('.folha.verso');
+      if (!folhaVerso) return;
+
+      var tbody = folhaVerso.querySelector('table.mapa tbody');
+      if (!tbody) return;
+
+      var linhasExistentes = tbody.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
+      var novaOrdem = linhasExistentes + 1;
+
+      var thObs = folhaVerso.querySelector('thead tr th:nth-child(5)');
+      var temObservacaoVisivel = thObs && thObs.offsetWidth > 0;
+      if (!thObs) {
+        temObservacaoVisivel = folhaVerso.querySelector('th[style*="OBSERVAÇÃO"]') !== null;
+      }
+
+      var celulaObsHtml = '';
+      if (temObservacaoVisivel) {
+        celulaObsHtml = '<td class="obs obs-vazia" style="white-space:normal;">-</td>';
+      } else {
+        celulaObsHtml = '<td style="border:0; padding:0;"></td>';
+      }
+
+      var novaLinha = document.createElement('tr');
+      novaLinha.innerHTML =
+        '<td class="num">' + novaOrdem + '</td>' +
+        '<td style="white-space:normal;">-</td>' +
+        '<td class="ac">SO</td>' +
+        '<td class="cond">-</td>' +
+        celulaObsHtml +
+        '<td class="col-acao-impressao no-print">' +
+          '<button type="button" class="btn-excluir-impressao" onclick="removerLinhaDinamica(this)">Remover</button>' +
+        '</td>';
+
+      var linhaVaziaMsg = tbody.querySelector('tr td[colspan]');
+      if (linhaVaziaMsg && linhaVaziaMsg.textContent.includes('Nenhum dado')) {
+        linhaVaziaMsg.parentNode.remove();
+      }
+
+      tbody.appendChild(novaLinha);
+
+      // Se solicitado ou por padrão ao clicar direto no verso, sincroniza a linha na frente correspondente caso ela tenha menos linhas
+      if (sincronizarFrente !== false) {
+        var folhaFrente = folhaVerso.previousElementSibling;
+        if (folhaFrente && folhaFrente.classList.contains('frente')) {
+          var tbodyFrente = folhaFrente.querySelector('table.mapa tbody');
+          if (tbodyFrente) {
+            var qtdFrente = tbodyFrente.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
+            if (qtdFrente < novaOrdem) {
+              var btnFrente = folhaFrente.querySelector('.rodape-bloco-verso button.acao-btn-entrada');
+              if (btnFrente) {
+                // Adiciona apenas na frente sem loop
+                var novaFrenteLinha = document.createElement('tr');
+                novaFrenteLinha.innerHTML =
+                  '<td class="num">' + (qtdFrente + 1) + '</td>' +
+                  '<td>-</td>' +
+                  '<td class="cond">-</td>' +
+                  '<td class="ident">-</td>' +
+                  '<td>-</td>' +
+                  '<td>-</td>' +
+                  '<td>-</td>' +
+                  '<td>-</td>' +
+                  '<td class="obs" style="white-space:normal;">-</td>' +
+                  '<td class="hor">-</td>' +
+                  '<td class="col-acao-impressao no-print">' +
+                    '<button type="button" class="btn-excluir-impressao" onclick="removerLinhaDinamica(this)">Remover</button>' +
+                  '</td>';
+
+                var msgFrente = tbodyFrente.querySelector('tr td[colspan]');
+                if (msgFrente && (msgFrente.textContent.includes('Nenhum transporte') || msgFrente.textContent.includes('Novo bloco'))) {
+                  msgFrente.parentNode.remove();
+                }
+                tbodyFrente.appendChild(novaFrenteLinha);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    /* ---------- FORMATAÇÃO AUTOMÁTICA DE VIAGEM ---------- */
+    function formatarTextoViagem(input) {
+      if (!input) return '1ª Viagem';
+      var valor = input.toString().trim();
+      var numMatch = valor.match(/^(\d+)/);
+      if (numMatch) {
+        return numMatch[1] + 'ª Viagem';
+      }
+      return valor;
+    }
+
+    /* ---------- MODAL SELEÇÃO DE VIAGEM (AUTOCOMPLETE E ATALHOS) ---------- */
+    var callbackModalNumeroViagem = null;
+
+    function abrirModalNumeroViagem(titulo, valorInicial, callback) {
+      callbackModalNumeroViagem = callback;
+      var modal = document.getElementById('modalNumeroViagem');
+      var tituloEl = document.getElementById('modalNumeroViagemTitulo');
+      var inputEl = document.getElementById('inputNumeroViagem');
+
+      if (tituloEl) tituloEl.textContent = titulo || 'Número da Viagem';
+      if (inputEl) {
+        inputEl.value = valorInicial || '1ª Viagem';
+        setTimeout(function() {
+          inputEl.focus();
+          inputEl.select();
+        }, 50);
+      }
+      if (modal) modal.classList.add('ativo');
+    }
+
+    function fecharModalNumeroViagem() {
+      var modal = document.getElementById('modalNumeroViagem');
+      if (modal) modal.classList.remove('ativo');
+      callbackModalNumeroViagem = null;
+    }
+
+    function selecionarAtalhoViagem(valor) {
+      var inputEl = document.getElementById('inputNumeroViagem');
+      if (inputEl) inputEl.value = valor;
+      confirmarModalNumeroViagem();
+    }
+
+    function confirmarModalNumeroViagem() {
+      var inputEl = document.getElementById('inputNumeroViagem');
+      var valor = inputEl ? inputEl.value : '';
+      var valorFormatado = formatarTextoViagem(valor);
+      
+      var cb = callbackModalNumeroViagem;
+      fecharModalNumeroViagem();
+      
+      if (typeof cb === 'function') {
+        cb(valorFormatado);
+      }
+    }
+
+    // Tecla Enter no input de viagem confirma o modal
+    document.addEventListener('DOMContentLoaded', function() {
+      var inputEl = document.getElementById('inputNumeroViagem');
+      if (inputEl) {
+        inputEl.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            confirmarModalNumeroViagem();
+          } else if (e.key === 'Escape') {
+            fecharModalNumeroViagem();
+          }
+        });
+      }
+    });
+
+    /* ---------- EDIÇÃO DE VIAGEM / BLOCO ---------- */
+    function editarTextoViagem(elemento) {
+      var folha = elemento.closest('.folha');
+      if (!folha) return;
+
+      var ehVerso = folha.classList.contains('verso');
+      var folhaFrente = ehVerso ? folha.previousElementSibling : folha;
+      var folhaVerso = ehVerso ? folha : folha.nextElementSibling;
+
+      var celViagemFrente = folhaFrente ? folhaFrente.querySelector('.cel-viagem') : elemento;
+      var celViagemVerso = folhaVerso ? folhaVerso.querySelector('.cel-viagem') : null;
+
+      var textoAtual = celViagemFrente ? celViagemFrente.textContent.trim() : elemento.textContent.trim();
+      var partes = textoAtual.split('—');
+      var viagemAtual = partes[0] ? partes[0].trim() : '1ª Viagem';
+      var blocoAtual = partes[1] ? partes[1].trim() : 'BLOCO 1';
+
+      abrirModalNumeroViagem('Alterar Viagem / Bloco', viagemAtual, function(novaViagem) {
+        if (!novaViagem) return;
+
+        // Atualiza texto da frente
+        if (celViagemFrente) {
+          celViagemFrente.textContent = novaViagem + ' — ' + blocoAtual;
+        }
+
+        // Atualiza texto do verso correspondente em sincronia
+        if (celViagemVerso) {
+          var blocoVersoTexto = blocoAtual.replace('BLOCO', 'VERSO BLOCO').trim();
+          if (!blocoVersoTexto.includes('VERSO')) {
+            blocoVersoTexto = 'VERSO ' + blocoVersoTexto;
+          }
+          celViagemVerso.textContent = novaViagem + ' — ' + blocoVersoTexto;
+        }
+      });
+    }
+
+    /* ---------- NOVO BLOCO ---------- */
+    function novoBloco(botao) {
+      var folhasWrapper = document.getElementById('folhasWrapper');
+      if (!folhasWrapper) return;
+
+      var totalBlocosFrente = folhasWrapper.querySelectorAll('.folha.frente').length;
+      var novoNumBloco = totalBlocosFrente + 1;
+
+      var folhaVersoRef = botao ? botao.closest('.folha.verso') : null;
+      var folhaFrenteRef = folhaVersoRef ? folhaVersoRef.previousElementSibling : null;
+
+      var dataFmt = '{{ data_fmt }}';
+      var empresa = '{{ empresa|default:"NEM" }}';
+      var motorista = '—';
+      var veiculoInfo = 'Terceirizada';
+      var numeroViagemTexto = '1ª Viagem';
+
+      if (folhaFrenteRef) {
+        var celData = folhaFrenteRef.querySelector('.cel-data');
+        if (celData) dataFmt = celData.textContent.trim();
+
+        var celEmp = folhaFrenteRef.querySelector('.cel-empresa');
+        if (celEmp) empresa = celEmp.textContent.trim();
+
+        var celMot = folhaFrenteRef.querySelector('.cel-motorista');
+        if (celMot) motorista = celMot.textContent.replace('Motorista:', '').trim() || '—';
+
+        var celVeic = folhaFrenteRef.querySelector('.cel-veiculo');
+        if (celVeic) veiculoInfo = celVeic.textContent.trim();
+
+        var celViag = folhaFrenteRef.querySelector('.cel-viagem');
+        if (celViag) {
+          var matchViag = celViag.textContent.trim().split('—')[0];
+          if (matchViag) numeroViagemTexto = matchViag.trim();
+        }
+      }
+
+      abrirModalNumeroViagem('Novo Bloco — Escolha a Viagem', numeroViagemTexto, function(viagemEscolhida) {
+        var numeroViagemFinal = viagemEscolhida || numeroViagemTexto;
+
+        // 1. Criar Folha Frente
+        var novaFrente = document.createElement('div');
+        novaFrente.className = 'folha frente';
+        novaFrente.innerHTML =
+          '<div class="cabecalho">' +
+            '<div class="cel-data">' + dataFmt + '</div>' +
+            '<div class="cel-empresa">' + empresa + '</div>' +
+            '<div class="cel-viagem" onclick="editarTextoViagem(this)" title="Clique para alterar o número da viagem ou bloco">' + numeroViagemFinal + ' — BLOCO ' + novoNumBloco + '</div>' +
+            '<div class="cel-motorista">Motorista: ' + motorista + '</div>' +
+            '<div class="cel-veiculo">' + veiculoInfo + '</div>' +
+          '</div>' +
+          '<table class="mapa">' +
+            '<thead>' +
+              '<tr>' +
+                '<th style="width:18px;">#</th>' +
+                '<th>PACIENTE</th>' +
+                '<th style="width:82px;">CONDIÇÕES ESPECIAIS</th>' +
+                '<th style="width:24px;">ID</th>' +
+                '<th style="width:90px;">TEL</th>' +
+                '<th style="width:36px;">IDADE</th>' +
+                '<th>ENDEREÇO</th>' +
+                '<th style="width:70px;">BAIRRO</th>' +
+                '<th style="width:90px;">PONTO REF.</th>' +
+                '<th style="width:46px;">CONSULTA</th>' +
+                '<th class="col-acao-impressao no-print">AÇÃO</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+              '<tr>' +
+                '<td colspan="11" style="text-align:center; padding:10px; color:#777;">' +
+                  'Novo bloco criado. Use as opções para transferir ou adicionar pacientes.' +
+                '</td>' +
+              '</tr>' +
+            '</tbody>' +
+          '</table>' +
+          '<div class="rodape-bloco-verso no-print">' +
+            '<button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaFrente(this)">＋ Adicionar Linha</button> ' +
+            '<button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco(this)">＋ Novo Bloco</button> ' +
+            '<span class="separador-btn"></span> ' +
+            '<form method="post" style="display:inline;">' +
+              '{% csrf_token %}' +
+              '<input type="hidden" name="acao" value="salvar_continuar">' +
+              '<button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>' +
+            '</form> ' +
+            '<button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>' +
+          '</div>';
+
+        // 2. Criar Folha Verso
+        var novoVerso = document.createElement('div');
+        novoVerso.className = 'folha verso';
+        novoVerso.innerHTML =
+          '<div class="cabecalho">' +
+            '<div class="cel-data">' + dataFmt + '</div>' +
+            '<div class="cel-empresa">' + empresa + '</div>' +
+            '<div class="cel-viagem" onclick="editarTextoViagem(this)" title="Clique para alterar o número da viagem ou bloco">' + numeroViagemFinal + ' — VERSO BLOCO ' + novoNumBloco + '</div>' +
+            '<div class="cel-motorista">Motorista: ' + motorista + '</div>' +
+            '<div class="cel-veiculo">' + veiculoInfo + '</div>' +
+          '</div>' +
+          '<table class="mapa">' +
+            '<thead>' +
+              '<tr>' +
+                '<th style="width:18px;">#</th>' +
+                '<th>DESTINO</th>' +
+                '<th style="width:22px;">AC</th>' +
+                '<th style="width:80px;">CONDIÇÕES ESPECIAIS</th>' +
+                '<th style="width:86px;">OBSERVAÇÃO</th>' +
+                '<th class="col-acao-impressao no-print">AÇÃO</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+              '<tr>' +
+                '<td colspan="6" style="text-align:center; padding:10px; color:#777;">' +
+                  'Nenhum dado para o verso.' +
+                '</td>' +
+              '</tr>' +
+            '</tbody>' +
+          '</table>' +
+          '<div class="rodape-bloco-verso no-print">' +
+            '<button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaVerso(this)">＋ Adicionar Linha</button> ' +
+            '<button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco(this)">＋ Novo Bloco</button> ' +
+            '<span class="separador-btn"></span> ' +
+            '<form method="post" style="display:inline;">' +
+              '{% csrf_token %}' +
+              '<input type="hidden" name="acao" value="salvar_continuar">' +
+              '<button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>' +
+            '</form> ' +
+            '<button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>' +
+          '</div>';
+
+        // Inserir logo após o verso atual se invocado pelo botão do bloco, ou ao final do wrapper
+        if (folhaVersoRef && folhaVersoRef.nextSibling) {
+          folhasWrapper.insertBefore(novoVerso, folhaVersoRef.nextSibling);
+          folhasWrapper.insertBefore(novaFrente, novoVerso);
+        } else {
+          folhasWrapper.appendChild(novaFrente);
+          folhasWrapper.appendChild(novoVerso);
+        }
+
+        // Scroll suave até o novo bloco criado
+        novaFrente.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    /* ---------- MODAL DE TRANSFERÊNCIA ---------- */
+    function abrirModalTransferencia(transporteId, pacienteNome, blocoAtualLabel, blocoId, dataViagem) {
+      transporteIdAtual = transporteId;
+      blocoAtualId = blocoId;
+      dataViagemAtual = dataViagem;
+
+      document.getElementById('modalPacienteNome').textContent = pacienteNome;
+      document.getElementById('modalBlocoAtual').textContent = blocoAtualLabel;
+
+      var modal = document.getElementById('modalTransferencia');
+      modal.classList.add('ativo');
+
+      var btn = document.getElementById('btnConfirmarTransferencia');
+      btn.disabled = false;
+      btn.textContent = 'Transferir';
+
+      carregarBlocosDisponiveis();
+    }
+
+    function fecharModalTransferencia() {
+      document.getElementById('modalTransferencia').classList.remove('ativo');
+
+      transporteIdAtual = null;
+      blocoAtualId = null;
+      dataViagemAtual = null;
+    }
+
+    function carregarBlocosDisponiveis() {
+      var select = document.getElementById('selectBlocoDestino');
+      select.innerHTML = '<option value="">Carregando...</option>';
+
+      var url = '{% url "transporte_pacientes:listar_blocos_disponiveis" %}';
+
+      if (dataViagemAtual) {
+        url += '?data=' + encodeURIComponent(dataViagemAtual);
+      }
+
+      if (blocoAtualId) {
+        url += (url.includes('?') ? '&' : '?') + 'excluir_bloco=' + encodeURIComponent(blocoAtualId);
+      }
+
+      fetch(url)
+        .then(function(resposta) {
+          return resposta.json();
+        })
+        .then(function(dados) {
+          if (!dados.ok) {
+            select.innerHTML = '<option value="">' + (dados.erro || 'Erro ao carregar blocos') + '</option>';
+            return;
+          }
+
+          if (!dados.blocos || dados.blocos.length === 0) {
+            select.innerHTML = '<option value="">Nenhum bloco disponível</option>';
+            return;
+          }
+
+          select.innerHTML = '<option value="">Selecione um bloco...</option>';
+
+          dados.blocos.forEach(function(bloco) {
+            var opcao = document.createElement('option');
+            opcao.value = bloco.id;
+            opcao.textContent = bloco.label;
+            select.appendChild(opcao);
+          });
+        })
+        .catch(function(erro) {
+          console.error('Erro ao carregar blocos:', erro);
+          select.innerHTML = '<option value="">Erro ao carregar blocos</option>';
+        });
+    }
+
+    function criarNovoBlocoETransferir() {
+      var formData = new FormData();
+      if (dataViagemAtual) {
+        formData.append('data', dataViagemAtual);
+      }
+
+      fetch('{% url "transporte_pacientes:criar_bloco_ou_viagem" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      })
+        .then(function(res) { return res.json(); })
+        .then(function(dados) {
+          if (!dados.ok) {
+            alert('Erro ao criar bloco: ' + (dados.erro || 'Falha na requisição'));
+            return;
+          }
+          var select = document.getElementById('selectBlocoDestino');
+          var opt = document.createElement('option');
+          opt.value = dados.bloco.id;
+          opt.textContent = dados.bloco.label + ' (Recém-criado)';
+          opt.selected = true;
+          select.appendChild(opt);
+          alert('Novo bloco criado (' + dados.bloco.label + ') e selecionado!');
+        })
+        .catch(function(err) {
+          console.error(err);
+          alert('Erro ao criar novo bloco.');
+        });
+    }
+
+    function confirmarTransferencia() {
+      var blocoDestinoId = document.getElementById('selectBlocoDestino').value;
+
+      if (!blocoDestinoId) {
+        alert('Selecione um bloco de destino.');
+        return;
+      }
+
+      var btn = document.getElementById('btnConfirmarTransferencia');
+      btn.disabled = true;
+      btn.textContent = 'Transferindo...';
+
+      var formData = new FormData();
+      formData.append('transporte_id', transporteIdAtual);
+      formData.append('bloco_id', blocoDestinoId);
+
+      fetch('{% url "transporte_pacientes:transferir_paciente_bloco" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        }
+      })
+        .then(function(resposta) {
+          return resposta.json();
+        })
+        .then(function(dados) {
+          if (dados.ok) {
+            alert('Paciente transferido com sucesso!');
+            fecharModalTransferencia();
+            window.location.reload();
+          } else {
+            alert('Erro: ' + (dados.erro || 'Erro desconhecido'));
+            btn.disabled = false;
+            btn.textContent = 'Transferir';
+          }
+        })
+        .catch(function(erro) {
+          console.error('Erro ao transferir:', erro);
+          alert('Erro ao transferir paciente.');
+          btn.disabled = false;
+          btn.textContent = 'Transferir';
+        });
+    }
+
+    /* ---------- INICIALIZAÇÃO ---------- */
+    document.addEventListener('DOMContentLoaded', function() {
+      aplicarZoom();
+      atualizarStatusEdicaoImpressao();
+
+      var modal = document.getElementById('modalTransferencia');
+
+      modal.addEventListener('click', function(evento) {
+        if (evento.target === modal) {
+          fecharModalTransferencia();
+        }
+      });
+
+      document.addEventListener('keydown', function(evento) {
+        if (evento.key === 'Escape') {
+          fecharModalTransferencia();
+        }
       });
     });
-  }
+  </script>
 
-  function removerPacienteDaPrevia(pacienteId) {
-    var id = String(pacienteId || '').trim();
-    if (!id) return;
-    var linhas = document.querySelectorAll('tr[data-paciente-id="' + id + '"]');
-    if (!linhas.length) return;
-
-    Array.prototype.forEach.call(linhas, function(tr) {
-      tr.parentNode.removeChild(tr);
-    });
-    pacientesRemovidosPrevia[id] = true;
-    renumerarTabelasPrevia();
-    atualizarStatusEdicaoImpressao();
-  }
-
-  function restaurarPacientesRemovidosImpressao() {
-    window.location.reload();
-  }
-
-  function aplicarZoom() {
-    var wrapper = document.getElementById('folhasWrapper');
-    var indicador = document.getElementById('zoomPercent');
-    if (!wrapper) return;
-    var zoomLimitado = Math.max(0.6, Math.min(1.6, zoomAtual));
-    zoomAtual = zoomLimitado;
-    wrapper.style.transform = 'scale(' + zoomAtual + ')';
-    if (indicador) {
-      indicador.textContent = Math.round(zoomAtual * 100) + '%';
-    }
-  }
-
-  function ajustarZoom(delta) {
-    zoomAtual += delta;
-    aplicarZoom();
-  }
-
-  function restaurarZoom() {
-    zoomAtual = 1;
-    aplicarZoom();
-  }
-
-  function sairDaImpressao() {
-    if (window.opener && !window.opener.closed) {
-      window.close();
-      return;
-    }
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    window.location.href = '{% url 'transporte_pacientes:mapa_operacional' %}';
-  }
-
-  // ============================================================
-  // NOVAS FUNÇÕES — ADICIONAR LINHA E NOVO BLOCO
-  // ============================================================
-  
-  function adicionarLinhaVerso(botao) {
-    // Encontra a tabela do verso mais próxima
-    var folhaVerso = botao.closest('.folha.verso');
-    if (!folhaVerso) return;
-    
-    var tbody = folhaVerso.querySelector('table.mapa tbody');
-    if (!tbody) return;
-    
-    // Conta linhas existentes
-    var linhasExistentes = tbody.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
-    var novaOrdem = linhasExistentes + 1;
-    
-    // Verifica se tem coluna de observação
-    var temObservacao = folhaVerso.querySelector('th[style*="OBSERVAÇÃO"]') !== null;
-    var colspan = temObservacao ? 6 : 5;
-    
-    // Cria nova linha
-    var novaLinha = document.createElement('tr');
-    novaLinha.innerHTML = `
-      <td class="num">${novaOrdem}</td>
-      <td style="white-space:normal;">-</td>
-      <td class="ac">SO</td>
-      <td class="cond">-</td>
-      ${temObservacao ? '<td class="obs obs-vazia" style="white-space:normal;"></td>' : ''}
-      <td class="col-acao-impressao no-print"></td>
-    `;
-    
-    // Remove mensagem de "nenhum dado" se existir
-    var linhaVaziaMsg = tbody.querySelector('tr td[colspan]');
-    if (linhaVaziaMsg && linhaVaziaMsg.textContent.includes('Nenhum dado')) {
-      linhaVaziaMsg.parentNode.remove();
-    }
-    
-    tbody.appendChild(novaLinha);
-  }
-
-  function novoBloco() {
-    alert('Função "Novo Bloco" será implementada com integração ao backend.\n\nPor enquanto, use o botão "Salvar e continuar" no topo da página para criar um novo bloco.');
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    aplicarZoom();
-    atualizarStatusEdicaoImpressao();
-  });
-</script>
 </body>
 </html>

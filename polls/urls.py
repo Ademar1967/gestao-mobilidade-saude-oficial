@@ -1,30 +1,19 @@
 from django.urls import path
 from . import views
-from .views_mapa_operacional import (
-    mapa_operacional,
-    pacientes_alocados_por_data,
-    mapa_operacional_imprimir,
-    mapa_operacional_impressao,
-    rotinas_mapa_api,
-    salvar_viagem,
-)
-
-urlpatterns = [
-    path("mapa-operacional/", mapa_operacional, name="mapa_operacional"),
-    path("mapa-operacional/imprimir/", mapa_operacional_imprimir, name="mapa_operacional_imprimir"),
-    path("mapa-operacional/impressao/", mapa_operacional_impressao, name="mapa_operacional_impressao"),
-    path("mapa-operacional/salvar/", salvar_viagem, name="salvar_viagem"),
-]
-
-from django.urls import path
-from . import views
 from . import views_condutor_delete
 from . import views_condutor_delete_lote
 from .views import editar_paciente, login_view
 from .views_mapa_operacional import (
     mapa_operacional,
+    pacientes_alocados_por_data,
+    todos_pacientes_ids_api,
     mapa_operacional_imprimir,
+    mapa_operacional_impressao,
+    rotinas_mapa_api,
     salvar_viagem,
+    listar_blocos_disponiveis,
+    criar_bloco_ou_viagem,
+    transferir_paciente_bloco,
 )
 
 app_name = "transporte_pacientes"
@@ -287,8 +276,28 @@ urlpatterns = [
         name="pacientes_alocados_por_data",
     ),
     path(
+        "mapas-viagem/todos-pacientes-ids/",
+        todos_pacientes_ids_api,
+        name="todos_pacientes_ids_api",
+    ),
+    path(
         "mapas-viagem/rotinas/",
         rotinas_mapa_api,
         name="rotinas_mapa_api",
+    ),
+    path(
+        "blocos-disponiveis/",
+        listar_blocos_disponiveis,
+        name="listar_blocos_disponiveis",
+    ),
+    path(
+        "criar-bloco-viagem/",
+        criar_bloco_ou_viagem,
+        name="criar_bloco_ou_viagem",
+    ),
+    path(
+        "transferir-paciente/",
+        transferir_paciente_bloco,
+        name="transferir_paciente_bloco",
     ),
 ]

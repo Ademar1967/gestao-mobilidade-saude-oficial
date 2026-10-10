@@ -1,7 +1,13 @@
 import json
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+from django.db.models import Max
+
 import re
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from django.contrib import messages
@@ -15,6 +21,34 @@ from django.utils.dateparse import parse_date, parse_time
 
 
 NUMEROS_VIAGEM = [f"{i}ª Viagem" for i in range(1, 11)]
+
+
+def _parse_data_flexivel(data_val):
+    """Converte strings em formatos YYYY-MM-DD, DD/MM/YYYY ou date/datetime para objeto date."""
+    if not data_val:
+        return None
+    if hasattr(data_val, "date"):
+        return data_val.date()
+    if hasattr(data_val, "year") and hasattr(data_val, "month") and hasattr(data_val, "day"):
+        return data_val
+
+    data_str = str(data_val).strip()
+    if not data_str:
+        return None
+
+    # Tenta padrão ISO YYYY-MM-DD
+    dt = parse_date(data_str)
+    if dt:
+        return dt
+
+    # Tenta padrão brasileiro DD/MM/YYYY ou DD-MM-YYYY
+    for formato in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y"):
+        try:
+            return datetime.strptime(data_str, formato).date()
+        except ValueError:
+            pass
+
+    return None
 
 
 def _clean_text(value):
@@ -112,6 +146,7 @@ def _linha_from_paciente(paciente, ordem, transporte=None, clinica_fallback=None
     return {
         "ordem": ordem,
         "paciente_id": paciente.id,
+        "transporte_id": getattr(transporte, "id", None) if transporte else None,
         "nome": _clean_text(getattr(paciente, "nome", "")),
         "telefone": telefone or "-",
         "idade": _idade_from_paciente(paciente),
@@ -353,10 +388,13 @@ def _blocos_from_viagens_salvas(viagens, origem_padrao="nem"):
                     transporte=transporte,
                     clinica_fallback=getattr(transporte, "clinica", None),
                 )
+                
+                
                 linha["ordem"] = int(transporte.ordem or idx)
+                linha["transporte_id"] = transporte.id  # ← ADICIONAR
                 linhas.append(linha)
-
-            veiculo_obj = viagem.veiculo
+            
+                veiculo_obj = viagem.veiculo
             frota_label = ""
             if veiculo_obj:
                 if veiculo_obj.tipo_veiculo == "ambulancia" and veiculo_obj.patrimonio:
@@ -367,8 +405,11 @@ def _blocos_from_viagens_salvas(viagens, origem_padrao="nem"):
                     frota_label = str(veiculo_obj)
 
             bloco_dict = {
+                "bloco_id": bloco.id,
                 "trip_num": int(viagem.numero or 1),
+                
                 "bloco_num": int(bloco.numero or 1),
+                     
                 "label": f"VIAGEM {int(viagem.numero or 1)} — BLOCO {int(bloco.numero or 1)}",
                 "mostrar_separador_antes": False,
                 "linhas": linhas,
@@ -647,6 +688,20 @@ def pacientes_alocados_por_data(request):
 
 
 @login_required
+def todos_pacientes_ids_api(request):
+    """Retorna todos os IDs e acompanhantes dos pacientes cadastrados para seleção rápida."""
+    from .models import Paciente
+
+    somente_ativos = _to_bool(request.GET.get("somente_ativos", "1"))
+    qs = Paciente.objects.order_by("id")
+    if somente_ativos:
+        qs = qs.filter(servico_ativo=True)
+
+    dados = list(qs.values("id", "acompanhantes"))
+    return JsonResponse({"ok": True, "pacientes": dados, "total": len(dados)})
+
+
+@login_required
 def rotinas_mapa_api(request):
     from .models import Condutor, RotinaMapaViagem, Veiculo
 
@@ -775,7 +830,7 @@ def salvar_viagem(request):
             messages.error(request, msg)
             return redirect("transporte_pacientes:mapa_operacional")
 
-        data_filtro = parse_date(data_str)
+        data_filtro = _parse_data_flexivel(data_str)
         if not data_filtro:
             msg = "Data inválida."
             if ajax:
@@ -953,3 +1008,219 @@ def salvar_viagem(request):
             return JsonResponse({"ok": False, "erro": msg, "error": msg}, status=500)
         messages.error(request, msg)
         return redirect("transporte_pacientes:mapa_operacional")
+    # nessa linha para baixo vamos lançar novas parte do codigo 20/09
+@login_required
+def listar_blocos_disponiveis(request):
+    """Lista os blocos disponíveis (destinos) para transferência de paciente.
+
+    GET ?data=YYYY-MM-DD [&excluir_bloco=<id do bloco de origem>]
+    """
+    from .models import Viagem
+
+    data_str = (request.GET.get("data") or "").strip()
+    data_ref = _parse_data_flexivel(data_str) or timezone.localdate()
+
+    excluir_bloco_id = (request.GET.get("excluir_bloco") or "").strip()
+
+    viagens = (
+        Viagem.objects.select_related("veiculo", "condutor")
+        .filter(data=data_ref)
+        .prefetch_related("blocos__transportes__paciente")
+        .order_by("numero", "id")
+    )
+
+    blocos = []
+    for viagem in viagens:
+        for bloco in viagem.blocos.order_by("numero"):
+            if excluir_bloco_id and str(bloco.id) == excluir_bloco_id:
+                continue
+
+            ocupacao = 0
+            for transporte in bloco.transportes.all():
+                paciente = getattr(transporte, "paciente", None)
+                acompanhantes = int(getattr(paciente, "acompanhantes", 0) or 0)
+                ocupacao += 1 + max(0, acompanhantes)
+
+            veiculo = viagem.veiculo
+            frota_label = ""
+            if veiculo:
+                if (
+                    getattr(veiculo, "tipo_veiculo", "") == "ambulancia"
+                    and getattr(veiculo, "patrimonio", "")
+                ):
+                    frota_label = f"AMB {veiculo.patrimonio}"
+                elif (
+                    getattr(veiculo, "tipo_veiculo", "") == "van"
+                    and getattr(veiculo, "placa", "")
+                ):
+                    frota_label = f"VAN {veiculo.placa}"
+                else:
+                    frota_label = str(veiculo)
+
+            blocos.append(
+                {
+                    "id": bloco.id,
+                    "viagem_id": viagem.id,
+                    "numero": int(bloco.numero or 1),
+                    "label": f"VIAGEM {int(viagem.numero or 1)} — BLOCO {int(bloco.numero or 1)}",
+                    "data": viagem.data.strftime("%d/%m/%Y") if viagem.data else "",
+                    "frota_label": frota_label,
+                    "condutor": (
+                        getattr(viagem.condutor, "nome", "") if viagem.condutor else ""
+                    ),
+                    "total_transportes": bloco.transportes.count(),
+                    "ocupacao": ocupacao,
+                }
+            )
+
+    return JsonResponse({"ok": True, "blocos": blocos})
+
+
+@login_required
+def criar_bloco_ou_viagem(request):
+    """Cria um novo bloco ou nova viagem para a data informada e retorna o novo bloco.
+
+    POST data=<YYYY-MM-DD ou DD/MM/YYYY> & viagem_id=<id ou opcional> & numero_viagem=<opcional>
+    """
+    from .models import Bloco, Viagem
+
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "erro": "Método inválido."}, status=405)
+
+    data_str = (request.POST.get("data") or "").strip()
+    data_ref = _parse_data_flexivel(data_str) or timezone.localdate()
+    viagem_id = (request.POST.get("viagem_id") or "").strip()
+    numero_viagem_raw = (request.POST.get("numero_viagem") or "").strip()
+
+    try:
+        viagem = None
+        if viagem_id:
+            viagem = Viagem.objects.filter(id=viagem_id).first()
+
+        if not viagem:
+            # Buscar última viagem do dia ou criar nova com próximo número
+            ultima_viagem = Viagem.objects.filter(data=data_ref).order_by("-numero", "-id").first()
+            prox_num = (ultima_viagem.numero + 1) if ultima_viagem and ultima_viagem.numero else 1
+            if numero_viagem_raw:
+                match = re.search(r"(\d+)", numero_viagem_raw)
+                if match:
+                    prox_num = int(match.group(1))
+
+            viagem = Viagem.objects.create(
+                data=data_ref,
+                numero=prox_num,
+                status="rascunho",
+            )
+
+        ultimo_bloco = viagem.blocos.order_by("-numero").first()
+        novo_numero_bloco = (ultimo_bloco.numero + 1) if ultimo_bloco and ultimo_bloco.numero else 1
+
+        bloco = Bloco.objects.create(viagem=viagem, numero=novo_numero_bloco)
+
+        return JsonResponse(
+            {
+                "ok": True,
+                "bloco": {
+                    "id": bloco.id,
+                    "viagem_id": viagem.id,
+                    "numero": int(bloco.numero or 1),
+                    "label": f"VIAGEM {int(viagem.numero or 1)} — BLOCO {int(bloco.numero or 1)}",
+                    "data": viagem.data.strftime("%d/%m/%Y") if viagem.data else "",
+                },
+            }
+        )
+    except Exception as exc:
+        return JsonResponse({"ok": False, "erro": str(exc)}, status=500)
+
+
+@login_required
+def transferir_paciente_bloco(request):
+    """Transfere um paciente (Transporte) de um bloco para outro.
+
+    POST transporte_id=<id> & bloco_id=<id do bloco de destino>
+    """
+    from django.db.models import Max
+    from .models import Bloco, Transporte
+
+    if request.method != "POST":
+        return JsonResponse(
+            {"ok": False, "erro": "Método inválido.", "error": "Método inválido."},
+            status=405,
+        )
+
+    transporte_id = (request.POST.get("transporte_id") or "").strip()
+    bloco_destino_id = (request.POST.get("bloco_id") or "").strip()
+
+    if not transporte_id or not bloco_destino_id:
+        return JsonResponse(
+            {"ok": False, "erro": "transporte_id e bloco_id são obrigatórios."},
+            status=400,
+        )
+
+    try:
+        transporte = Transporte.objects.select_related("bloco__viagem").get(
+            id=transporte_id
+        )
+    except Transporte.DoesNotExist:
+        return JsonResponse(
+            {"ok": False, "erro": "Transporte não encontrado."}, status=404
+        )
+
+    try:
+        bloco_destino = Bloco.objects.select_related(
+            "viagem__veiculo", "viagem__condutor"
+        ).get(id=bloco_destino_id)
+    except Bloco.DoesNotExist:
+        return JsonResponse(
+            {"ok": False, "erro": "Bloco de destino não encontrado."}, status=404
+        )
+
+    bloco_origem = transporte.bloco
+
+    # Próxima ordem no bloco de destino (adiciona ao final)
+    ultima_ordem = (
+        bloco_destino.transportes.exclude(id=transporte.id)
+        .aggregate(max_ordem=Max("ordem"))["max_ordem"]
+        or 0
+    )
+
+    transporte.bloco = bloco_destino
+    transporte.ordem = ultima_ordem + 1
+
+    # Mantém veículo/condutor coerentes com a viagem de destino
+    viagem_destino = bloco_destino.viagem
+    if viagem_destino and getattr(viagem_destino, "veiculo_id", None):
+        transporte.veiculo = viagem_destino.veiculo
+    if viagem_destino and getattr(viagem_destino, "condutor_id", None):
+        transporte.condutor = viagem_destino.condutor
+
+    transporte.save(update_fields=["bloco", "ordem", "veiculo", "condutor"])
+
+    # Renumera o bloco de origem (remove lacunas na ordem)
+    if bloco_origem and bloco_origem.id != bloco_destino.id:
+        for idx, t in enumerate(
+            bloco_origem.transportes.order_by("ordem", "id"), start=1
+        ):
+            if t.ordem != idx:
+                t.ordem = idx
+                t.save(update_fields=["ordem"])
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "transporte_id": transporte.id,
+            "paciente": (
+                getattr(transporte.paciente, "nome", "")
+                if transporte.paciente
+                else ""
+            ),
+            "bloco_origem_id": bloco_origem.id if bloco_origem else None,
+            "bloco_destino_id": bloco_destino.id,
+            "viagem_destino_id": bloco_destino.viagem_id,
+            "label_destino": (
+                f"VIAGEM {int(bloco_destino.viagem.numero or 1)} — "
+                f"BLOCO {int(bloco_destino.numero or 1)}"
+            ),
+        }
+    )
+
