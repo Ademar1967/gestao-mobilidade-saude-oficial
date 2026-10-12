@@ -136,8 +136,14 @@ if _strict_database_url and not DEBUG and not _db_url:
     raise ImproperlyConfigured(
         "Defina DATABASE_URL em produção para usar banco persistente."
     )
-if _db_url:
-    _db_config = dj_database_url.parse(_db_url)
+if _db_url and "://" in _db_url and not _db_url.startswith("://"):
+    try:
+        _db_config = dj_database_url.parse(_db_url)
+    except Exception:
+        _db_config = {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
 else:
     _db_config = {
         "ENGINE": "django.db.backends.sqlite3",
