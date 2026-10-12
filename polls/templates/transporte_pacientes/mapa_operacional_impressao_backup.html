@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa de Viagem — {{ data_fmt }}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #111; background: #f5f7fa; line-height: 1.2; }
+
+    .acoes-tela { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 20px; background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%); border-bottom: 1px solid #ccd6e3; position: sticky; top: 0; z-index: 10; }
+    .acoes-tela-grupo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .acoes-tela form { margin: 0; }
+    .acao-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; border: 1px solid transparent; transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease; line-height: 1; }
+    .acao-btn:hover { filter: brightness(1.02); box-shadow: 0 2px 8px rgba(16, 42, 67, 0.14); }
+    .acao-btn:active { transform: translateY(1px); box-shadow: none; }
+    .acao-btn-primario { background: #0b66c3; color: #fff; border-color: #0b66c3; }
+    .acao-btn-sucesso { background: #1c7c54; color: #fff; border-color: #1c7c54; }
+    .acao-btn-neutro { background: #ffffff; color: #243b53; border-color: #9fb3c8; }
+    .acao-btn-entrada { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .acao-btn-agrupar { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+    .acoes-tela-ajuda { font-size: 11px; color: #486581; font-weight: 600; white-space: nowrap; }
+    .status-edicao-impressao { font-size: 11px; color: #334e68; font-weight: 700; }
+    @media (max-width: 900px) { .acoes-tela { flex-direction: column; align-items: stretch; } .acoes-tela-grupo { width: 100%; } .acao-btn { flex: 1 1 calc(50% - 8px); min-width: 180px; } .acoes-tela-ajuda { white-space: normal; } }
+
+    .folha { width: 210mm; min-height: 148mm; margin: 10px auto; padding: 6mm 8mm; background: #fff; border: 1px solid #cdd6e4; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); }
+    .zoom-bar { display: flex; align-items: center; gap: 8px; padding: 8px 20px; background: #f7f9fc; border-bottom: 1px solid #d9e2ec; flex-wrap: wrap; }
+    .zoom-bar .zoom-label { font-size: 12px; font-weight: 700; color: #334e68; }
+    .zoom-bar button { padding: 6px 12px; border: 1px solid #9fb3c8; background: #fff; color: #102a43; border-radius: 6px; cursor: pointer; font-weight: 700; }
+    .zoom-bar button:active { transform: translateY(1px); }
+    .zoom-bar .zoom-percent { min-width: 52px; text-align: center; font-weight: 700; color: #102a43; }
+    .folhas-wrapper { transform-origin: top center; will-change: transform; }
+
+    .cabecalho { display: flex; align-items: center; border: 1px solid #000; margin-bottom: 4px; background: #f8fbff; }
+    .cabecalho .cel-data { padding: 3px 6px; font-weight: 700; white-space: nowrap; border-right: 1px solid #000; font-size: 8pt; }
+    .cabecalho .cel-empresa { padding: 3px 8px; font-weight: 700; font-size: 8pt; min-width: 60px; border-right: 1px solid #000; text-align: center; }
+    .cabecalho .cel-viagem { padding: 3px 8px; font-weight: 700; font-size: 8pt; border-right: 1px solid #000; white-space: nowrap; }
+    .cabecalho .cel-motorista { padding: 3px 8px; font-size: 8pt; flex: 1; border-right: 1px solid #000; }
+    .cabecalho .cel-veiculo { padding: 3px 8px; font-size: 8pt; white-space: nowrap; }
+
+    .titulo-secao { font-weight: bold; font-size: 7.5pt; text-align: center; border: 1px solid #000; border-bottom: none; padding: 2px; background: #fff; letter-spacing: 0.5px; }
+    table.mapa { width: 100%; border-collapse: collapse; font-size: 7.5pt; table-layout: fixed; }
+    table.mapa th { background: #f4f7fb; border: 1px solid #000; padding: 2px 3px; text-align: center; font-size: 7pt; font-weight: 700; }
+    table.mapa th, table.mapa td { overflow-wrap: anywhere; word-break: break-word; }
+    table.mapa td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; line-height: 1.15; }
+    table.mapa td.num { text-align: center; width: 18px; }
+    table.mapa td.ac { text-align: center; width: 22px; }
+    table.mapa td.hor { text-align: center; width: 34px; white-space: nowrap; }
+    table.mapa td.ident { text-align: center; width: 24px; }
+    table.mapa td.obs { font-size: 6.1pt; color: #000; line-height: 1.05; vertical-align: top; white-space: normal; }
+    table.mapa td.obs-vazia { color: #000; }
+    table.mapa td.cond { font-size: 6.2pt; color: #000; font-weight: bold; line-height: 1.1; }
+    table.mapa th.col-acao-impressao, table.mapa td.col-acao-impressao { width: 90px; text-align: center; }
+
+    .btn-excluir-impressao, .btn-transferir-impressao { border-radius: 999px; font-size: 10px; font-weight: 700; padding: 3px 7px; cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.12s ease; }
+    .btn-excluir-impressao { border: 1px solid #c9d4e0; background: #fff; color: #5c6b7a; }
+    .btn-excluir-impressao:hover { background: #f8fafc; filter: brightness(0.98); }
+    .btn-transferir-impressao { border: 1px solid #f59e0b; background: #fff7ed; color: #b45309; margin-left: 3px; }
+    .btn-transferir-impressao:hover { background: #ffedd5; filter: brightness(0.98); }
+    .btn-excluir-impressao:active, .btn-transferir-impressao:active { transform: translateY(1px); box-shadow: none; }
+
+    table.mapa tbody tr:not(.linha-vazia):not(.linha-separador) { height: 22px; max-height: 22px; }
+    table.mapa tbody tr:not(.linha-vazia):not(.linha-separador) td { height: 22px; max-height: 22px; overflow: hidden; }
+    tr.linha-vazia td { height: 22px; background: #fff; }
+    tr.linha-separador td { height: 12px; border: none !important; background: #fff !important; padding: 0 !important; }
+
+    .separador { text-align: center; font-size: 7.5pt; color: #555; margin: 8px 0 4px; border-top: 1px dashed #888; padding-top: 4px; letter-spacing: 1px; }
+
+    .rodape-bloco-verso { display: flex; gap: 8px; align-items: center; padding: 12px 0; border-top: 2px solid #e5e7eb; margin-top: 12px; flex-wrap: wrap; }
+    .rodape-bloco-verso .separador-btn { width: 2px; height: 28px; background: #cbd5e1; margin: 0 8px; }
+
+    .modal-transferencia-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center; }
+    .modal-transferencia-overlay.ativo { display: flex; }
+    .modal-transferencia-conteudo { background: white; padding: 24px; border-radius: 10px; min-width: 420px; max-width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); }
+    .modal-transferencia-conteudo h3 { margin-top: 0; margin-bottom: 16px; color: #102a43; font-size: 16pt; }
+    .modal-transferencia-conteudo p { margin: 8px 0; font-size: 11pt; color: #334e68; }
+    .modal-transferencia-conteudo label { display: block; margin-top: 18px; margin-bottom: 6px; font-weight: 700; color: #102a43; font-size: 11pt; }
+    .modal-transferencia-conteudo select { width: 100%; padding: 10px; border: 1px solid #9fb3c8; border-radius: 6px; font-size: 11pt; }
+    .modal-transferencia-botoes { margin-top: 24px; text-align: right; }
+    .modal-btn-cancelar, .modal-btn-confirmar { padding: 10px 18px; border-radius: 6px; font-size: 11pt; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.12s ease; }
+    .modal-btn-cancelar { background: #fff; color: #334e68; border-color: #9fb3c8; margin-right: 10px; }
+    .modal-btn-cancelar:hover { background: #f1f5f9; }
+    .modal-btn-cancelar:active { transform: translateY(1px); box-shadow: none; }
+    .modal-btn-confirmar { background: #0b66c3; color: #fff; border-color: #0b66c3; }
+    .modal-btn-confirmar:hover { filter: brightness(1.05); }
+    .modal-btn-confirmar:active { transform: translateY(1px); box-shadow: none; }
+    .modal-btn-confirmar:disabled { background: #94a3b8; border-color: #94a3b8; cursor: not-allowed; }
+
+    @media print {
+      .zoom-bar, .acoes-tela, .rodape-bloco-verso, .no-print { display: none !important; }
+      .folhas-wrapper { transform: none !important; }
+      body { font-size: 7.2pt; }
+      tr.linha-vazia, tr.linha-separador { display: none !important; }
+      .folha { width: 100%; min-height: auto; margin: 0; padding: 2.5mm 4mm; border: none; box-shadow: none; page-break-after: always; }
+      tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
+      .titulo-secao, table.mapa th { background: #fff !important; color: #000 !important; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .folha:last-of-type { page-break-after: auto; }
+      .folha.verso { page-break-before: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="zoom-bar no-print">
+  <span class="zoom-label">Zoom da prévia:</span>
+  <button type="button" onclick="ajustarZoom(-0.1)">-</button>
+  <button type="button" onclick="ajustarZoom(0.1)">+</button>
+  <button type="button" onclick="restaurarZoom()">100%</button>
+  <span class="zoom-percent" id="zoomPercent">100%</span>
+</div>
+
+<div class="acoes-tela">
+  <div class="acoes-tela-grupo">
+    <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">Prévia/Imprimir</button>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="salvar_continuar">
+      <button type="submit" class="acao-btn acao-btn-neutro">Salvar e continuar</button>
+    </form>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="finalizar">
+      <button type="submit" class="acao-btn acao-btn-sucesso">Salvar e finalizar</button>
+    </form>
+    <button class="acao-btn acao-btn-neutro" type="button" onclick="restaurarPacientesRemovidosImpressao()">Restaurar pacientes removidos da prévia</button>
+  </div>
+  <div class="acoes-tela-grupo">
+    <button class="acao-btn acao-btn-neutro" type="button" onclick="sairDaImpressao()">Fechar prévia</button>
+    <a class="acao-btn acao-btn-neutro" href="{% url 'transporte_pacientes:mapa_operacional' %}">Voltar ao mapa</a>
+    <span class="acoes-tela-ajuda">Cada bloco sai em frente/verso com numeração da viagem.</span>
+  </div>
+  <span id="statusEdicaoImpressao" class="status-edicao-impressao">Nenhum paciente removido da prévia.</span>
+</div>
+
+<div class="folhas-wrapper" id="folhasWrapper">
+{% for bloco in blocos %}
+<div class="folha frente">
+  <div class="cabecalho">
+    <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
+    <div class="cel-empresa">{{ empresa }}</div>
+    <div class="cel-viagem">{{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}</div>
+    <div class="cel-motorista">Motorista: {% if bloco.condutor_nome %}{{ bloco.condutor_nome }}{% elif condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
+    <div class="cel-veiculo">
+      {% if bloco.origem|default:origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
+      {% if bloco.frota_label %} — {{ bloco.frota_label }}{% elif frota_label %} — {{ frota_label }}{% elif veiculo %} — {% if veiculo.tipo_veiculo == 'ambulancia' %}AMB {{ veiculo.patrimonio }}{% else %}VAN {{ veiculo.placa }}{% endif %}{% endif %}
+      {% if bloco.horario_consulta_base|default:horario_consulta_base %} — {{ bloco.horario_consulta_base|default:horario_consulta_base }}{% endif %}
+    </div>
+  </div>
+
+  <table class="mapa">
+    <thead>
+      <tr>
+        <th style="width:18px;">#</th>
+        <th>PACIENTE</th>
+        <th style="width:82px;">CONDIÇÕES ESPECIAIS</th>
+        <th style="width:24px;">ID</th>
+        <th style="width:90px;">TEL</th>
+        <th style="width:36px;">IDADE</th>
+        <th>ENDEREÇO</th>
+        <th style="width:70px;">BAIRRO</th>
+        <th style="width:90px;">PONTO REF.</th>
+        <th style="width:46px;">CONSULTA</th>
+        <th class="col-acao-impressao no-print">AÇÃO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if bloco.linhas %}
+        {% for l in bloco.linhas %}
+          {% if l.separador %}
+            <tr class="linha-separador"><td colspan="11"></td></tr>
+          {% else %}
+            <tr data-paciente-id="{{ l.paciente_id }}" data-transporte-id="{{ l.transporte_id }}">
+              <td class="num">{{ l.ordem }}</td>
+              <td>{{ l.nome }}</td>
+              <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
+              <td class="ident">{{ l.paciente_id }}</td>
+              <td>{{ l.telefone|default:'-' }}</td>
+              <td>{{ l.idade|default:'-' }}</td>
+              <td>{{ l.endereco }}</td>
+              <td>{{ l.bairro }}</td>
+              <td class="obs" style="white-space:normal;">{{ l.referencia|default:'-' }}</td>
+              <td class="hor">{{ l.horario }}</td>
+              <td class="col-acao-impressao no-print">
+                <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">Remover</button>
+                <button type="button" class="btn-transferir-impressao" onclick="abrirModalTransferencia('{{ l.transporte_id }}','{{ l.nome|escapejs }}','VIAGEM {{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}','{{ bloco.bloco_id|default:bloco.id }}','{{ bloco.data_fmt|default:data_fmt }}')">Transferir</button>
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+        {% if bloco.vazios %}
+          {% for _ in bloco.vazios %}
+            <tr class="linha-vazia"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="no-print"></td></tr>
+          {% endfor %}
+        {% endif %}
+      {% else %}
+        <tr><td colspan="11" style="text-align:center; padding:10px; color:#777;">Nenhum transporte encontrado para os filtros selecionados.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="folha verso">
+  <div class="cabecalho">
+    <div class="cel-data">{{ bloco.data_fmt|default:data_fmt }}</div>
+    <div class="cel-empresa">{{ empresa }}</div>
+    <div class="cel-viagem">{{ bloco.numero_viagem|default:numero_viagem }} — VERSO BLOCO {{ bloco.bloco_num|default:forloop.counter }}</div>
+    <div class="cel-motorista">Motorista: {% if bloco.condutor_nome %}{{ bloco.condutor_nome }}{% elif condutor %}{{ condutor.nome }}{% else %}—{% endif %}</div>
+    <div class="cel-veiculo">
+      {% if bloco.origem|default:origem == 'prefeitura' %}Frota Prefeitura{% else %}Terceirizada{% endif %}
+      {% if bloco.frota_label %} — {{ bloco.frota_label }}{% elif frota_label %} — {{ frota_label }}{% endif %}
+    </div>
+  </div>
+
+  <table class="mapa">
+    <thead>
+      <tr>
+        <th style="width:18px;">#</th>
+        <th>DESTINO</th>
+        <th style="width:22px;">AC</th>
+        <th style="width:80px;">CONDIÇÕES ESPECIAIS</th>
+        {% if bloco.mostrar_coluna_observacao %}<th style="width:86px;">OBSERVAÇÃO</th>{% else %}<th style="width:0; border:0; padding:0;"></th>{% endif %}
+        <th class="col-acao-impressao no-print">AÇÃO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if bloco.linhas %}
+        {% for l in bloco.linhas %}
+          {% if l.separador %}
+            <tr class="linha-separador"><td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}"></td></tr>
+          {% else %}
+            <tr data-paciente-id="{{ l.paciente_id }}" data-transporte-id="{{ l.transporte_id }}">
+              <td class="num">{{ l.ordem }}</td>
+              <td style="white-space:normal;">{{ l.destino|default:'-' }}{% if l.endereco_clinica %} — {{ l.endereco_clinica }}{% endif %}</td>
+              <td class="ac">{{ l.acompanhante_marca|default:'SO' }}</td>
+              <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
+              {% if bloco.mostrar_coluna_observacao %}
+                {% if l.observacao %}<td class="obs" style="white-space:normal;">{{ l.observacao }}</td>{% else %}<td class="obs obs-vazia" style="white-space:normal;"></td>{% endif %}
+              {% else %}<td style="border:0; padding:0;"></td>{% endif %}
+              <td class="col-acao-impressao no-print">
+                <button type="button" class="btn-excluir-impressao" onclick="removerPacienteDaPrevia('{{ l.paciente_id }}')">Remover</button>
+                <button type="button" class="btn-transferir-impressao" onclick="abrirModalTransferencia('{{ l.transporte_id }}','{{ l.nome|escapejs }}','VIAGEM {{ bloco.numero_viagem|default:numero_viagem }} — BLOCO {{ bloco.bloco_num|default:forloop.counter }}','{{ bloco.bloco_id|default:bloco.id }}','{{ bloco.data_fmt|default:data_fmt }}')">Transferir</button>
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+        {% if bloco.vazios %}
+          {% for _ in bloco.vazios %}
+            <tr class="linha-vazia"><td></td><td></td><td></td><td></td>{% if bloco.mostrar_coluna_observacao %}<td></td>{% endif %}<td class="no-print"></td></tr>
+          {% endfor %}
+        {% endif %}
+      {% else %}
+        <tr><td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}" style="text-align:center; padding:10px; color:#777;">Nenhum dado para o verso.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <div class="rodape-bloco-verso no-print">
+    <button class="acao-btn acao-btn-entrada" type="button" onclick="adicionarLinhaVerso(this)">＋ Adicionar Linha</button>
+    <button class="acao-btn acao-btn-agrupar" type="button" onclick="novoBloco()">＋ Novo Bloco</button>
+    <span class="separador-btn"></span>
+    <form method="post" style="display:inline;">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="salvar_continuar">
+      <button type="submit" class="acao-btn acao-btn-sucesso">💾 Salvar</button>
+    </form>
+    <button class="acao-btn acao-btn-primario" type="button" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+<div id="modalTransferencia" class="modal-transferencia-overlay">
+  <div class="modal-transferencia-conteudo">
+    <h3>Transferir Paciente</h3>
+    <p>Paciente: <strong id="modalPacienteNome">-</strong></p>
+    <p>Bloco atual: <strong id="modalBlocoAtual">-</strong></p>
+    <label for="selectBlocoDestino">Selecione o bloco de destino:</label>
+    <select id="selectBlocoDestino"><option value="">Carregando blocos...</option></select>
+    <div class="modal-transferencia-botoes">
+      <button type="button" class="modal-btn-cancelar" onclick="fecharModalTransferencia()">Cancelar</button>
+      <button type="button" class="modal-btn-confirmar" id="btnConfirmarTransferencia" onclick="confirmarTransferencia()">Transferir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var zoomAtual = 1;
+  var pacientesRemovidosPrevia = {};
+  var transporteIdAtual = null;
+  var blocoAtualId = null;
+  var dataViagemAtual = null;
+
+  function atualizarStatusEdicaoImpressao() {
+    var el = document.getElementById('statusEdicaoImpressao');
+    if (!el) return;
+    var total = Object.keys(pacientesRemovidosPrevia).length;
+    el.textContent = total ? total + ' paciente(s) removido(s) apenas desta prévia.' : 'Nenhum paciente removido da prévia.';
+  }
+
+  function renumerarTabelasPrevia() {
+    var tbodies = document.querySelectorAll('table.mapa tbody');
+    Array.prototype.forEach.call(tbodies, function(tbody) {
+      var ordem = 0;
+      Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(tr) {
+        if (tr.classList.contains('linha-separador') || tr.classList.contains('linha-vazia')) return;
+        var celNum = tr.querySelector('td.num');
+        if (!celNum) return;
+        ordem += 1;
+        celNum.textContent = ordem;
+      });
+    });
+  }
+
+  function removerPacienteDaPrevia(pacienteId) {
+    var id = String(pacienteId || '').trim();
+    if (!id) return;
+    var linhas = document.querySelectorAll('tr[data-paciente-id="' + id + '"]');
+    if (!linhas.length) return;
+    Array.prototype.forEach.call(linhas, function(tr) { tr.parentNode.removeChild(tr); });
+    pacientesRemovidosPrevia[id] = true;
+    renumerarTabelasPrevia();
+    atualizarStatusEdicaoImpressao();
+  }
+
+  function restaurarPacientesRemovidosImpressao() { window.location.reload(); }
+
+  function aplicarZoom() {
+    var wrapper = document.getElementById('folhasWrapper');
+    var indicador = document.getElementById('zoomPercent');
+    if (!wrapper) return;
+    zoomAtual = Math.max(0.6, Math.min(1.6, zoomAtual));
+    wrapper.style.transform = 'scale(' + zoomAtual + ')';
+    if (indicador) indicador.textContent = Math.round(zoomAtual * 100) + '%';
+  }
+
+  function ajustarZoom(delta) { zoomAtual += delta; aplicarZoom(); }
+  function restaurarZoom() { zoomAtual = 1; aplicarZoom(); }
+
+  function sairDaImpressao() {
+    if (window.opener && !window.opener.closed) { window.close(); return; }
+    if (window.history.length > 1) { window.history.back(); return; }
+    window.location.href = "{% url 'transporte_pacientes:mapa_operacional' %}";
+  }
+
+  function adicionarLinhaVerso(botao) {
+    var folhaVerso = botao.closest('.folha.verso');
+    if (!folhaVerso) return;
+    var tbody = folhaVerso.querySelector('table.mapa tbody');
+    if (!tbody) return;
+    var linhasExistentes = tbody.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
+    var novaOrdem = linhasExistentes + 1;
+    var temObservacao = folhaVerso.querySelector('th[style*="OBSERVAÇÃO"]') !== null;
+    var novaLinha = document.createElement('tr');
+    novaLinha.innerHTML = '<td class="num">' + novaOrdem + '</td><td style="white-space:normal;">-</td><td class="ac">SO</td><td class="cond">-</td>' + (temObservacao ? '<td class="obs obs-vazia" style="white-space:normal;"></td>' : '') + '<td class="col-acao-impressao no-print"></td>';
+    var linhaVaziaMsg = tbody.querySelector('tr td[colspan]');
+    if (linhaVaziaMsg && linhaVaziaMsg.textContent.includes('Nenhum dado')) linhaVaziaMsg.parentNode.remove();
+    tbody.appendChild(novaLinha);
+  }
+
+  function novoBloco() {
+    alert('Função "Novo Bloco" será implementada com integração ao backend.\n\nPor enquanto, use o botão "Salvar e continuar" no topo da página para criar um novo bloco.');
+  }
+
+  function abrirModalTransferencia(transporteId, pacienteNome, blocoAtualLabel, blocoId, dataViagem) {
+    transporteIdAtual = transporteId;
+    blocoAtualId = blocoId;
+    dataViagemAtual = dataViagem;
+    document.getElementById('modalPacienteNome').textContent = pacienteNome;
+    document.getElementById('modalBlocoAtual').textContent = blocoAtualLabel;
+    document.getElementById('modalTransferencia').classList.add('ativo');
+    document.getElementById('btnConfirmarTransferencia').disabled = false;
+    document.getElementById('btnConfirmarTransferencia').textContent = 'Transferir';
+    carregarBlocosDisponiveis();
+  }
+
+  function fecharModalTransferencia() {
+    document.getElementById('modalTransferencia').classList.remove('ativo');
+    transporteIdAtual = null;
+    blocoAtualId = null;
+    dataViagemAtual = null;
+  }
+
+  function carregarBlocosDisponiveis() {
+    var select = document.getElementById('selectBlocoDestino');
+    select.innerHTML = '<option value="">Carregando...</option>';
+    var url = '{% url "transporte_pacientes:listar_blocos_disponiveis" %}';
+    if (dataViagemAtual) url += '?data=' + encodeURIComponent(dataViagemAtual);
+    if (blocoAtualId) url += (url.includes('?') ? '&' : '?') + 'excluir_bloco=' + encodeURIComponent(blocoAtualId);
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data.ok) { select.innerHTML = '<option value="">' + (data.erro || 'Erro ao carregar blocos') + '</option>'; return; }
+        if (!data.blocos || data.blocos.length === 0) { select.innerHTML = '<option value="">Nenhum bloco disponível</option>'; return; }
+        select.innerHTML = '<option value="">Selecione um bloco...</option>';
+        data.blocos.forEach(function(b) { var o = document.createElement('option'); o.value = b.id; o.textContent = b.label; select.appendChild(o); });
+      })
+      .catch(function(e) { console.error('Erro:', e); select.innerHTML = '<option value="">Erro ao carregar blocos</option>'; });
+  }
+
+  function confirmarTransferencia() {
+    var blocoDestinoId = document.getElementById('selectBlocoDestino').value;
+    if (!blocoDestinoId) { alert('Selecione um bloco de destino.'); return; }
+    var btn = document.getElementById('btnConfirmarTransferencia');
+    btn.disabled = true; btn.textContent = 'Transferindo...';
+    var formData = new FormData();
+    formData.append('transporte_id', transporteIdAtual);
+    formData.append('bloco_id', blocoDestinoId);
+    fetch('{% url "transporte_pacientes:transferir_paciente_bloco" %}', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) { alert('Paciente transferido com sucesso!'); fecharModalTransferencia(); window.location.reload(); }
+      else { alert('Erro: ' + (data.erro || 'Erro desconhecido')); btn.disabled = false; btn.textContent = 'Transferir'; }
+    })
+    .catch(function(e) { console.error('Erro:', e); alert('Erro ao transferir paciente.'); btn.disabled = false; btn.textContent = 'Transferir'; });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    aplicarZoom();
+    atualizarStatusEdicaoImpressao();
+
+    var modal = document.getElementById('modalTransferencia');
+    modal.addEventListener('click', function(e) { if (e.target === modal) fecharModalTransferencia(); });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') fecharModalTransferencia(); });
+  });
+</script>
+</body>
+</html>
