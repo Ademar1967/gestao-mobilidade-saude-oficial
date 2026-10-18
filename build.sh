@@ -24,3 +24,8 @@ python -m pip install --prefer-binary requests==2.33.1 python-slugify==8.0.4 pyt
 echo ">>> TODOS OS PACOTES OK"
 python manage.py collectstatic --no-input
 python manage.py migrate
+
+if [ -f "dados_export_completo.json" ]; then
+    echo ">>> CARREGANDO DADOS SINCRONIZADOS (dados_export_completo.json)..."
+    python manage.py loaddata dados_export_completo.json || echo ">>> Aviso: Alguns dados ja existem ou foram ignorados no loaddata."
+fi
