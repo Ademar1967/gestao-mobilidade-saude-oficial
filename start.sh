@@ -20,6 +20,11 @@ python manage.py create_admin || true
 echo "[DEPLOY] Applying migrations..."
 python manage.py migrate --no-input || true
 
+if [ -f "dados_export_completo.json" ]; then
+    echo "[DEPLOY] Carregando dump completo do banco local (dados_export_completo.json)..."
+    python manage.py loaddata dados_export_completo.json || echo "[DEPLOY] Aviso: erro ou dados ja carregados no loaddata."
+fi
+
 if [ -f "viaturas.csv" ]; then
     echo "[DEPLOY] Importing viaturas.csv..."
     python manage.py importar_viaturas || true
