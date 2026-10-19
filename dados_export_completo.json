@@ -3,7 +3,7 @@
   "model": "auth.user",
   "fields": {
     "password": "pbkdf2_sha256$1200000$MG0QS7t9cDnJbXfIE4S804$Ss9hWYAf7c06nqdPgGhK1l+22nCrDeZWYZ+9HzuT+QE=",
-    "last_login": "2026-10-18T17:08:41.922Z",
+    "last_login": "2026-10-19T09:45:57.449Z",
     "is_superuser": true,
     "username": "AMBULANCIA192",
     "first_name": "",
@@ -720,6 +720,14 @@
   "fields": {
     "session_data": ".eJxVjEEOwiAQAP-yZ0NaWKD06N03EBYWqRpISnsy_t006UGvM5N5gw_7VvzeefVLghlGuPwyCvHJ9RDpEeq9idjqti4kjkSctotbS_y6nu3foIReYAabzKRQYZTstNU2y8w6khsHnjCjpZiJjDRISDY7izqnZJR2ho0cVITPF9z0N8U:1x0jMD:70dvmmBlySUXdCZtREbYkD32U7Uczshjo_BiXF3BCRE",
     "expire_date": "2026-08-30T18:00:13.439Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "mhh5hl8k9cq0nqbg3ylazj3mdg4xykhf",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQAP-yZ0OALpX26L1vIMDuStWUpLQn499Nkx70OjOZN4S4byXsjdcwE4xg4PLLUsxPXg5Bj7jcq8p12dY5qSNRp21qqsSv29n-DUpsBUZg67VoJjG94cFq7YQwMQlKHDga6ZJzfZeRBm21OCcWfWbLePWMgvD5AvywOGU:1xIjwP:ozJS47ndE-Im9wUl-c-ox2GoteZi5YJCXgLvVxtLMeg",
+    "expire_date": "2026-10-19T10:16:01.261Z"
   }
 },
 {
