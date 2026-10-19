@@ -26,6 +26,6 @@ python manage.py collectstatic --no-input
 python manage.py migrate
 
 if [ -f "dados_export_completo.json" ]; then
-    echo ">>> CARREGANDO DADOS SINCRONIZADOS (dados_export_completo.json)..."
-    python manage.py loaddata dados_export_completo.json || echo ">>> Aviso: Alguns dados ja existem ou foram ignorados no loaddata."
+    echo ">>> CARREGANDO DADOS SINCRONIZADOS (sincronizar_dados)..."
+    python manage.py sincronizar_dados || true
 fi

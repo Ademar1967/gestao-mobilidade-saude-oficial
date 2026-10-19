@@ -21,8 +21,8 @@ echo "[DEPLOY] Applying migrations..."
 python manage.py migrate --no-input || true
 
 if [ -f "dados_export_completo.json" ]; then
-    echo "[DEPLOY] Carregando dump completo do banco local (dados_export_completo.json)..."
-    python manage.py loaddata dados_export_completo.json || echo "[DEPLOY] Aviso: erro ou dados ja carregados no loaddata."
+    echo "[DEPLOY] Executando sincronizacao do banco (sincronizar_dados)..."
+    python manage.py sincronizar_dados || true
 fi
 
 if [ -f "viaturas.csv" ]; then
