@@ -37,6 +37,9 @@ tbEstabelecimento*.csv
 # Dados sens�veis - LGPD
 *.csv
 dados.json
+
+# Artefato local fora do escopo do projeto
+planta_apartamento.svg
 pacientes.json
 
 # Dados sens�veis - LGPD
