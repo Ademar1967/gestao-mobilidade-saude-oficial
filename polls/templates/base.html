@@ -24,6 +24,16 @@
           width: 1px !important;
         }
 
+        body.authenticated-layout {
+          padding-top: 60px;
+        }
+
+        @media (max-width: 991.98px) {
+          body.authenticated-layout {
+            padding-top: 58px;
+          }
+        }
+
         .ui-autocomplete {
           z-index: 3000 !important;
           max-height: 260px;
@@ -59,8 +69,10 @@
         }
       </style>
 </head>
-<body>
-  {% include 'partials/navbar.html' %}
+<body class="{% if user.is_authenticated %}authenticated-layout{% endif %}">
+  {% if user.is_authenticated %}
+    {% include 'partials/navbar.html' %}
+  {% endif %}
   <main class="container py-3">
     {% block content %}{% endblock %}
   </main>

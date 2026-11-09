@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import unicodedata
+from datetime import date
 
 from django import forms
 from django.db.models import Q
@@ -105,10 +106,8 @@ class TransporteForm(forms.ModelForm):
     )
 
     def clean_data_transporte(self):
-        from django.utils import timezone
-
         data = self.cleaned_data.get("data_transporte")
-        if data and data < timezone.localdate():
+        if data and data < date.today():
             raise forms.ValidationError(
                 "A data informada já passou. Selecione uma data igual ou posterior a hoje."
             )
@@ -131,6 +130,10 @@ class TransporteForm(forms.ModelForm):
 
         if "hora_chegada" in self.fields:
             self.fields["hora_chegada"].label = "Horário de Chegada"
+
+        if "ordem" in self.fields:
+            self.fields["ordem"].required = False
+            self.fields["ordem"].initial = 0
 
     @staticmethod
     def _formatar_opcao_veiculo(veiculo):

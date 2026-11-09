@@ -1,5 +1,72 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4" id="navbar-global-topo">
   <style>
+    #navbar-global-topo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      z-index: 1040;
+      box-shadow: 0 4px 14px rgba(13, 71, 161, 0.22);
+      min-height: 52px;
+      padding-top: 0.15rem;
+      padding-bottom: 0.15rem;
+    }
+
+    #navbar-global-topo .navbar-brand {
+      white-space: nowrap;
+      font-size: 0.9rem;
+      margin-right: 0.55rem;
+      line-height: 1.05;
+    }
+
+    #navbar-global-topo .navbar-nav {
+      gap: 1px;
+    }
+
+    #navbar-global-topo .menu-links-topo {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      width: 100%;
+      padding-bottom: 1px;
+    }
+
+    #navbar-global-topo .menu-links-topo::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    #navbar-global-topo .menu-links-topo .navbar-nav {
+      flex-wrap: nowrap;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    #navbar-global-topo .nav-link {
+      white-space: nowrap;
+      font-size: 0.77rem;
+      line-height: 1.05;
+      padding: 0.3rem 0.46rem;
+    }
+
+    #navbar-global-topo .btn-nav-logout {
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.8);
+      white-space: nowrap;
+      font-size: 0.77rem;
+      line-height: 1.05;
+      padding: 0.3rem 0.46rem;
+    }
+
+    #navbar-global-topo .btn-nav-logout:hover,
+    #navbar-global-topo .btn-nav-logout:focus {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+    }
+
     .navbar .nav-link.nav-link-active,
     .navbar .nav-link.nav-link-active:focus,
     .navbar .nav-link.nav-link-active:hover {
@@ -11,11 +78,8 @@
   </style>
   <div class="container-fluid">
     <a class="navbar-brand fw-bold" href="{% url 'transporte_pacientes:home' %}">Gestão Mobilidade Saúde</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
+    <div class="menu-links-topo">
+      <ul class="navbar-nav flex-row flex-nowrap align-items-center">
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'home' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:home' %}">Início</a></li>
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_paciente' or request.resolver_match.url_name == 'editar_paciente' or request.resolver_match.url_name == 'buscar_editar_paciente' or request.resolver_match.url_name == 'arquivos_recebidos_pacientes' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_paciente' or request.resolver_match.url_name == 'editar_paciente' or request.resolver_match.url_name == 'buscar_editar_paciente' or request.resolver_match.url_name == 'arquivos_recebidos_pacientes' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_paciente' %}">Pacientes</a></li>
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_condutor' or request.resolver_match.url_name == 'editar_condutor' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_condutor' or request.resolver_match.url_name == 'editar_condutor' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_condutor' %}">Condutores</a></li>
@@ -24,9 +88,9 @@
 
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_clinica' or request.resolver_match.url_name == 'corrigir_dados_clinica' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_clinica' or request.resolver_match.url_name == 'corrigir_dados_clinica' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:cadastrar_clinica' %}">Clínicas</a></li>
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'cadastrar_transporte' or request.resolver_match.url_name == 'preparar_cadastro_transporte_lote' or request.resolver_match.url_name == 'cadastrar_transporte_lote' or request.resolver_match.url_name == 'listar_transportes' and request.GET.modo != 'impressao' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'cadastrar_transporte' or request.resolver_match.url_name == 'preparar_cadastro_transporte_lote' or request.resolver_match.url_name == 'cadastrar_transporte_lote' or request.resolver_match.url_name == 'listar_transportes' and request.GET.modo != 'impressao' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:listar_transportes' %}">Transportes</a></li>
+        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'mapa_operacional' or request.resolver_match.url_name == 'mapa_operacional_imprimir' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'mapa_operacional' or request.resolver_match.url_name == 'mapa_operacional_imprimir' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:mapa_operacional' %}">Mapas de Viagem</a></li>
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'listar_transportes' and request.GET.modo == 'impressao' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'listar_transportes' and request.GET.modo == 'impressao' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:listar_transportes' %}?modo=impressao&auto=1">Impressão</a></li>
         <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'mapa_pacientes' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'mapa_pacientes' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:mapa_pacientes' %}">Mapa de Pacientes</a></li>
-        <li class="nav-item"><a class="nav-link{% if request.resolver_match.url_name == 'mapa_operacional' or request.resolver_match.url_name == 'mapa_operacional_imprimir' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'mapa_operacional' or request.resolver_match.url_name == 'mapa_operacional_imprimir' %} aria-current="page"{% endif %} href="{% url 'transporte_pacientes:mapa_operacional' %}">📋 Mapas de Viagem</a></li>
         {% if user.is_staff %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle{% if request.resolver_match.url_name == 'estatisticas' or request.resolver_match.url_name == 'estatistica_tipo' or request.resolver_match.url_name == 'estatistica_clinica' or request.resolver_match.url_name == 'estatistica_periodo' or request.resolver_match.url_name == 'estatistica_veiculo' or request.resolver_match.url_name == 'estatistica_condutor' %} nav-link-active{% endif %}" href="#" id="estatisticasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -43,6 +107,14 @@
           </ul>
         </li>
         {% endif %}
+        <li class="nav-item">
+          <form method="post" action="{% url 'logout' %}" class="d-flex align-items-center mb-0">
+            {% csrf_token %}
+            <button type="submit" class="btn-nav-logout">
+              Sair
+            </button>
+          </form>
+        </li>
       </ul>
     </div>
   </div>

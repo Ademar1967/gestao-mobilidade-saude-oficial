@@ -59,7 +59,7 @@
         </div>
       </div>
 
-      <form method="post" id="form-lote" novalidate>
+      <form method="post" action="{% url 'transporte_pacientes:cadastrar_transporte_lote' %}" id="form-lote" novalidate>
         {% csrf_token %}
         <input type="hidden" name="paciente_ids_lote" value="{{ paciente_ids_lote }}">
         <input type="hidden" name="forcar_duplicado" id="id_forcar_duplicado" value="{% if forcar_duplicado %}1{% else %}0{% endif %}">

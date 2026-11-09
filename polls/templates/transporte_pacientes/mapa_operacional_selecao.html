@@ -43,6 +43,17 @@
     padding: 0.22rem 0.62rem;
   }
 
+  .titulo-gerar-mapa-destaque {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(13, 110, 253, 0.28) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(8, 57, 128, 0.22);
+    letter-spacing: 0.01em;
+  }
+
   .nome-paciente-mapa {
     cursor: help;
   }
@@ -102,6 +113,55 @@
     box-shadow: 0 3px 10px rgba(13, 110, 253, 0.08);
   }
 
+  .secao-form-mapa {
+    border: 1px solid #deebfb;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .secao-form-mapa .titulo-secao-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #214f80;
+    letter-spacing: 0.01em;
+  }
+
+  .acoes-mapa-topo {
+    position: static;
+  }
+
+  .bloco-padroes-rotina {
+    border: 1px solid #d8e6f8;
+    border-radius: 12px;
+    background: #f8fbff;
+  }
+
+  .painel-pacientes-toolbar-sticky {
+    position: static;
+  }
+
+  .painel-pacientes-toolbar .titulo-toolbar-pacientes {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2d598a;
+  }
+
+  .painel-pacientes-toolbar .ferramentas-lista-box {
+    border: 1px dashed #c6d9f1;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 8px;
+  }
+
   .status-salvamento {
     font-size: 0.86rem;
     font-weight: 600;
@@ -128,6 +188,32 @@
     color: #842029;
   }
 
+  .resumo-topo-fluxo {
+    border: 1px solid #cfe2ff;
+    background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  .resumo-topo-fluxo .titulo-resumo-topo {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1f4f82;
+    margin-bottom: 6px;
+  }
+
+  .resumo-topo-fluxo .lista-resumo-topo {
+    margin: 0;
+    padding-left: 1rem;
+    color: #2f4864;
+    font-size: 0.82rem;
+  }
+
+  .resumo-topo-fluxo .lista-resumo-topo li {
+    margin-bottom: 2px;
+  }
+
   .aviso-auto-ocultar {
     display: flex;
     align-items: center;
@@ -144,9 +230,7 @@
   }
 
   .aviso-auto-ocultar.aviso-fixo-lista {
-    position: sticky;
-    top: 0;
-    z-index: 3;
+    position: static;
     margin-bottom: 8px;
   }
 
@@ -232,12 +316,21 @@
   <div class="card shadow-sm">
     <div class="card-header bg-primary text-white d-flex align-items-center gap-2">
       <span style="font-size:1.5rem;">📋</span>
-      <span class="fw-bold fs-5">Gerar Mapa de Viagem</span>
+      <span class="fw-bold fs-5 titulo-gerar-mapa-destaque">Gerar Mapa de Viagem</span>
     </div>
     <div class="card-body">
+      <div class="resumo-topo-fluxo">
+        <div class="titulo-resumo-topo"><i class="bi bi-signpost-split me-1"></i>Como usar (resumo rápido)</div>
+        <ol class="lista-resumo-topo">
+          <li>Configure data, viagem, equipe e veículo.</li>
+          <li>Selecione os pacientes e confira o total de pessoas.</li>
+          <li>Salve para continuar ou conclua e abra a prévia para impressão.</li>
+        </ol>
+      </div>
+
       <div class="mb-3">
         <button type="button" id="btnToggleInstrucoes" class="btn btn-outline-primary btn-sm fw-bold">
-          <i class="bi bi-info-circle me-1"></i>Ocultar instruções de uso
+          <i class="bi bi-info-circle me-1"></i>Exibir instruções completas
         </button>
       </div>
 
@@ -277,11 +370,8 @@
         {% csrf_token %}
         <input type="hidden" name="paciente_ids" id="pacienteIdsHidden" value="{{ form_values.paciente_ids|default:'' }}">
 
-        <div class="barra-acoes-form mb-3">
+        <div class="barra-acoes-form mb-3 acoes-mapa-topo">
           <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary fw-bold px-4">
-              <i class="bi bi-eye"></i> Abrir Prévia do Mapa (sem salvar)
-            </button>
             <button type="button" id="btnSalvarViagem" class="btn btn-success fw-bold px-4"
                     data-url="{% url 'transporte_pacientes:salvar_viagem' %}">
               <i class="bi bi-save"></i> Salvar e continuar editando
@@ -289,6 +379,9 @@
             <button type="button" id="btnSalvarEPrevia" class="btn btn-outline-primary fw-bold px-4"
                     data-url="{% url 'transporte_pacientes:salvar_viagem' %}">
               <i class="bi bi-check2-circle"></i> Concluir e abrir prévia
+            </button>
+            <button type="submit" class="btn btn-primary fw-bold px-4">
+              <i class="bi bi-eye"></i> Abrir Prévia do Mapa (sem salvar)
             </button>
             <a href="{% url 'transporte_pacientes:listar_transportes' %}" class="btn btn-outline-secondary">
               Voltar
@@ -300,130 +393,131 @@
           </small>
         </div>
 
-        <!-- Origem do transporte -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Origem do Transporte</label>
-          <select class="form-select" name="origem" id="origemTransporte">
-            <option value="nem" {% if form_values.origem|default:'nem' == 'nem' %}selected{% endif %}>Terceirizada (NEM)</option>
-            <option value="prefeitura" {% if form_values.origem == 'prefeitura' %}selected{% endif %}>Frota Própria da Prefeitura (por patrimônio)</option>
-          </select>
-          <div class="form-text">Use Prefeitura quando a rota for feita com veículos próprios cadastrados por patrimônio.</div>
-        </div>
-
-        <!-- Empresa prestadora -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Empresa Prestadora</label>
-          <input type="text" class="form-control" name="empresa" id="empresaPrestadora" value="{{ form_values.empresa|default:'NEM' }}"
-                 placeholder="Ex: NEM, CASEM…"
-                 title="Nome da empresa que aparece na escala. Pode ser alterado livremente."
-                 maxlength="30">
-          <div class="form-text">Padrão: NEM. Pode ser qualquer nome.</div>
-        </div>
-
-        <!-- Data -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Data da Viagem</label>
-          <input type="date" class="form-control" name="data" value="{{ form_values.data|default:hoje }}" required>
-        </div>
-
-        <!-- Padrão de agendamento -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Padrão de Agendamento</label>
-          <select class="form-select" name="padrao_agendamento" id="padraoAgendamento">
-            <option value="data_unica" {% if form_values.padrao_agendamento|default:'data_unica' == 'data_unica' %}selected{% endif %}>Somente a data informada</option>
-            <option value="periodo" {% if form_values.padrao_agendamento == 'periodo' %}selected{% endif %}>Período (vários dias)</option>
-          </select>
-          <div class="form-text">Use Período para deixar viagens prontas em feriados prolongados ou agendas futuras.</div>
-        </div>
-
-        <div id="camposPeriodo" class="mb-3" style="display:none;">
-          <div class="row g-2 align-items-end">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Data final do período</label>
-              <input type="date" class="form-control" name="data_final" value="{{ form_values.data_final|default:'' }}">
+        <div class="secao-form-mapa">
+          <div class="titulo-secao-form"><i class="bi bi-sliders"></i>Configuração da viagem</div>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-bold">Origem do Transporte</label>
+              <select class="form-select" name="origem" id="origemTransporte">
+                <option value="nem" {% if form_values.origem|default:'nem' == 'nem' %}selected{% endif %}>Terceirizada (NEM)</option>
+                <option value="prefeitura" {% if form_values.origem == 'prefeitura' %}selected{% endif %}>Frota Própria da Prefeitura (por patrimônio)</option>
+              </select>
+              <div class="form-text">Use Prefeitura quando a rota for feita com veículos próprios cadastrados por patrimônio.</div>
             </div>
-            <div class="col-md-6">
-              <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" name="apenas_dias_uteis" id="apenasDiasUteis" {% if form_values.apenas_dias_uteis %}checked{% endif %}>
-                <label class="form-check-label fw-bold" for="apenasDiasUteis">
-                  Agendar apenas dias úteis (seg-sex)
-                </label>
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-bold">Empresa Prestadora</label>
+              <input type="text" class="form-control" name="empresa" id="empresaPrestadora" value="{{ form_values.empresa|default:'NEM' }}"
+                     placeholder="Ex: NEM, CASEM…"
+                     title="Nome da empresa que aparece na escala. Pode ser alterado livremente."
+                     maxlength="30">
+              <div class="form-text">Padrão: NEM. Pode ser qualquer nome.</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-bold">Data da Viagem</label>
+              <input type="date" class="form-control" name="data" value="{{ form_values.data|default:hoje }}" required>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-bold">Padrão de Agendamento</label>
+              <select class="form-select" name="padrao_agendamento" id="padraoAgendamento">
+                <option value="data_unica" {% if form_values.padrao_agendamento|default:'data_unica' == 'data_unica' %}selected{% endif %}>Somente a data informada</option>
+                <option value="periodo" {% if form_values.padrao_agendamento == 'periodo' %}selected{% endif %}>Período (vários dias)</option>
+              </select>
+              <div class="form-text">Use Período para deixar viagens prontas em feriados prolongados ou agendas futuras.</div>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-bold">Número da Viagem</label>
+              <select class="form-select" name="numero_viagem" required>
+                {% for nv in numeros_viagem %}
+                <option value="{{ nv }}" {% if form_values.numero_viagem|default:'1ª Viagem' == nv %}selected{% endif %}>{{ nv }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Selecione quantas viagens serão impressas nesta escala.</div>
+            </div>
+          </div>
+
+          <div id="camposPeriodo" class="mt-3" style="display:none;">
+            <div class="row g-2 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Data final do período</label>
+                <input type="date" class="form-control" name="data_final" value="{{ form_values.data_final|default:'' }}">
               </div>
-              <div class="form-text">Sábados e domingos serão ignorados quando essa opção estiver marcada.</div>
+              <div class="col-md-6">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" name="apenas_dias_uteis" id="apenasDiasUteis" {% if form_values.apenas_dias_uteis %}checked{% endif %}>
+                  <label class="form-check-label fw-bold" for="apenasDiasUteis">
+                    Agendar apenas dias úteis (seg-sex)
+                  </label>
+                </div>
+                <div class="form-text">Sábados e domingos serão ignorados quando essa opção estiver marcada.</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Número da viagem -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Número da Viagem</label>
-          <select class="form-select" name="numero_viagem" required>
-            {% for nv in numeros_viagem %}
-            <option value="{{ nv }}" {% if form_values.numero_viagem|default:'1ª Viagem' == nv %}selected{% endif %}>{{ nv }}</option>
-            {% endfor %}
-          </select>
-          <div class="form-text">Selecione quantas viagens serão impressas nesta escala.</div>
-        </div>
-
-        <!-- Condutor / Motorista -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Motorista</label>
-          <select class="form-select" name="condutor">
-            <option value="">— Todos os motoristas —</option>
-            {% for c in condutores %}
-            <option value="{{ c.id }}" {% if form_values.condutor == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <!-- Veículo -->
-        <div class="mb-3">
-          <label class="form-label fw-bold">Veículo / Ambulância <span id="hintPatrimonio" class="text-muted fw-normal">(se frota própria, selecione o patrimônio)</span></label>
-          <select class="form-select" name="veiculo" id="campoVeiculo">
-            <option value="">— Todos os veículos —</option>
-            {% for v in veiculos %}
-            <option value="{{ v.id }}" {% if form_values.veiculo == v.id|stringformat:'s' %}selected{% endif %}>
-              {% if v.tipo_veiculo == 'ambulancia' %}AMB {{ v.patrimonio }}{% else %}VAN {{ v.placa }}{% endif %}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <!-- Horário da consulta -->
-        <div class="mb-4">
-          <label class="form-label fw-bold">Horário de saida da base<span class="text-muted fw-normal">(opcional)</span></label>
-          <input type="time" class="form-control" name="horario_consulta" value="{{ form_values.horario_consulta|default:'' }}" style="max-width:140px;">
-          <div class="form-text">Se informado, será usado na coluna da consulta no mapa. Ex: 06:00</div>
-        </div>
-
-        <!-- Observação de planejamento -->
-        <div class="mb-4">
-          <label class="form-label fw-bold">Observação do planejamento <span class="text-muted fw-normal">(opcional)</span></label>
-          <textarea class="form-control" name="observacoes" id="observacoesPlanejamento" rows="2"
-                    placeholder="Ex: Feriado prolongado - agenda preparada antecipadamente para 20/11 a 24/11.">{{ form_values.observacoes|default:'' }}</textarea>
-          <div class="form-text">Esse texto será salvo na viagem para facilitar conferência da equipe depois.</div>
-        </div>
-
-        <div class="mb-4 border rounded p-3 bg-light-subtle">
-          <label class="form-label fw-bold mb-2">Padrões de rotina</label>
-          <div class="row g-2 align-items-end">
+        <div class="secao-form-mapa">
+          <div class="titulo-secao-form"><i class="bi bi-person-gear"></i>Equipe e veículo</div>
+          <div class="row g-3">
             <div class="col-12 col-md-6">
-              <label class="form-label mb-1">Nome do padrão</label>
-              <input type="text" class="form-control" id="nomePadraoRotina" maxlength="60" placeholder="Ex: Hemodiálise manhã - seg/qua/sex">
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label mb-1">Padrões salvos</label>
-              <select class="form-select" id="selectPadraoRotina">
-                <option value="">Selecione um padrão salvo</option>
+              <label class="form-label fw-bold">Motorista</label>
+              <select class="form-select" name="condutor">
+                <option value="">— Todos os motoristas —</option>
+                {% for c in condutores %}
+                <option value="{{ c.id }}" {% if form_values.condutor == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
+                {% endfor %}
               </select>
             </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-bold">Veículo / Ambulância <span id="hintPatrimonio" class="text-muted fw-normal">(se frota própria, selecione o patrimônio)</span></label>
+              <select class="form-select" name="veiculo" id="campoVeiculo">
+                <option value="">— Todos os veículos —</option>
+                {% for v in veiculos %}
+                <option value="{{ v.id }}" {% if form_values.veiculo == v.id|stringformat:'s' %}selected{% endif %}>
+                  {% if v.tipo_veiculo == 'ambulancia' %}AMB {{ v.patrimonio }}{% else %}VAN {{ v.placa }}{% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-bold">Horário de saida da base<span class="text-muted fw-normal">(opcional)</span></label>
+              <input type="time" class="form-control" name="horario_consulta" value="{{ form_values.horario_consulta|default:'' }}" style="max-width:140px;">
+              <div class="form-text">Se informado, será usado na coluna da consulta no mapa. Ex: 06:00</div>
+            </div>
+            <div class="col-12 col-md-8">
+              <label class="form-label fw-bold">Observação do planejamento <span class="text-muted fw-normal">(opcional)</span></label>
+              <textarea class="form-control" name="observacoes" id="observacoesPlanejamento" rows="2"
+                        placeholder="Ex: Feriado prolongado - agenda preparada antecipadamente para 20/11 a 24/11.">{{ form_values.observacoes|default:'' }}</textarea>
+              <div class="form-text">Esse texto será salvo na viagem para facilitar conferência da equipe depois.</div>
+            </div>
           </div>
-          <div class="d-flex gap-2 flex-wrap mt-2">
-            <button type="button" class="btn btn-outline-success btn-sm" id="btnSalvarPadraoRotina">Salvar padrão atual</button>
-            <button type="button" class="btn btn-outline-primary btn-sm" id="btnAplicarPadraoRotina">Aplicar padrão selecionado</button>
-            <button type="button" class="btn btn-outline-danger btn-sm" id="btnExcluirPadraoRotina">Excluir padrão selecionado</button>
+        </div>
+
+        <div class="mb-4 bloco-padroes-rotina p-3">
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+            <label class="form-label fw-bold mb-0">Padrões de rotina</label>
+            <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#boxPadroesRotina" aria-expanded="false" aria-controls="boxPadroesRotina">
+              Mostrar/ocultar padrões
+            </button>
           </div>
-          <div class="form-text mt-2">O padrão guarda pacientes selecionados e filtros principais (empresa, origem, motorista, veículo, viagem e observação). A data da viagem continua sendo informada no momento do uso e você mantém autonomia para trocar condutor, veículo e destino quando necessário.</div>
+          <div id="boxPadroesRotina" class="collapse">
+            <div class="row g-2 align-items-end">
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Nome do padrão</label>
+                <input type="text" class="form-control" id="nomePadraoRotina" maxlength="60" placeholder="Ex: Hemodiálise manhã - seg/qua/sex">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label mb-1">Padrões salvos</label>
+                <select class="form-select" id="selectPadraoRotina">
+                  <option value="">Selecione um padrão salvo</option>
+                </select>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap mt-2">
+              <button type="button" class="btn btn-outline-success btn-sm" id="btnSalvarPadraoRotina">Salvar padrão atual</button>
+              <button type="button" class="btn btn-outline-primary btn-sm" id="btnAplicarPadraoRotina">Aplicar padrão selecionado</button>
+              <button type="button" class="btn btn-outline-danger btn-sm" id="btnExcluirPadraoRotina">Excluir padrão selecionado</button>
+            </div>
+            <div class="form-text mt-2">O padrão guarda pacientes selecionados e filtros principais (empresa, origem, motorista, veículo, viagem e observação). A data da viagem continua sendo informada no momento do uso.</div>
+          </div>
         </div>
 
       </form>
@@ -438,22 +532,15 @@
           <span class="badge text-bg-primary" id="badgeSelecionados">0 selecionado(s)</span>
         </div>
         <div class="card-body">
-          <div class="painel-pacientes-toolbar barra-acoes-pacientes mb-3">
+          <div class="painel-pacientes-toolbar barra-acoes-pacientes mb-3 painel-pacientes-toolbar-sticky">
             <div class="toolbar-linha mb-2">
-              <span class="small fw-bold text-primary">Acoes rapidas da lista</span>
+              <span class="titulo-toolbar-pacientes"><i class="bi bi-lightning-charge-fill"></i>Ações rápidas da lista</span>
               <span class="small text-muted">Use / para focar a busca</span>
             </div>
 
             <div class="toolbar-linha">
               <input type="text" id="filtroPacientesMapa" class="form-control campo-filtro-mapa" placeholder="Filtrar por nome, bairro ou cidade...">
               <button type="button" class="btn btn-outline-dark btn-sm btn-toolbar-mapa" id="btnLimparBuscaPacientes"><i class="bi bi-x-circle me-1"></i>Limpar busca</button>
-              <button type="button" class="btn btn-outline-primary btn-sm btn-toolbar-mapa" id="btnSelecionarVisiveis"><i class="bi bi-check2-square me-1"></i>Selecionar visíveis</button>
-              <button type="button" class="btn btn-primary btn-sm btn-toolbar-mapa" id="btnSelecionarTodosBanco"><i class="bi bi-check-all me-1"></i>Selecionar todos (total)</button>
-              <button type="button" class="btn btn-outline-warning btn-sm btn-toolbar-mapa" id="btnOcultarSelecionadosLista"><i class="bi bi-eye-slash me-1"></i>Ocultar selecionados da lista</button>
-              <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnMostrarSomenteOcultos"><i class="bi bi-funnel me-1"></i>Mostrar apenas ocultos</button>
-              <button type="button" class="btn btn-outline-info btn-sm btn-toolbar-mapa" id="btnMostrarOcultosLista"><i class="bi bi-eye me-1"></i>Mostrar ocultos</button>
-              <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnLimparSelecao"><i class="bi bi-eraser me-1"></i>Remover selecionados do mapa</button>
-              <button type="button" id="btnToggleDetalhesPacientes" class="btn btn-sm btn-outline-warning toggle-orientacao-pacientes" data-filtro="{% if somente_ativos %}Ativos{% else %}Todos{% endif %}"><i class="bi bi-sliders me-1"></i>Exibir detalhes</button>
             </div>
 
             <div class="resumo-rapido-painel" id="resumoRapidoPainelPacientes">
@@ -467,11 +554,32 @@
             </div>
 
             <div class="toolbar-linha mt-2">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="toggleAutoOcultarPosPrevia" checked>
-                <label class="form-check-label small fw-semibold" for="toggleAutoOcultarPosPrevia" id="labelAutoOcultarPosPrevia">
-                  Auto-ocultar da lista apos abrir previa
-                </label>
+              <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#boxFerramentasLista" aria-expanded="false" aria-controls="boxFerramentasLista">
+                Ferramentas da lista
+              </button>
+            </div>
+
+            <div id="boxFerramentasLista" class="collapse mt-2 ferramentas-lista-box">
+              <div class="toolbar-linha mb-2">
+                <button type="button" class="btn btn-outline-primary btn-sm btn-toolbar-mapa" id="btnSelecionarVisiveis"><i class="bi bi-check2-square me-1"></i>Selecionar visíveis</button>
+                <button type="button" class="btn btn-primary btn-sm btn-toolbar-mapa" id="btnSelecionarTodosBanco"><i class="bi bi-check-all me-1"></i>Selecionar todos (total)</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnLimparSelecao"><i class="bi bi-eraser me-1"></i>Remover selecionados do mapa</button>
+              </div>
+
+              <div class="toolbar-linha mb-2">
+                <button type="button" class="btn btn-outline-warning btn-sm btn-toolbar-mapa" id="btnOcultarSelecionadosLista"><i class="bi bi-eye-slash me-1"></i>Ocultar selecionados da lista</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm btn-toolbar-mapa" id="btnMostrarSomenteOcultos"><i class="bi bi-funnel me-1"></i>Mostrar apenas ocultos</button>
+                <button type="button" class="btn btn-outline-info btn-sm btn-toolbar-mapa" id="btnMostrarOcultosLista"><i class="bi bi-eye me-1"></i>Mostrar ocultos</button>
+                <button type="button" id="btnToggleDetalhesPacientes" class="btn btn-sm btn-outline-warning toggle-orientacao-pacientes" data-filtro="{% if somente_ativos %}Ativos{% else %}Todos{% endif %}"><i class="bi bi-sliders me-1"></i>Exibir detalhes</button>
+              </div>
+
+              <div class="toolbar-linha mt-1">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="toggleAutoOcultarPosPrevia" checked>
+                  <label class="form-check-label small fw-semibold" for="toggleAutoOcultarPosPrevia" id="labelAutoOcultarPosPrevia">
+                    Auto-ocultar da lista apos abrir previa
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -504,10 +612,11 @@
             </div>
           </div>
 
+          <div class="aviso-auto-ocultar aviso-info aviso-fixo-lista mb-2" id="avisoAutoOcultarLista" role="status" aria-live="polite">Atencao: os pacientes permanecem selecionados para impressao.</div>
+
           <div class="table-responsive" style="max-height:420px; overflow:auto;">
-            <div class="aviso-auto-ocultar aviso-info aviso-fixo-lista" id="avisoAutoOcultarLista" role="status" aria-live="polite">Atencao: os pacientes permanecem selecionados para impressao.</div>
             <table class="table table-sm table-hover align-middle mb-0" id="tabelaPacientesMapa">
-              <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+              <thead class="table-light">
                 <tr>
                   <th style="width:48px;">OK</th>
                   <th>Paciente</th>
@@ -618,17 +727,17 @@
       camposPeriodo.style.display = padraoAgendamento.value === 'periodo' ? 'block' : 'none';
     }
 
-    aplicarEstadoToggle(
+      aplicarEstadoToggle(
       btn,
       box,
       lerPreferencia(STORAGE_KEY_INSTRUCOES, false),
-      'Ocultar fluxo e instruções de uso',
-      'Exibir fluxo e instruções de uso'
+      'Ocultar instruções completas',
+      'Exibir instruções completas'
     );
 
     btn.addEventListener('click', function() {
       var abrir = box.style.display === 'none';
-      aplicarEstadoToggle(btn, box, abrir, 'Ocultar fluxo e instruções de uso', 'Exibir fluxo e instruções de uso');
+      aplicarEstadoToggle(btn, box, abrir, 'Ocultar instruções completas', 'Exibir instruções completas');
       salvarPreferencia(STORAGE_KEY_INSTRUCOES, abrir);
     });
 

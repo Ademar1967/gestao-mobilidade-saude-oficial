@@ -353,6 +353,17 @@
       line-height: 1.1;
     }
 
+    table.mapa th.col-anotacao-manual,
+    table.mapa td.col-anotacao-manual {
+      width: 34px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    table.mapa td.col-anotacao-manual {
+      background: #f9fbff;
+    }
+
     table.mapa th.col-acao-impressao,
     table.mapa td.col-acao-impressao {
       width: 125px;
@@ -431,6 +442,18 @@
       border-top: 1px dashed #888;
       padding-top: 4px;
       letter-spacing: 1px;
+    }
+
+    .legenda-anotacao-manual {
+      border: 1px solid #d5e3f6;
+      background: #f4f8ff;
+      color: #1f3f66;
+      border-radius: 8px;
+      padding: 4px 6px;
+      margin: 4px 0 6px;
+      font-size: 6.6pt;
+      line-height: 1.25;
+      font-weight: 600;
     }
 
     /* ---------- RODAPÉ DO VERSO ---------- */
@@ -578,6 +601,10 @@
         font-size: 7.2pt;
       }
 
+      table.mapa td.col-anotacao-manual {
+        background: #fff;
+      }
+
       tr.linha-vazia,
       tr.linha-separador {
         display: none !important;
@@ -715,10 +742,16 @@
         </div>
       </div>
 
+      <div class="legenda-anotacao-manual">
+        Anotação manual: <strong>SP</strong> = paciente permanece em São Paulo. <strong>RET</strong> = retorno (<strong>CO</strong> conosco, <strong>MP</strong> meios próprios, <strong>INT</strong> internado).
+      </div>
+
       <table class="mapa">
         <thead>
           <tr>
             <th style="width:18px;">#</th>
+            <th class="col-anotacao-manual">SP</th>
+            <th class="col-anotacao-manual">RET</th>
             <th>PACIENTE</th>
             <th style="width:82px;">CONDIÇÕES ESPECIAIS</th>
             <th style="width:24px;">ID</th>
@@ -736,11 +769,13 @@
             {% for l in bloco.linhas %}
               {% if l.separador %}
                 <tr class="linha-separador">
-                  <td colspan="11"></td>
+                  <td colspan="13"></td>
                 </tr>
               {% else %}
                 <tr data-paciente-id="{{ l.paciente_id }}" data-transporte-id="{{ l.transporte_id }}">
                   <td class="num">{{ l.ordem }}</td>
+                  <td class="col-anotacao-manual"></td>
+                  <td class="col-anotacao-manual"></td>
                   <td>{{ l.nome }}</td>
                   <td class="cond">{{ l.condicoes_especiais|default:'-' }}</td>
                   <td class="ident">{{ l.paciente_id }}</td>
@@ -772,6 +807,8 @@
               {% for _ in bloco.vazios %}
                 <tr class="linha-vazia">
                   <td></td>
+                  <td class="col-anotacao-manual"></td>
+                  <td class="col-anotacao-manual"></td>
                   <td></td>
                   <td></td>
                   <td></td>
@@ -787,7 +824,7 @@
             {% endif %}
           {% else %}
             <tr>
-              <td colspan="11" style="text-align:center; padding:10px; color:#777;">
+              <td colspan="13" style="text-align:center; padding:10px; color:#777;">
                 Nenhum transporte encontrado para os filtros selecionados.
               </td>
             </tr>
@@ -845,10 +882,16 @@
         </div>
       </div>
 
+      <div class="legenda-anotacao-manual">
+        Anotação manual: <strong>SP</strong> = paciente permanece em São Paulo. <strong>RET</strong> = retorno (<strong>CO</strong> conosco, <strong>MP</strong> meios próprios, <strong>INT</strong> internado).
+      </div>
+
       <table class="mapa">
         <thead>
           <tr>
             <th style="width:18px;">#</th>
+            <th class="col-anotacao-manual">SP</th>
+            <th class="col-anotacao-manual">RET</th>
             <th>DESTINO</th>
             <th style="width:22px;">AC</th>
             <th style="width:80px;">CONDIÇÕES ESPECIAIS</th>
@@ -865,11 +908,13 @@
             {% for l in bloco.linhas %}
               {% if l.separador %}
                 <tr class="linha-separador">
-                  <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}"></td>
+                  <td colspan="{% if bloco.mostrar_coluna_observacao %}8{% else %}7{% endif %}"></td>
                 </tr>
               {% else %}
                 <tr data-paciente-id="{{ l.paciente_id }}" data-transporte-id="{{ l.transporte_id }}">
                   <td class="num">{{ l.ordem }}</td>
+                  <td class="col-anotacao-manual"></td>
+                  <td class="col-anotacao-manual"></td>
                   <td style="white-space:normal;">
                     {{ l.destino|default:'-' }}
                     {% if l.endereco_clinica %}
@@ -909,6 +954,8 @@
               {% for _ in bloco.vazios %}
                 <tr class="linha-vazia">
                   <td></td>
+                  <td class="col-anotacao-manual"></td>
+                  <td class="col-anotacao-manual"></td>
                   <td></td>
                   <td></td>
                   <td></td>
@@ -921,7 +968,7 @@
             {% endif %}
           {% else %}
             <tr>
-              <td colspan="{% if bloco.mostrar_coluna_observacao %}6{% else %}5{% endif %}" style="text-align:center; padding:10px; color:#777;">
+              <td colspan="{% if bloco.mostrar_coluna_observacao %}8{% else %}7{% endif %}" style="text-align:center; padding:10px; color:#777;">
                 Nenhum dado para o verso.
               </td>
             </tr>
@@ -1086,7 +1133,8 @@
         var linhasRestantes = tbody.querySelectorAll('tr:not(.linha-separador):not(.linha-vazia)');
         if (linhasRestantes.length === 0) {
           var ehVerso = tbody.closest('.folha.verso') !== null;
-          var colSpan = ehVerso ? 6 : 11;
+          var tabela = tbody.closest('table');
+          var colSpan = tabela ? tabela.querySelectorAll('thead th').length : (ehVerso ? 8 : 13);
           var msg = ehVerso ? 'Nenhum dado para o verso.' : 'Nenhum transporte encontrado para os filtros selecionados.';
           var trVazia = document.createElement('tr');
           trVazia.innerHTML = '<td colspan="' + colSpan + '" style="text-align:center; padding:10px; color:#777;">' + msg + '</td>';
@@ -1154,6 +1202,8 @@
       var novaLinha = document.createElement('tr');
       novaLinha.innerHTML =
         '<td class="num">' + novaOrdem + '</td>' +
+        '<td class="col-anotacao-manual"></td>' +
+        '<td class="col-anotacao-manual"></td>' +
         '<td>-</td>' +
         '<td class="cond">-</td>' +
         '<td class="ident">-</td>' +
@@ -1194,10 +1244,15 @@
       var linhasExistentes = tbody.querySelectorAll('tr:not(.linha-vazia):not(.linha-separador)').length;
       var novaOrdem = linhasExistentes + 1;
 
-      var thObs = folhaVerso.querySelector('thead tr th:nth-child(5)');
+      var thObs = folhaVerso.querySelector('thead tr th:nth-child(7)');
       var temObservacaoVisivel = thObs && thObs.offsetWidth > 0;
       if (!thObs) {
-        temObservacaoVisivel = folhaVerso.querySelector('th[style*="OBSERVAÇÃO"]') !== null;
+        temObservacaoVisivel = Array.prototype.some.call(
+          folhaVerso.querySelectorAll('thead tr th'),
+          function(th) {
+            return th.textContent && th.textContent.indexOf('OBSERVAÇÃO') !== -1;
+          }
+        );
       }
 
       var celulaObsHtml = '';
@@ -1210,6 +1265,8 @@
       var novaLinha = document.createElement('tr');
       novaLinha.innerHTML =
         '<td class="num">' + novaOrdem + '</td>' +
+        '<td class="col-anotacao-manual"></td>' +
+        '<td class="col-anotacao-manual"></td>' +
         '<td style="white-space:normal;">-</td>' +
         '<td class="ac">SO</td>' +
         '<td class="cond">-</td>' +
@@ -1239,6 +1296,8 @@
                 var novaFrenteLinha = document.createElement('tr');
                 novaFrenteLinha.innerHTML =
                   '<td class="num">' + (qtdFrente + 1) + '</td>' +
+                  '<td class="col-anotacao-manual"></td>' +
+                  '<td class="col-anotacao-manual"></td>' +
                   '<td>-</td>' +
                   '<td class="cond">-</td>' +
                   '<td class="ident">-</td>' +
@@ -1426,6 +1485,8 @@
             '<thead>' +
               '<tr>' +
                 '<th style="width:18px;">#</th>' +
+                '<th class="col-anotacao-manual">SP</th>' +
+                '<th class="col-anotacao-manual">RET</th>' +
                 '<th>PACIENTE</th>' +
                 '<th style="width:82px;">CONDIÇÕES ESPECIAIS</th>' +
                 '<th style="width:24px;">ID</th>' +
@@ -1440,7 +1501,7 @@
             '</thead>' +
             '<tbody>' +
               '<tr>' +
-                '<td colspan="11" style="text-align:center; padding:10px; color:#777;">' +
+                '<td colspan="13" style="text-align:center; padding:10px; color:#777;">' +
                   'Novo bloco criado. Use as opções para transferir ou adicionar pacientes.' +
                 '</td>' +
               '</tr>' +
@@ -1473,6 +1534,8 @@
             '<thead>' +
               '<tr>' +
                 '<th style="width:18px;">#</th>' +
+                '<th class="col-anotacao-manual">SP</th>' +
+                '<th class="col-anotacao-manual">RET</th>' +
                 '<th>DESTINO</th>' +
                 '<th style="width:22px;">AC</th>' +
                 '<th style="width:80px;">CONDIÇÕES ESPECIAIS</th>' +
@@ -1482,7 +1545,7 @@
             '</thead>' +
             '<tbody>' +
               '<tr>' +
-                '<td colspan="6" style="text-align:center; padding:10px; color:#777;">' +
+                '<td colspan="8" style="text-align:center; padding:10px; color:#777;">' +
                   'Nenhum dado para o verso.' +
                 '</td>' +
               '</tr>' +
