@@ -791,7 +791,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <li>Demais campos podem ficar para atualização posterior no botão Editar.</li>
         </ol>
         <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" role="switch" id="modoRapidoSwitch" 
+          <input class="form-check-input" type="checkbox" role="switch" id="modoRapidoSwitch">
           <label class="form-check-label small fw-semibold" for="modoRapidoSwitch">
             Modo atendimento rápido (oculta campos complementares)
           </label>
@@ -804,7 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card-body pb-2">
           <div class="row g-2">
             <div class="col-md-5 mb-2">
-              {{ form.nome.label_tag }}<span class="text-danger">*</span> 
+              {{ form.nome.label_tag }}<span class="text-danger">*</span>
               {{ form.nome }}
               {% if form.nome.errors %}
                 <div class="text-danger small">{{ form.nome.errors }}</div>
@@ -827,64 +827,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="text-danger small">{{ form.horario_consulta.errors }}</div>
               {% endif %}
             </div>
-            
-            <div class="col-md-2 mb-2">
+            <div class="col-md-3 mb-2">
               {{ form.status.label_tag }}
               {{ form.status }}
               {% if form.status.errors %}
                 <div class="text-danger small">{{ form.status.errors }}</div>
               {% endif %}
             </div>
-            <script>
-            // Define "Ativo" como valor padrão para o campo status
-            document.addEventListener('DOMContentLoaded', function() {
-              var statusField = document.getElementById('id_status');
-              if (statusField && !statusField.value) {
-                statusField.value = 'Ativo';
-              }
-            });
-            </script>
+          </div>
+          <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            var statusField = document.getElementById('id_status');
+            if (statusField && !statusField.value) {
+              statusField.value = 'Ativo';
+            }
+          });
+          </script>
 
-          
-            <div class="col-md-3 mb-2">
-              {% if form.destino_preferencial %}
-                {% if form.destino_preferencial_manual %}
+          <div class="row g-2 mt-1">
+            <div class="col-md-4 mb-2">
+              <div class="border rounded p-2 bg-light h-100">
+                {% if form.destino_preferencial %}
+                  {% if form.destino_preferencial_manual %}
+                    <div class="mb-2">
+                      {{ form.destino_preferencial_manual.label_tag }}
+                      {{ form.destino_preferencial_manual }}
+                      <small class="form-text text-muted">
+                        <i class="bi bi-search"></i> Digite para buscar clínicas cadastradas ou cadastre uma nova automaticamente.
+                      </small>
+                      {% if form.destino_preferencial_manual.errors %}
+                        <div class="text-danger small">{{ form.destino_preferencial_manual.errors }}</div>
+                      {% endif %}
+                    </div>
+                  {% endif %}
                   <div class="mb-2">
-                    {{ form.destino_preferencial_manual.label_tag }}
-                    {{ form.destino_preferencial_manual }}
-                    <small class="form-text text-muted">
-                      <i class="bi bi-search"></i> Digite para buscar clínicas cadastradas ou digite uma nova para cadastrar automaticamente.
-                    </small>
-                    {% if form.destino_preferencial_manual.errors %}
-                      <div class="text-danger small">{{ form.destino_preferencial_manual.errors }}</div>
+                    {{ form.destino_preferencial.label_tag }}
+                    {{ form.destino_preferencial }}
+                    {{ form.destino_preferencial_limpar }}
+                    <small class="form-text text-muted">Destino preferencial sugerido para este paciente (opcional).</small>
+                    {% if form.destino_preferencial.errors %}
+                      <div class="text-danger small">{{ form.destino_preferencial.errors }}</div>
                     {% endif %}
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                      <button type="button" id="btnLimparDestinoPreferencial" class="btn btn-outline-secondary btn-sm">Limpar destino</button>
+                    </div>
+                  </div>
+                  <div id="avisoSemClinicasDestino" class="alert alert-warning mt-2 py-2 px-2 small d-none" role="alert">
+                    Nenhuma clínica disponível para seleção no destino preferencial.
+                    <a href="{% url 'transporte_pacientes:cadastrar_clinica' %}" class="btn btn-sm btn-outline-warning ms-2" target="_blank" rel="noopener">Cadastrar clínica</a>
+                  </div>
+                {% else %}
+                  <label class="form-label">Destino preferencial</label>
+                  <div class="alert alert-warning py-2 px-2 small" role="alert">
+                    Campo de destino preferencial indisponível nesta versão do formulário.
                   </div>
                 {% endif %}
-                <div class="mb-2">
-                  {{ form.destino_preferencial.label_tag }}
-                  {{ form.destino_preferencial }}
-                  {{ form.destino_preferencial_limpar }}
-                  <small class="form-text text-muted">{{ form.destino_preferencial.help_text }}</small>
-                  {% if form.destino_preferencial.errors %}
-                    <div class="text-danger small">{{ form.destino_preferencial.errors }}</div>
-                  {% endif %}
-                  <div class="d-flex gap-2 mt-2 flex-wrap">
-                    <button type="button" id="btnLimparDestinoPreferencial" class="btn btn-outline-secondary btn-sm">Limpar destino</button>
-                  </div>
-                </div>
-                <div id="avisoSemClinicasDestino" class="alert alert-warning mt-2 py-2 px-2 small d-none" role="alert">
-                  Nenhuma clínica disponível para seleção no destino preferencial.
-                  <a href="{% url 'transporte_pacientes:cadastrar_clinica' %}" class="btn btn-sm btn-outline-warning ms-2" target="_blank" rel="noopener">Cadastrar clínica</a>
-                </div>
-              {% else %}
-                <label class="form-label">Destino preferencial</label>
-                <div class="alert alert-warning py-2 px-2 small" role="alert">
-                  Campo de destino preferencial indisponível nesta versão do formulário.
-                </div>
-              {% endif %}
+              </div>
             </div>
-            <div class="col-md-1 mb-2">
-              {{ form.idade.label_tag }}<span class="text-danger">*</span> 
+            <div class="col-md-2 mb-2">
+              {{ form.idade.label_tag }}<span class="text-danger">*</span>
               {{ form.idade }}
               {% if form.idade.errors %}
                 <div class="text-danger small">{{ form.idade.errors }}</div>
@@ -901,12 +902,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="text-danger small">{{ form.peso.errors }}</div>
               {% endif %}
             </div>
-            <div class="col-md-6 mb-2">
-              {{ form.tratamento.label_tag }}
-              {{ form.tratamento }}
-              {% if form.tratamento.errors %}
-                <div class="text-danger small">{{ form.tratamento.errors }}</div>
-              {% endif %}
+            <div class="col-md-4 mb-2">
+              <div class="campo-tratamento h-100">
+                {{ form.tratamento.label_tag }}
+                {{ form.tratamento }}
+                <small class="form-text text-muted">Descreva o tratamento, acompanhamento ou observação principal, se houver.</small>
+                {% if form.tratamento.errors %}
+                  <div class="text-danger small">{{ form.tratamento.errors }}</div>
+                {% endif %}
+              </div>
             </div>
           </div>
         </div>
@@ -1274,16 +1278,140 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <style>
-@media (max-width: 768px) {
-  #barra-acoes-cadastro-paciente {
-    position: sticky;
-    bottom: 0;
-    z-index: 1020;
-    background: #ffffff;
-    padding-bottom: 0.5rem;
-    box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+  #cadastrar-paciente-form .card {
+    border: 1px solid rgba(13, 110, 253, 0.12);
+    box-shadow: 0 0.4rem 1rem rgba(15, 23, 42, 0.04);
   }
-}
+
+  #cadastrar-paciente-form .card-header {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    letter-spacing: 0.01em;
+  }
+
+  #cadastrar-paciente-form .card-body {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  #cadastrar-paciente-form .form-label,
+  #cadastrar-paciente-form label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  #cadastrar-paciente-form .text-danger {
+    color: #dc3545 !important;
+  }
+
+  #cadastrar-paciente-form .form-control,
+  #cadastrar-paciente-form .form-select,
+  #cadastrar-paciente-form textarea {
+    max-width: 100%;
+    width: 100%;
+    min-height: 38px;
+    border-radius: 0.5rem;
+    border: 1px solid #dfe7ef;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+
+  #cadastrar-paciente-form .form-control:focus,
+  #cadastrar-paciente-form .form-select:focus,
+  #cadastrar-paciente-form textarea:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.12);
+    border-color: #86b7fe;
+  }
+
+  #cadastrar-paciente-form .row.g-2 > [class*="col-"] {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  #cadastrar-paciente-form .small.form-text {
+    margin-top: 0.25rem;
+    line-height: 1.35;
+  }
+
+  #cadastrar-paciente-form .form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 38px;
+  }
+
+  #cadastrar-paciente-form .form-check-input {
+    margin-top: 0;
+    flex: 0 0 auto;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  #cadastrar-paciente-form .form-check-label {
+    white-space: normal;
+    margin-bottom: 0;
+  }
+
+  #cadastrar-paciente-form .campo-tratamento textarea,
+  #cadastrar-paciente-form .campo-tratamento input {
+    min-height: 90px;
+    width: 100%;
+  }
+
+  #cadastrar-paciente-form .input-group {
+    width: 100%;
+    display: flex;
+  }
+
+  #cadastrar-paciente-form .input-group > .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  #cadastrar-paciente-form .input-group > .input-group-text {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-width: 52px;
+    justify-content: center;
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background: #f3f6fb;
+    color: #374151;
+    font-weight: 600;
+  }
+
+  #cadastrar-paciente-form #id_idade,
+  #cadastrar-paciente-form #id_peso {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #cadastrar-paciente-form .border.rounded.p-2.bg-light.h-100 {
+    border-color: #dfe7ef !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  @media (max-width: 768px) {
+    #barra-acoes-cadastro-paciente {
+      position: sticky;
+      bottom: 0;
+      z-index: 1020;
+      background: #ffffff;
+      padding-bottom: 0.5rem;
+      box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    #cadastrar-paciente-form .row.g-2 > [class*="col-"] {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
 </style>
 <script>
 // --- Máscaras de telefone e CEP ---
