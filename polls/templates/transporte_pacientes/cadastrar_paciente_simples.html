@@ -20,9 +20,20 @@
             <a href="{{ url_formulario_completo }}" class="btn btn-warning btn-sm btn-afunda">
               <i class="bi bi-layout-text-window-reverse me-1"></i> Abrir formulario completo
             </a>
-            <button type="button" class="btn btn-outline-secondary btn-sm no-print" onclick="window.print()">
+            <button type="button" id="btn-imprimir-ficha" class="btn btn-outline-secondary btn-sm no-print" onclick="imprimirFicha()">
               <i class="bi bi-printer me-1"></i> Imprimir
             </button>
+          </div>
+        </div>
+
+        <div class="fa-cabecalho-oficial mb-2">
+          <div class="fa-cabecalho-linha1">
+            <div class="fa-orgao">Mogi das Cruzes</div>
+            <div class="fa-titulo">F.A. Remoções Eletivas</div>
+            <div class="fa-servico">Serviço de Ambulância</div>
+          </div>
+          <div class="fa-cabecalho-linha2">
+            Prefeitura de Mogi das Cruzes - Secretaria Municipal de Saúde
           </div>
         </div>
 
@@ -314,6 +325,46 @@
   overflow-x: visible;
 }
 
+.fa-cabecalho-oficial {
+  border: 1px solid #9f9f9f;
+  background: #fff;
+}
+
+.fa-cabecalho-linha1 {
+  display: grid;
+  grid-template-columns: 1.15fr 1.7fr 1.15fr;
+  align-items: center;
+  border-bottom: 1px solid #bcbcbc;
+  text-transform: uppercase;
+  font-size: 0.73rem;
+}
+
+.fa-cabecalho-linha1 > div {
+  padding: 3px 6px;
+}
+
+.fa-orgao,
+.fa-servico,
+.fa-titulo {
+  font-weight: 700;
+}
+
+.fa-titulo {
+  text-align: center;
+  letter-spacing: 0.35px;
+}
+
+.fa-servico {
+  text-align: right;
+}
+
+.fa-cabecalho-linha2 {
+  font-size: 0.69rem;
+  color: #444;
+  text-align: center;
+  padding: 2px 6px;
+}
+
 .ficha-box-lateral {
   height: auto;
   padding: 0.4rem !important;
@@ -365,6 +416,7 @@
   vertical-align: top;
   padding: 4px 6px;
   overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .ficha-tabela-dados .ficha-celula-nome {
@@ -378,15 +430,39 @@
 
 .ficha-tabela-dados .ficha-celula-sis,
 .ficha-tabela-dados .ficha-celula-peso {
-  width: 14%;
+  width: 13%;
 }
 
 .ficha-tabela-dados .ficha-celula-telefone {
-  width: 24%;
+  width: 26%;
+}
+
+.ficha-celula-telefone,
+.ficha-celula-acompanhantes {
+  overflow: hidden;
+}
+
+.ficha-tabela-dados .ficha-campo {
+  min-width: 0;
+}
+
+.ficha-tabela-dados .ficha-campo > label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ficha-celula-telefone .ficha-campo label {
+  white-space: nowrap;
+  font-size: 0.68rem;
 }
 
 .ficha-celula-acompanhantes .ficha-campo label {
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.05;
+  font-size: 0.68rem;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 #form-cadastro-rapido,
@@ -396,7 +472,7 @@
 
 #form-cadastro-rapido {
   font-family: "Times New Roman", Georgia, serif;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   color: #1e1e1e;
 }
 
@@ -470,6 +546,9 @@
 .ficha-campo > label {
   display: block;
   margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.28px;
 }
 
 .quadro-horarios {
@@ -674,8 +753,22 @@ label {
 }
 
 .ficha-celula-telefone .form-control {
-  max-width: 150px;
+  max-width: 100%;
   width: 100%;
+  min-width: 0;
+}
+
+.ficha-celula-acompanhantes .form-control {
+  max-width: 68px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.ficha-celula-telefone .ficha-campo,
+.ficha-celula-acompanhantes .ficha-campo {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -708,6 +801,19 @@ label {
   max-width: 100%;
 }
 
+.residencia-flex .campo-inline {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.28rem;
+  align-items: center;
+  width: 100%;
+}
+
+.residencia-flex .campo-inline-label {
+  white-space: nowrap;
+  margin-bottom: 0;
+}
+
 .residencia-flex .campo-referencia {
   grid-column: 1 / -1;
 }
@@ -721,6 +827,15 @@ label {
 .residencia-flex .form-control,
 .residencia-flex .form-select {
   min-height: 34px;
+}
+
+.ficha-box-horarios .mb-1.campo-inline {
+  max-width: 100% !important;
+}
+
+.ficha-box-horarios .mb-1.campo-inline .campo-inline-label {
+  flex: 0 0 135px;
+  white-space: nowrap;
 }
 
 @media (max-width: 1200px) {
@@ -776,6 +891,20 @@ label {
     max-width: 100%;
   }
 
+  .residencia-flex .campo-inline {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .residencia-flex .campo-inline-label {
+    flex: 0 0 100%;
+  }
+
+  .ficha-box-horarios .mb-1.campo-inline .campo-inline-label {
+    flex: 0 0 100%;
+    white-space: normal;
+  }
+
   .residencia-flex {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -789,8 +918,8 @@ label {
 
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 4mm;
+    size: 160mm 210mm;
+    margin: 0;
   }
 
   html,
@@ -800,9 +929,21 @@ label {
   }
 
   .pagina-ficha-rapida {
-    max-width: 100% !important;
+    width: 154mm !important;
+    max-width: 154mm !important;
     margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     padding: 0 !important;
+  }
+
+  .pagina-ficha-rapida.mt-2,
+  .pagina-ficha-rapida.mb-3,
+  .container-fluid.pagina-ficha-rapida {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
   }
 
   .btn,
@@ -815,10 +956,13 @@ label {
   .card {
     box-shadow: none !important;
     border: 1px solid #bdbdbd !important;
+    margin-top: 0 !important;
   }
 
   .card-body {
-    padding: 2mm !important;
+    padding: 1.2mm !important;
+    padding-top: 0.6mm !important;
+    margin-top: 0 !important;
   }
 
   #box-busca-paciente,
@@ -828,19 +972,27 @@ label {
   }
 
   #form-cadastro-rapido {
-    font-size: 0.72rem !important;
-    line-height: 1.02 !important;
-    zoom: 0.78;
+    font-size: 0.64rem !important;
+    line-height: 1 !important;
+    zoom: 0.93;
+    border: 1px solid #8f8f8f !important;
+    padding: 1.4mm !important;
+    margin-top: 0 !important;
+  }
+
+  #form-cadastro-rapido > *:first-child {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 
   #form-cadastro-rapido .row {
-    --bs-gutter-x: 0.35rem !important;
-    --bs-gutter-y: 0.2rem !important;
+    --bs-gutter-x: 0.2rem !important;
+    --bs-gutter-y: 0.1rem !important;
   }
 
   .ficha-box {
-    margin-bottom: 1mm !important;
-    padding: 1mm !important;
+    margin-bottom: 0.6mm !important;
+    padding: 0.6mm !important;
   }
 
   .ficha-legend {
@@ -853,39 +1005,50 @@ label {
 
   .ficha-campo > label,
   .campo-inline-label {
-    margin-bottom: 0.6mm !important;
+    margin-bottom: 0.35mm !important;
+  }
+
+  .ficha-celula-telefone .ficha-campo label,
+  .ficha-celula-acompanhantes .ficha-campo label {
+    font-size: 0.64rem !important;
+  }
+
+  .ficha-celula-acompanhantes .form-control {
+    max-width: 52px !important;
   }
 
   .ficha-tabela-dados td {
-    padding-top: 0.8mm !important;
-    padding-bottom: 0.8mm !important;
+    padding-top: 0.45mm !important;
+    padding-bottom: 0.45mm !important;
   }
 
   #form-cadastro-rapido > .row.g-2.align-items-start,
   #bloco-complementar.row.g-2.align-items-start {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 2mm !important;
+    display: block !important;
   }
 
   #form-cadastro-rapido > .row.g-2.align-items-start > .col-xl-7 {
-    flex: 0 0 58% !important;
-    max-width: 58% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
   }
 
   #form-cadastro-rapido > .row.g-2.align-items-start > .col-xl-5 {
-    flex: 0 0 42% !important;
-    max-width: 42% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
   }
 
   #bloco-complementar.row.g-2.align-items-start > .col-xl-8 {
-    flex: 0 0 78% !important;
-    max-width: 78% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
   }
 
   #bloco-complementar.row.g-2.align-items-start > .col-xl-4 {
-    flex: 0 0 22% !important;
-    max-width: 22% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
   }
 
   .ficha-box,
@@ -898,7 +1061,20 @@ label {
 
   .campo-linha-horario {
     border-bottom: 1px solid #555 !important;
-    font-size: 0.74rem !important;
+    font-size: 0.66rem !important;
+    min-height: 14px !important;
+  }
+
+  .quadro-horarios-head {
+    font-size: 0.64rem !important;
+    padding: 2px 5px !important;
+  }
+
+  .quadro-horarios-grid-labels {
+    font-size: 0.62rem !important;
+  }
+
+  .quadro-horarios-grid-labels > div {
     min-height: 18px !important;
   }
 
@@ -920,7 +1096,17 @@ label {
   }
 
   #cabecalho-ficha-operacional {
-    margin-bottom: 0.2rem !important;
+    display: none !important;
+  }
+
+  .fa-cabecalho-oficial {
+    margin-top: 0 !important;
+    margin-bottom: 0.8mm !important;
+    border-color: #7d7d7d !important;
+  }
+
+  .fa-cabecalho-linha1 {
+    font-size: 0.67rem !important;
   }
 
   #logo-prefeitura-ficha,
@@ -933,13 +1119,33 @@ label {
 </style>
 
 <script>
+var tituloOriginalDocumento = document.title;
+
+function prepararTituloParaImpressao() {
+  tituloOriginalDocumento = document.title;
+  document.title = '';
+}
+
+function restaurarTituloAposImpressao() {
+  document.title = tituloOriginalDocumento || ' '; 
+}
+
+function imprimirFicha() {
+  prepararTituloParaImpressao();
+  window.print();
+  setTimeout(restaurarTituloAposImpressao, 300);
+}
+
+window.addEventListener('beforeprint', prepararTituloParaImpressao);
+window.addEventListener('afterprint', restaurarTituloAposImpressao);
+
 document.addEventListener('DOMContentLoaded', function() {
   var btnImprimir = document.getElementById('btn-imprimir-ficha');
   var dataExecucao = document.getElementById('op_data_execucao');
 
   if (btnImprimir) {
     btnImprimir.addEventListener('click', function() {
-      window.print();
+      imprimirFicha();
     });
   }
 
