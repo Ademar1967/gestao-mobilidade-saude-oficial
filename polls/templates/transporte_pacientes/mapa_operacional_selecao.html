@@ -450,6 +450,35 @@
                 </div>
                 <div class="form-text">Sábados e domingos serão ignorados quando essa opção estiver marcada.</div>
               </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Escala de motoristas para o período <span class="text-muted fw-normal">(opcional)</span></label>
+                <select class="form-select" name="condutores_periodo" id="condutoresPeriodo" multiple size="5">
+                  {% for c in condutores %}
+                  <option value="{{ c.id }}" {% if c.id|stringformat:'s' in condutores_periodo_values %}selected{% endif %}>{{ c.nome }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">
+                  Selecione dois ou mais motoristas para rodízio automático entre os dias do período. Se não selecionar, o sistema usa o campo Motorista único abaixo.
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Escala de veículos para o período <span class="text-muted fw-normal">(opcional)</span></label>
+                <select class="form-select" name="veiculos_periodo" id="veiculosPeriodo" multiple size="5">
+                  {% for v in veiculos %}
+                  <option value="{{ v.id }}" {% if v.id|stringformat:'s' in veiculos_periodo_values %}selected{% endif %}>
+                    {% if v.tipo_veiculo == 'ambulancia' %}AMB {{ v.patrimonio }}{% else %}VAN {{ v.placa }}{% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">
+                  Selecione dois ou mais veículos para rodízio automático por dia. Se não selecionar, o sistema usa o campo Veículo único abaixo.
+                </div>
+              </div>
+              <div class="col-12">
+                <div id="resumoEscalaPeriodo" class="alert alert-info py-2 mb-0" role="status" aria-live="polite">
+                  Escala do período inativa. Selecione motoristas e/ou veículos para habilitar rodízio.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1042,7 +1071,9 @@
         apenas_dias_uteis: !!((form.querySelector('[name="apenas_dias_uteis"]') || {}).checked),
         numero_viagem: (form.querySelector('[name="numero_viagem"]') || {}).value || '',
         condutor: (form.querySelector('[name="condutor"]') || {}).value || '',
+        condutores_periodo: Array.prototype.slice.call((form.querySelector('[name="condutores_periodo"]') || {}).selectedOptions || []).map(function(op) { return op.value; }),
         veiculo: (form.querySelector('[name="veiculo"]') || {}).value || '',
+        veiculos_periodo: Array.prototype.slice.call((form.querySelector('[name="veiculos_periodo"]') || {}).selectedOptions || []).map(function(op) { return op.value; }),
         horario_consulta: (form.querySelector('[name="horario_consulta"]') || {}).value || '',
         observacoes: (form.querySelector('[name="observacoes"]') || {}).value || '',
         paciente_ids: idsSelecionados
@@ -1063,6 +1094,18 @@
         }
       }
 
+      function setValoresMultiplo(nome, valores) {
+        var el = form.querySelector('[name="' + nome + '"]');
+        if (!el) return;
+        var selecionados = {};
+        (Array.isArray(valores) ? valores : []).forEach(function(v) {
+          selecionados[String(v)] = true;
+        });
+        Array.prototype.forEach.call(el.options || [], function(opt) {
+          opt.selected = !!selecionados[String(opt.value)];
+        });
+      }
+
       setValor('origem', dados.origem || 'nem');
       setValor('empresa', dados.empresa || 'NEM');
       setValor('padrao_agendamento', dados.padrao_agendamento || 'data_unica');
@@ -1070,7 +1113,9 @@
       setValor('apenas_dias_uteis', !!dados.apenas_dias_uteis);
       setValor('numero_viagem', dados.numero_viagem || '1ª Viagem');
       setValor('condutor', dados.condutor || '');
+      setValoresMultiplo('condutores_periodo', dados.condutores_periodo || []);
       setValor('veiculo', dados.veiculo || '');
+      setValoresMultiplo('veiculos_periodo', dados.veiculos_periodo || []);
       setValor('horario_consulta', dados.horario_consulta || '');
       setValor('observacoes', dados.observacoes || '');
 
@@ -1390,6 +1435,9 @@
     var btnMostrarOcultosLista = document.getElementById('btnMostrarOcultosLista');
     var resumoRapidoSelecionados = document.getElementById('resumoRapidoSelecionados');
     var resumoRapidoPessoas = document.getElementById('resumoRapidoPessoas');
+    var condutoresPeriodoEl = document.getElementById('condutoresPeriodo');
+    var veiculosPeriodoEl = document.getElementById('veiculosPeriodo');
+    var resumoEscalaPeriodoEl = document.getElementById('resumoEscalaPeriodo');
     var statusSalvamentoMapa = document.getElementById('statusSalvamentoMapa');
 
     function exibirStatusSalvamento(tipo, mensagem) {
@@ -1399,6 +1447,21 @@
         statusSalvamentoMapa.classList.add('status-' + tipo);
       }
       statusSalvamentoMapa.textContent = mensagem || '';
+    }
+
+    function atualizarResumoEscalaPeriodo() {
+      if (!resumoEscalaPeriodoEl) return;
+      var qtdCond = condutoresPeriodoEl ? Array.prototype.slice.call(condutoresPeriodoEl.selectedOptions || []).length : 0;
+      var qtdVeic = veiculosPeriodoEl ? Array.prototype.slice.call(veiculosPeriodoEl.selectedOptions || []).length : 0;
+
+      if (qtdCond === 0 && qtdVeic === 0) {
+        resumoEscalaPeriodoEl.className = 'alert alert-info py-2 mb-0';
+        resumoEscalaPeriodoEl.textContent = 'Escala do período inativa. Selecione motoristas e/ou veículos para habilitar rodízio.';
+        return;
+      }
+
+      resumoEscalaPeriodoEl.className = 'alert alert-success py-2 mb-0';
+      resumoEscalaPeriodoEl.textContent = 'Escala ativa com sucesso: ' + qtdCond + ' motorista(s) e ' + qtdVeic + ' veículo(s) em rodízio por dia.';
     }
 
     ordenarPacientesPorIdCrescente();
@@ -1436,6 +1499,14 @@
     if (dataInputMapa) {
       dataInputMapa.addEventListener('change', atualizarDestaquePorData);
     }
+
+    if (condutoresPeriodoEl) {
+      condutoresPeriodoEl.addEventListener('change', atualizarResumoEscalaPeriodo);
+    }
+    if (veiculosPeriodoEl) {
+      veiculosPeriodoEl.addEventListener('change', atualizarResumoEscalaPeriodo);
+    }
+    atualizarResumoEscalaPeriodo();
 
     if (btnSelecionarVisiveis) {
       btnSelecionarVisiveis.addEventListener('click', function() {
@@ -1753,6 +1824,8 @@
         apenas_dias_uteis: form.querySelector('[name="apenas_dias_uteis"]') ? form.querySelector('[name="apenas_dias_uteis"]').checked : false,
         veiculo: form.querySelector('[name="veiculo"]').value,
         condutor: form.querySelector('[name="condutor"]').value,
+        condutores_periodo: Array.prototype.slice.call((form.querySelector('[name="condutores_periodo"]') || {}).selectedOptions || []).map(function(op) { return op.value; }),
+        veiculos_periodo: Array.prototype.slice.call((form.querySelector('[name="veiculos_periodo"]') || {}).selectedOptions || []).map(function(op) { return op.value; }),
         numero_viagem: form.querySelector('[name="numero_viagem"]').value,
         observacoes: form.querySelector('[name="observacoes"]') ? form.querySelector('[name="observacoes"]').value : '',
         paciente_ids: pacienteIds
@@ -1798,6 +1871,9 @@
           ];
           if (result.periodo_agendado) {
             linhas.push('Período: ' + result.periodo_agendado);
+          }
+          if ((result.condutores_periodo_count || 0) > 0 || (result.veiculos_periodo_count || 0) > 0) {
+            linhas.push('Escala aplicada: ' + (result.condutores_periodo_count || 0) + ' motorista(s) e ' + (result.veiculos_periodo_count || 0) + ' veículo(s) em rodízio.');
           }
 
           var agora = new Date();

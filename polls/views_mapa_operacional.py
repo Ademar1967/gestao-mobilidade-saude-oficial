@@ -288,7 +288,9 @@ def _parse_salvar_payload(request):
         "data_final": request.POST.get("data_final"),
         "apenas_dias_uteis": request.POST.get("apenas_dias_uteis"),
         "veiculo": request.POST.get("veiculo"),
+        "veiculos_periodo": request.POST.getlist("veiculos_periodo"),
         "condutor": request.POST.get("condutor"),
+        "condutores_periodo": request.POST.getlist("condutores_periodo"),
         "numero_viagem": request.POST.get("numero_viagem"),
         "observacoes": request.POST.get("observacoes"),
         "paciente_ids": request.POST.getlist("paciente_ids"),
@@ -441,6 +443,27 @@ def mapa_operacional_imprimir(request):
     data_final_str = (request.GET.get("data_final") or "").strip()
     apenas_dias_uteis = _to_bool(request.GET.get("apenas_dias_uteis"))
     condutor_id = (request.GET.get("condutor") or "").strip()
+    veiculos_periodo_ids = []
+    for valor in request.GET.getlist("veiculos_periodo"):
+        valor = str(valor or "").strip()
+        if not valor:
+            continue
+        try:
+            veiculos_periodo_ids.append(int(valor))
+        except ValueError:
+            continue
+    veiculos_periodo_ids = list(dict.fromkeys(veiculos_periodo_ids))
+
+    condutores_periodo_ids = []
+    for valor in request.GET.getlist("condutores_periodo"):
+        valor = str(valor or "").strip()
+        if not valor:
+            continue
+        try:
+            condutores_periodo_ids.append(int(valor))
+        except ValueError:
+            continue
+    condutores_periodo_ids = list(dict.fromkeys(condutores_periodo_ids))
     veiculo_id = (request.GET.get("veiculo") or "").strip()
     horario_consulta_base = (request.GET.get("horario_consulta") or "").strip()
     viagem_ids = _parse_ids_csv((request.GET.get("viagem_ids") or "").strip())
@@ -490,6 +513,23 @@ def mapa_operacional_imprimir(request):
             capacidade = 50
 
     condutor_obj = Condutor.objects.filter(id=condutor_id).first() if condutor_id else None
+    veiculos_periodo_lookup = {
+        v.id: v for v in Veiculo.objects.filter(id__in=veiculos_periodo_ids)
+    }
+    veiculos_periodo_ordenados = [
+        veiculos_periodo_lookup[vid]
+        for vid in veiculos_periodo_ids
+        if vid in veiculos_periodo_lookup
+    ]
+
+    condutores_periodo_lookup = {
+        c.id: c for c in Condutor.objects.filter(id__in=condutores_periodo_ids)
+    }
+    condutores_periodo_ordenados = [
+        condutores_periodo_lookup[cid]
+        for cid in condutores_periodo_ids
+        if cid in condutores_periodo_lookup
+    ]
     frota_label = ""
     if veiculo_obj:
         if veiculo_obj.tipo_veiculo == "ambulancia" and veiculo_obj.patrimonio:
@@ -500,14 +540,32 @@ def mapa_operacional_imprimir(request):
             frota_label = str(veiculo_obj)
 
     blocos = []
-    for data_viagem in datas_agendamento:
+    for idx_data, data_viagem in enumerate(datas_agendamento):
+        veiculo_obj_dia = veiculo_obj
+        if (
+            str(padrao_agendamento or "").strip().lower() == "periodo"
+            and veiculos_periodo_ordenados
+        ):
+            veiculo_obj_dia = veiculos_periodo_ordenados[
+                idx_data % len(veiculos_periodo_ordenados)
+            ]
+
+        condutor_obj_dia = condutor_obj
+        if (
+            str(padrao_agendamento or "").strip().lower() == "periodo"
+            and condutores_periodo_ordenados
+        ):
+            condutor_obj_dia = condutores_periodo_ordenados[
+                idx_data % len(condutores_periodo_ordenados)
+            ]
+
         transportes_qs_data = transportes_qs.filter(
             data_transporte__gte=data_viagem,
             data_transporte__lt=data_viagem + timedelta(days=1),
         )
-        if condutor_id:
+        if condutor_id and not condutores_periodo_ordenados:
             transportes_qs_data = transportes_qs_data.filter(condutor_id=condutor_id)
-        if veiculo_id:
+        if veiculo_id and not veiculos_periodo_ordenados:
             transportes_qs_data = transportes_qs_data.filter(veiculo_id=veiculo_id)
         if paciente_ids:
             transportes_qs_data = transportes_qs_data.filter(paciente_id__in=paciente_ids)
@@ -562,8 +620,17 @@ def mapa_operacional_imprimir(request):
         for bloco in blocos_dia:
             bloco["data_fmt"] = data_viagem.strftime("%d/%m/%Y")
             bloco["numero_viagem"] = numero_viagem
-            bloco["condutor_nome"] = getattr(condutor_obj, "nome", "") if condutor_obj else ""
+            bloco["condutor_nome"] = (
+                getattr(condutor_obj_dia, "nome", "") if condutor_obj_dia else ""
+            )
             bloco["frota_label"] = frota_label
+            if veiculo_obj_dia:
+                if veiculo_obj_dia.tipo_veiculo == "ambulancia" and veiculo_obj_dia.patrimonio:
+                    bloco["frota_label"] = f"AMB {veiculo_obj_dia.patrimonio}"
+                elif veiculo_obj_dia.tipo_veiculo == "van" and veiculo_obj_dia.placa:
+                    bloco["frota_label"] = f"VAN {veiculo_obj_dia.placa}"
+                else:
+                    bloco["frota_label"] = str(veiculo_obj_dia)
             bloco["origem"] = origem
             bloco["horario_consulta_base"] = horario_consulta_base
         blocos.extend(blocos_dia)
@@ -631,6 +698,12 @@ def mapa_operacional(request):
         "observacoes": (request.GET.get("observacoes") or "").strip(),
         "paciente_ids": (request.GET.get("paciente_ids") or "").strip(),
     }
+    condutores_periodo_values = [
+        str(v).strip() for v in request.GET.getlist("condutores_periodo") if str(v).strip()
+    ]
+    veiculos_periodo_values = [
+        str(v).strip() for v in request.GET.getlist("veiculos_periodo") if str(v).strip()
+    ]
 
     selected_patient_ids = _parse_ids_csv(form_values.get("paciente_ids", ""))
     pacientes_qs = Paciente.objects.order_by("id", "nome")
@@ -658,6 +731,8 @@ def mapa_operacional(request):
         "condutores": Condutor.objects.order_by("nome"),
         "veiculos": Veiculo.objects.order_by("tipo_veiculo", "patrimonio", "placa"),
         "form_values": form_values,
+        "condutores_periodo_values": condutores_periodo_values,
+        "veiculos_periodo_values": veiculos_periodo_values,
         "pacientes_cadastrados": page_obj.object_list,
         "pacientes_page_obj": page_obj,
         "somente_ativos": somente_ativos,
@@ -809,7 +884,45 @@ def salvar_viagem(request):
         data_final_str = str(payload.get("data_final") or "").strip()
         apenas_dias_uteis = _to_bool(payload.get("apenas_dias_uteis"))
         veiculo_id = str(payload.get("veiculo") or "").strip()
+        veiculos_periodo_raw = payload.get("veiculos_periodo") or []
+        if isinstance(veiculos_periodo_raw, str):
+            if "," in veiculos_periodo_raw:
+                veiculos_periodo_raw = [
+                    parte.strip() for parte in veiculos_periodo_raw.split(",") if parte.strip()
+                ]
+            elif veiculos_periodo_raw.strip():
+                veiculos_periodo_raw = [veiculos_periodo_raw.strip()]
+            else:
+                veiculos_periodo_raw = []
+
+        veiculos_periodo_ids = []
+        for valor in veiculos_periodo_raw:
+            try:
+                veiculos_periodo_ids.append(int(str(valor).strip()))
+            except Exception:
+                continue
+        veiculos_periodo_ids = list(dict.fromkeys(veiculos_periodo_ids))
+
         condutor_id = str(payload.get("condutor") or "").strip()
+        condutores_periodo_raw = payload.get("condutores_periodo") or []
+        if isinstance(condutores_periodo_raw, str):
+            if "," in condutores_periodo_raw:
+                condutores_periodo_raw = [
+                    parte.strip() for parte in condutores_periodo_raw.split(",") if parte.strip()
+                ]
+            elif condutores_periodo_raw.strip():
+                condutores_periodo_raw = [condutores_periodo_raw.strip()]
+            else:
+                condutores_periodo_raw = []
+
+        condutores_periodo_ids = []
+        for valor in condutores_periodo_raw:
+            try:
+                condutores_periodo_ids.append(int(str(valor).strip()))
+            except Exception:
+                continue
+        condutores_periodo_ids = list(dict.fromkeys(condutores_periodo_ids))
+
         numero_viagem = str(payload.get("numero_viagem") or "1a Viagem").strip()
         observacoes = str(payload.get("observacoes") or "").strip()
         paciente_ids_raw = payload.get("paciente_ids") or []
@@ -854,6 +967,22 @@ def salvar_viagem(request):
 
         veiculo_obj_fixo = Veiculo.objects.filter(id=veiculo_id).first() if veiculo_id else None
         condutor_obj_fixo = Condutor.objects.filter(id=condutor_id).first() if condutor_id else None
+        veiculos_periodo_lookup = {
+            v.id: v for v in Veiculo.objects.filter(id__in=veiculos_periodo_ids)
+        }
+        veiculos_periodo_ordenados = [
+            veiculos_periodo_lookup[vid]
+            for vid in veiculos_periodo_ids
+            if vid in veiculos_periodo_lookup
+        ]
+        condutores_periodo_lookup = {
+            c.id: c for c in Condutor.objects.filter(id__in=condutores_periodo_ids)
+        }
+        condutores_periodo_ordenados = [
+            condutores_periodo_lookup[cid]
+            for cid in condutores_periodo_ids
+            if cid in condutores_periodo_lookup
+        ]
 
         capacidade_lote = 30
         if veiculo_obj_fixo and getattr(veiculo_obj_fixo, "lotacao", None):
@@ -875,7 +1004,27 @@ def salvar_viagem(request):
         primeira_viagem_id = None
         viagem_ids_salvas = []
 
-        for data_viagem in datas_agendamento:
+        for idx_data, data_viagem in enumerate(datas_agendamento):
+            veiculo_obj_periodo = None
+            if (
+                str(padrao_agendamento or "").strip().lower() == "periodo"
+                and veiculos_periodo_ordenados
+            ):
+                veiculo_obj_periodo = veiculos_periodo_ordenados[
+                    idx_data % len(veiculos_periodo_ordenados)
+                ]
+
+            condutor_obj_periodo = None
+            if (
+                str(padrao_agendamento or "").strip().lower() == "periodo"
+                and condutores_periodo_ordenados
+            ):
+                condutor_obj_periodo = condutores_periodo_ordenados[
+                    idx_data % len(condutores_periodo_ordenados)
+                ]
+            veiculo_obj_ativo = veiculo_obj_periodo or veiculo_obj_fixo
+            condutor_obj_ativo = condutor_obj_periodo or condutor_obj_fixo
+
             qs_base = Transporte.objects.select_related("paciente", "veiculo", "condutor")
             qs_base = qs_base.filter(
                 data_transporte__gte=data_viagem,
@@ -901,8 +1050,8 @@ def salvar_viagem(request):
                         transporte_novo = Transporte.objects.create(
                             paciente=paciente,
                             data_transporte=data_viagem,
-                            veiculo=veiculo_obj_fixo,
-                            condutor=condutor_obj_fixo,
+                            veiculo=veiculo_obj_ativo,
+                            condutor=condutor_obj_ativo,
                             clinica=getattr(paciente, "destino_preferencial", None),
                             tipo_transporte="CONSULTA",
                         )
@@ -915,17 +1064,17 @@ def salvar_viagem(request):
                 ]
             else:
                 qs = qs_base
-                if condutor_id:
+                if condutor_id and not condutor_obj_periodo:
                     qs = qs.filter(condutor_id=condutor_id)
-                if veiculo_id:
+                if veiculo_id and not veiculo_obj_periodo:
                     qs = qs.filter(veiculo_id=veiculo_id)
                 transportes = list(qs.order_by("paciente_id", "id"))
 
             if not transportes:
                 continue
 
-            veiculo_obj = veiculo_obj_fixo or transportes[0].veiculo
-            condutor_obj = condutor_obj_fixo or transportes[0].condutor
+            veiculo_obj = veiculo_obj_ativo or transportes[0].veiculo
+            condutor_obj = condutor_obj_ativo or transportes[0].condutor
 
             viagem = Viagem.objects.create(
                 data=data_viagem,
@@ -991,6 +1140,8 @@ def salvar_viagem(request):
                     "total_transportes": total_transportes,
                     "total_blocos": total_blocos,
                     "total_viagens": total_viagens,
+                    "condutores_periodo_count": len(condutores_periodo_ordenados),
+                    "veiculos_periodo_count": len(veiculos_periodo_ordenados),
                     "viagem_ids": viagem_ids_salvas,
                     "periodo_agendado": periodo_txt,
                 }

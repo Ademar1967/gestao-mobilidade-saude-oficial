@@ -4,6 +4,7 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 no-print">
     <h2 class="mb-0"><i class="bi bi-printer"></i> Impressão Consolidada de Gráficos</h2>
     <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-danger" onclick="window.history.back()">Sair desta tela</button>
       <a href="{% url 'transporte_pacientes:estatistica_tipo' %}?data_inicio={{ filtros.data_inicio|urlencode }}&data_fim={{ filtros.data_fim|urlencode }}" class="btn btn-outline-secondary">Voltar</a>
       <button type="button" class="btn btn-primary" id="btnImprimirSelecionados"><i class="bi bi-printer-fill me-1"></i>Imprimir Selecionados</button>
     </div>
