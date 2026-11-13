@@ -35,14 +35,12 @@ def strtobool(val):
     raise ValueError(f"invalid truth value: {val}")
 
 
-DEBUG = strtobool(os.environ.get("DJANGO_DEBUG", "1"))
+DEBUG = strtobool(os.environ.get("DJANGO_DEBUG", "0"))
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 if not SECRET_KEY:
     if DEBUG:
-        SECRET_KEY = (
-            "django-insecure-#**fso4qcj-hc2yb6zwt%7nd3q@x(kof1h_tp$)+gy(gcrpp%!"
-        )
+        SECRET_KEY = os.urandom(32).hex()
     else:
         raise ImproperlyConfigured("Defina DJANGO_SECRET_KEY em produção.")
 

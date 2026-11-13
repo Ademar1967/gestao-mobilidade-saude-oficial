@@ -26,6 +26,11 @@ python manage.py collectstatic --no-input
 python manage.py migrate
 
 if [ -f "dados_export_completo.json" ]; then
-    echo ">>> CARREGANDO DADOS SINCRONIZADOS (sincronizar_dados)..."
-    python manage.py sincronizar_dados || true
+    echo ">>> ARQUIVO DE EXPORTAÇÃO ENCONTRADO; VALIDANDO SE O COMANDO EXISTE..."
+    if python manage.py help 2>/dev/null | grep -q "sincronizar_dados"; then
+        echo ">>> CARREGANDO DADOS SINCRONIZADOS (sincronizar_dados)..."
+        python manage.py sincronizar_dados || true
+    else
+        echo ">>> COMANDO sincronizar_dados NÃO EXISTE. IGNORANDO ARQUIVO SENSÍVEL PARA EVITAR FALHA NO BUILD."
+    fi
 fi

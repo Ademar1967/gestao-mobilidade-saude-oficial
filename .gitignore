@@ -45,3 +45,10 @@ pacientes.json
 # Dados sensï¿½veis - LGPD
 *.csv
 dados.json
+
+# Exportações sensíveis e dados de usuários
+# Remover do controle de versionamento
+dados_export_completo.json
+# Arquivos locais de backup de dados
+dados_export_*.json
+
