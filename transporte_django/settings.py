@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import socket
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 
@@ -35,7 +36,11 @@ def strtobool(val):
     raise ValueError(f"invalid truth value: {val}")
 
 
-DEBUG = strtobool(os.environ.get("DJANGO_DEBUG", "0"))
+_running_on_render = bool(
+    os.environ.get("RENDER") or os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+)
+_default_debug = "0" if _running_on_render else "1"
+DEBUG = strtobool(os.environ.get("DJANGO_DEBUG", _default_debug))
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 if not SECRET_KEY:
@@ -125,52 +130,93 @@ WSGI_APPLICATION = "transporte_django.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 import dj_database_url
 
-# ---------------------------------------------------------------1
-_db_url = os.environ.get("DATABASE_URL", "").strip()
-# Mantem modo estrito como opt-in para evitar quebra de deploy.
-_strict_database_url = strtobool(os.environ.get("STRICT_DATABASE_URL", "0"))
 
-if _strict_database_url and not DEBUG and not _db_url:
-    raise ImproperlyConfigured(
-        "Defina DATABASE_URL em produção para usar banco persistente."
-    )
-if _db_url and "://" in _db_url and not _db_url.startswith("://"):
-    try:
-        _db_config = dj_database_url.parse(_db_url)
-    except Exception:
-        _db_config = {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-else:
-    _db_config = {
+def _sqlite_database_config():
+    return {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
 
-DATABASES = {
-    "default": (
-        _db_config
-        if _db_config.get("ENGINE")
-        else {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    )
-}
 
-# If using a DATABASE_URL that points to Postgres, ensure SSL is required
-try:
-    engine = _db_config.get("ENGINE", "")
-except Exception:
-    engine = ""
+def _database_host_is_reachable(hostname):
+    if not hostname:
+        return False
+    if hostname in {"localhost", "127.0.0.1", "::1"}:
+        return True
+    try:
+        socket.getaddrinfo(hostname, None)
+        return True
+    except socket.gaierror:
+        return False
+
+
+# ---------------------------------------------------------------1
+_db_url = os.environ.get("DATABASE_URL", "").strip()
+# Mantem modo estrito como opt-in para evitar quebra de deploy.
+_strict_database_url = strtobool(
+    os.environ.get("STRICT_DATABASE_URL", "0" if DEBUG else "1")
+)
+_allow_sqlite_fallback = strtobool(
+    os.environ.get("ALLOW_SQLITE_FALLBACK", "0")
+)
+
+if not _db_url and not DEBUG:
+    raise ImproperlyConfigured(
+        "DATABASE_URL obrigatória em produção para evitar uso acidental de SQLite e vazamento de dados."
+    )
+
+if _db_url and _db_url.startswith("sqlite") and not DEBUG:
+    raise ImproperlyConfigured(
+        "SQLite não é permitido em produção. Use uma DATABASE_URL PostgreSQL explícita."
+    )
+
+_db_config = _sqlite_database_config()
+if _db_url and "://" in _db_url and not _db_url.startswith("://"):
+    try:
+        _db_config = dj_database_url.parse(_db_url)
+    except Exception:
+        if not DEBUG or _strict_database_url:
+            raise ImproperlyConfigured(
+                "DATABASE_URL inválida. Defina uma URL PostgreSQL válida para local/Render."
+            )
+        if _allow_sqlite_fallback:
+            print("[DATABASE_FALLBACK] DATABASE_URL inválida; usando SQLite local.")
+            _db_config = _sqlite_database_config()
+        else:
+            raise ImproperlyConfigured(
+                "DATABASE_URL inválida. Defina uma URL PostgreSQL válida para local/Render."
+            )
+
+engine = _db_config.get("ENGINE", "")
 if _db_url and engine and "postgres" in engine:
+    host = _db_config.get("HOST")
+    if host and not _database_host_is_reachable(host):
+        if DEBUG and (_allow_sqlite_fallback or not _strict_database_url):
+            print(
+                "[DATABASE_FALLBACK] Host do PostgreSQL indisponível; "
+                "falling back para SQLite local."
+            )
+            _db_config = _sqlite_database_config()
+        else:
+            raise ImproperlyConfigured(
+                "Host do PostgreSQL indisponível. Use o mesmo PostgreSQL em local e Render ou ajuste a DATABASE_URL antes de continuar."
+            )
+
+if _db_url and _db_config.get("ENGINE") and "postgres" in _db_config.get("ENGINE", ""):
     opts = _db_config.get("OPTIONS", {}) or {}
-    # Prefer explicit sslmode from the URL, otherwise require SSL
     if not opts.get("sslmode"):
         opts["sslmode"] = "require"
     _db_config["OPTIONS"] = opts
-    DATABASES["default"] = _db_config
+
+if not _db_config.get("ENGINE"):
+    if DEBUG:
+        _db_config = _sqlite_database_config()
+    else:
+        raise ImproperlyConfigured(
+            "Banco de dados não configurado. Defina DATABASE_URL em ambiente de produção."
+        )
+
+DATABASES = {"default": _db_config}
 
 # ---------------------------------------------------------------2
 
@@ -232,10 +278,12 @@ except (TypeError, ValueError):
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # A sessão expira ao fechar o navegador
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Evita conflito de sessão entre múltiplos projetos Django rodando no mesmo host
 # (ex.: localhost:8000 e localhost:8001 compartilham escopo de cookie por domínio).
@@ -253,6 +301,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
 
