@@ -317,7 +317,28 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("DRF_THROTTLE_ANON", "30/min"),
+        "user": os.environ.get("DRF_THROTTLE_USER", "300/min"),
+        "token_obtain": os.environ.get("DRF_THROTTLE_TOKEN_OBTAIN", "5/min"),
+        "token_refresh": os.environ.get("DRF_THROTTLE_TOKEN_REFRESH", "15/min"),
+    },
 }
+
+try:
+    LOGIN_RATE_LIMIT_ATTEMPTS = int(os.environ.get("LOGIN_RATE_LIMIT_ATTEMPTS", "5"))
+except (TypeError, ValueError):
+    LOGIN_RATE_LIMIT_ATTEMPTS = 5
+
+try:
+    LOGIN_RATE_LIMIT_WINDOW = int(os.environ.get("LOGIN_RATE_LIMIT_WINDOW", "900"))
+except (TypeError, ValueError):
+    LOGIN_RATE_LIMIT_WINDOW = 900
 
 TEST_RUNNER = "polls.test_runner.PollsDiscoverRunner"
 

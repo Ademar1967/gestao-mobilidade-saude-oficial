@@ -1,5 +1,6 @@
 import json
 import json
+import logging
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
@@ -21,6 +22,7 @@ from django.utils.dateparse import parse_date, parse_time
 
 
 NUMEROS_VIAGEM = [f"{i}ª Viagem" for i in range(1, 11)]
+logger = logging.getLogger(__name__)
 
 
 def _parse_data_flexivel(data_val):
@@ -1154,7 +1156,8 @@ def salvar_viagem(request):
         return redirect("transporte_pacientes:mapa_operacional")
 
     except Exception as exc:
-        msg = f"Erro ao salvar: {exc}"
+        logger.exception("Falha ao salvar viagem no mapa operacional")
+        msg = "Erro interno ao salvar viagem. Tente novamente e, se persistir, contate o suporte."
         if ajax:
             return JsonResponse({"ok": False, "erro": msg, "error": msg}, status=500)
         messages.error(request, msg)
@@ -1281,7 +1284,14 @@ def criar_bloco_ou_viagem(request):
             }
         )
     except Exception as exc:
-        return JsonResponse({"ok": False, "erro": str(exc)}, status=500)
+        logger.exception("Falha ao criar bloco ou viagem")
+        return JsonResponse(
+            {
+                "ok": False,
+                "erro": "Erro interno ao criar bloco/viagem. Tente novamente.",
+            },
+            status=500,
+        )
 
 
 @login_required

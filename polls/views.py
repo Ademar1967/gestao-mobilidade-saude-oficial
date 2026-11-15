@@ -8,6 +8,7 @@ import unicodedata
 import pandas as pd
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.http import HttpResponse
 
 # Cache em memoria para autocomplete de clinicas
@@ -193,6 +194,7 @@ def importar_arquivos(request):
 
 
 # Stub seguro para a view editar_transporte
+@login_required
 def editar_transporte(request, transporte_id):
     """Implementacao minima para suportar fluxo de edicao nos testes."""
     from django.shortcuts import get_object_or_404, redirect
@@ -1969,6 +1971,7 @@ from django.shortcuts import render
 
 
 # View para exibir mensagens recebidas do WhatsApp (aberta para teste)
+@login_required
 def mensagens_whatsapp(request):
     from .models import MensagemWhatsApp
 
@@ -1988,11 +1991,33 @@ try:
 except ImportError:
     MessagingResponse = None
 
+try:
+    from twilio.request_validator import RequestValidator
+except ImportError:
+    RequestValidator = None
+
 
 # Endpoint para receber mensagens do WhatsApp via Twilio
 @csrf_exempt
 def whatsapp_webhook(request):
     if request.method == "POST":
+        twilio_auth_token = getattr(settings, "TWILIO_AUTH_TOKEN", "") or ""
+        twilio_signature = request.META.get("HTTP_X_TWILIO_SIGNATURE", "")
+
+        if not settings.DEBUG and (not twilio_auth_token or RequestValidator is None):
+            logging.error(
+                "[WHATSAPP_WEBHOOK] Configuracao de seguranca ausente em producao "
+                "(TWILIO_AUTH_TOKEN/RequestValidator)."
+            )
+            return HttpResponse("Webhook temporariamente indisponivel", status=503)
+
+        if twilio_auth_token and RequestValidator is not None:
+            validator = RequestValidator(twilio_auth_token)
+            request_url = request.build_absolute_uri()
+            post_data = request.POST.dict()
+            if not validator.validate(request_url, post_data, twilio_signature):
+                return HttpResponse("Assinatura Twilio invalida", status=403)
+
         from django.utils.encoding import force_str
 
         body = request.POST.get("Body", "")
@@ -3279,6 +3304,7 @@ def editar_paciente(request, pk):
     )
 
 
+@login_required
 def autocomplete_endereco_unidade(request):
     """Retorna sugestoes de endereco de unidade a partir dos CSVs."""
     import logging
@@ -3361,7 +3387,7 @@ def autocomplete_endereco_unidade(request):
         return JsonResponse(resultados_unicos, safe=False)
     except Exception as exc:
         logging.error("[AUTOCOMPLETE] Erro: %s", exc)
-        return JsonResponse({"error": str(exc)}, status=500)
+        return JsonResponse({"error": "Erro interno ao processar autocomplete."}, status=500)
 
 
 def login_view(request):
@@ -3376,14 +3402,49 @@ def login_view(request):
         return redirect("transporte_pacientes:home")
 
     form = AuthenticationForm(request, data=request.POST or None)
+
+    ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+    if not ip:
+        ip = request.META.get("REMOTE_ADDR", "").strip() or "unknown"
+
+    try:
+        max_tentativas = int(getattr(settings, "LOGIN_RATE_LIMIT_ATTEMPTS", 5))
+    except (TypeError, ValueError):
+        max_tentativas = 5
+    try:
+        janela_segundos = int(getattr(settings, "LOGIN_RATE_LIMIT_WINDOW", 900))
+    except (TypeError, ValueError):
+        janela_segundos = 900
+
     if request.method == "POST":
+        username_input = str(request.POST.get("username", "")).strip().lower() or "_"
+        cache_key = f"login_fail:{ip}:{username_input}"
+        tentativas_atuais = int(cache.get(cache_key, 0) or 0)
+
+        if tentativas_atuais >= max_tentativas:
+            messages.error(
+                request,
+                "Muitas tentativas de login. Aguarde alguns minutos e tente novamente.",
+            )
+            response = render(
+                request,
+                "registration/login.html",
+                {"form": form, "year": timezone.now().year},
+                status=429,
+            )
+            response["Retry-After"] = str(janela_segundos)
+            return response
+
         if form.is_valid():
             username = form.cleaned_data.get("username")
             password = form.cleaned_data.get("password")
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
+                cache.delete(cache_key)
                 return redirect("transporte_pacientes:home")
+
+        cache.set(cache_key, tentativas_atuais + 1, timeout=janela_segundos)
         messages.error(request, "Usuario ou senha invalidos.")
     year = timezone.now().year
     return render(request, "registration/login.html", {"form": form, "year": year})

@@ -12,7 +12,6 @@ URLS_PUBLICAS = [
     "/api/whatsapp/webhook/",
     "/api/token/",
     "/api/token/refresh/",
-    "/autocomplete_endereco_unidade/",
 ]
 
 
@@ -56,9 +55,6 @@ class LoginObrigatorioMiddleware:
             return self.get_response(request)
 
         if path.startswith("/api/token/"):
-            return self.get_response(request)
-
-        if path.startswith("/autocomplete_endereco_unidade/"):
             return self.get_response(request)
 
         if not request.user.is_authenticated:

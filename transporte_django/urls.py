@@ -19,10 +19,21 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+
+
+class TokenObtainPairThrottledView(TokenObtainPairView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "token_obtain"
+
+
+class TokenRefreshThrottledView(TokenRefreshView):
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "token_refresh"
 
 urlpatterns = [
     # Admin isolado por caminho configurável em settings.ADMIN_URL_PATH
@@ -31,6 +42,6 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("", include("polls.urls")),
     path("api/", include("polls.api_urls")),
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/token/", TokenObtainPairThrottledView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshThrottledView.as_view(), name="token_refresh"),
 ]
