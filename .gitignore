@@ -20,6 +20,7 @@ __pycache__/
 
 # Common local/backup files
 *.bak
+*.bak_*
 *.tmp
 
 # Collected static files (generated)
@@ -46,7 +47,7 @@ pacientes.json
 *.csv
 dados.json
 
-# Exportações sensíveis e dados de usuários
+# Exportaï¿½ï¿½es sensï¿½veis e dados de usuï¿½rios
 # Remover do controle de versionamento
 dados_export_completo.json
 # Arquivos locais de backup de dados
