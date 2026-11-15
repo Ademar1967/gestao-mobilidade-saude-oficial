@@ -257,7 +257,7 @@ function exibirModalConfirmarPreencher(paciente) {
 
 
 
-<h2 class="mb-3 mt-2" style="font-weight:700; color:#1976d2;">Cadastro e Gerenciamento de Pacientes</h2>
+<h2 class="mb-3 mt-2 cadastro-hero-title">Cadastro e Gerenciamento de Pacientes</h2>
 <div class="mb-3 d-flex flex-wrap gap-2">
   <a href="{% url 'transporte_pacientes:cadastrar_paciente_simples' %}" class="btn btn-outline-primary btn-sm btn-afunda">
     <i class="bi bi-lightning-charge me-1"></i> Abrir formulário simples
@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {# 2. Formulário manual de cadastro (agora primeiro bloco) #}
 
 {# ── BLOCO: Reaproveitar dados de paciente já cadastrado ── #}
-<div class="card mb-3 shadow-sm border-primary">
+<div class="card mb-3 shadow-sm border-primary section-card section-reuse-card">
   <div class="card-body">
     <h5 class="card-title mb-2" style="color:#1565c0; background:#e3f2fd; padding:6px 12px; border-radius:6px;">
       <span class="bi bi-search me-2"></span>Paciente já usa o serviço? Busque e reaproveite os dados
@@ -587,10 +587,10 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
-<div class="card mb-3 shadow-sm">
+<div class="card mb-3 shadow-sm section-card section-manual-card">
   <div class="card-body">
-    <h5 class="card-title mb-2" style="color:#f57c00; background:#fff3e0; padding:6px 12px; border-radius:6px;">Cadastrar paciente manualmente</h5>
-    <div class="alert alert-light border mb-2" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
+    <h5 class="card-title mb-2 orientacoes-cadastro-extra" style="color:#f57c00; background:#fff3e0; padding:6px 12px; border-radius:6px;">Cadastrar paciente manualmente</h5>
+    <div class="alert alert-light border mb-2 orientacoes-cadastro-extra" style="font-size:1.02em; border-left:5px solid #1976d2 !important;">
       O formulário salva um rascunho automaticamente neste navegador enquanto você digita. Se a página fechar, os dados serão restaurados ao abrir novamente.
     </div>
     <div class="mb-2 d-flex gap-2 flex-wrap">
@@ -763,7 +763,23 @@ document.addEventListener('DOMContentLoaded', function() {
           </ul>
         </div>
       {% endif %}
-      <div class="alert alert-info" role="alert" id="orientacao-campos-paciente" style="border-left:4px solid #0dcaf0;">
+      <div class="d-flex justify-content-end mb-2">
+        <button
+          type="button"
+          class="btn btn-outline-info btn-sm btn-afunda"
+          id="toggleOrientacoesCadastroBtn"
+          data-bs-toggle="collapse"
+          data-bs-target="#painel-orientacoes-cadastro"
+          aria-expanded="true"
+          aria-controls="painel-orientacoes-cadastro"
+        >
+          <i class="bi bi-eye-slash me-1" id="toggleOrientacoesCadastroIcon"></i>
+          <span id="toggleOrientacoesCadastroText">Ocultar orientações</span>
+        </button>
+      </div>
+
+      <div class="collapse show" id="painel-orientacoes-cadastro">
+      <div class="alert alert-info guide-alert" role="alert" id="orientacao-campos-paciente" style="border-left:4px solid #0dcaf0;">
         <div class="fw-bold mb-1">Orientação de preenchimento</div>
         <div class="small mb-2">
           Para salvar, preencha os <span class="text-danger fw-bold">campos obrigatórios</span>. Os demais podem ser completados depois em Editar.
@@ -783,23 +799,28 @@ document.addEventListener('DOMContentLoaded', function() {
           <li>Data prevista retorno é opcional e usada quando houver expectativa de reativação.</li>
         </ul>
       </div>
-      <div class="alert alert-success" role="alert" style="border-left:4px solid #198754;">
+      <div class="alert alert-success guide-alert" role="alert" style="border-left:4px solid #198754;">
         <div class="fw-bold mb-1">Fluxo rápido recomendado (atendimento diário)</div>
         <ol class="small mb-2 ps-3">
           <li>Preencha primeiro: Nome, Idade, Peso, Endereço principal e LGPD.</li>
           <li>Informe Situação, Horário da consulta e Tratamento quando necessário.</li>
           <li>Demais campos podem ficar para atualização posterior no botão Editar.</li>
         </ol>
-        <div class="form-check form-switch mb-0">
+        <div class="form-check form-switch mb-0 align-items-center gap-2">
           <input class="form-check-input" type="checkbox" role="switch" id="modoRapidoSwitch">
           <label class="form-check-label small fw-semibold" for="modoRapidoSwitch">
-            Modo atendimento rápido (oculta campos complementares)
+            Modo atendimento rápido
           </label>
+          <span id="modoRapidoStatusBadge" class="badge text-bg-secondary">Desativado</span>
         </div>
+        <div id="modoRapidoAviso" class="alert alert-secondary py-2 px-3 mt-2 mb-0 small" role="status" aria-live="polite">
+          Modo rápido desativado: todos os blocos do formulário estão visíveis.
+        </div>
+      </div>
       </div>
       {% csrf_token %}
       <input type="hidden" name="paciente_existente_id" id="id_paciente_existente_id" value="{{ request.POST.paciente_existente_id|default:'' }}">
-      <fieldset class="card shadow-sm mb-3">
+      <fieldset class="card shadow-sm mb-3 section-fieldset">
         <legend class="card-header" style="font-size:1.15em; font-weight:600; background:#e3f2fd; color:#0d47a1; border-radius:6px 6px 0 0;">Dados Pessoais</legend>
         <div class="card-body pb-2">
           <div class="row g-2">
@@ -915,7 +936,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
       </fieldset>
-      <fieldset class="card shadow-sm mb-3" id="card-contato-referencia">
+      <fieldset class="card shadow-sm mb-3 section-fieldset" id="card-contato-referencia">
         <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#e0f7fa; color:#006064; border-radius:6px 6px 0 0;">Contato e Referência</legend>
         <div class="card-body pb-2">
           <div class="row g-2">
@@ -948,7 +969,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
       </fieldset>
-      <fieldset class="card shadow-sm mb-3">
+      <fieldset class="card shadow-sm mb-3 section-fieldset">
         <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#e8f5e9; color:#1b5e20; border-radius:6px 6px 0 0;">Endereço</legend>
         <div class="card-body pb-2">
           <div class="row g-2">
@@ -1003,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
       </fieldset>
-      <fieldset class="card shadow-sm mb-3" id="card-condicoes-especiais">
+      <fieldset class="card shadow-sm mb-3 section-fieldset" id="card-condicoes-especiais">
         <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#fffde7; color:#f9a825; border-radius:6px 6px 0 0;">Condições Especiais</legend>
         <div class="card-body pb-2">
           <div class="row g-2 mt-2">
@@ -1047,7 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
       </fieldset>
-      <fieldset class="card shadow-sm mb-3" id="card-observacoes-evolucao">
+      <fieldset class="card shadow-sm mb-3 section-fieldset" id="card-observacoes-evolucao">
         <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#f3e5f5; color:#4a148c; border-radius:6px 6px 0 0;">Observações e Evolução</legend>
         <div class="card-body pb-2">
           <div class="mb-2">
@@ -1065,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </fieldset>
 
-      <fieldset class="card shadow-sm mb-3" id="card-status-servico">
+      <fieldset class="card shadow-sm mb-3 section-fieldset" id="card-status-servico">
         <legend class="card-header" style="font-size:1.08em; font-weight:600; background:#fff3e0; color:#e65100; border-radius:6px 6px 0 0;">Status no Serviço de Transporte</legend>
         <div class="card-body pb-2">
           <div class="row g-2">
@@ -1135,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', function() {
           Ao marcar esta opção, você declara que o paciente ou responsável foi informado sobre o uso dos dados pessoais para fins de transporte e atendimento em saúde, conforme a <a href="/politica-privacidade/" target="_blank">Política de Privacidade</a> e a LGPD.
         </small>
       </div>
-      <div class="d-flex gap-2 mt-3 flex-wrap align-items-center border-top pt-3" id="barra-acoes-cadastro-paciente">
+      <div class="d-flex gap-2 mt-3 flex-wrap align-items-center border-top pt-3 cadastro-actions-bar" id="barra-acoes-cadastro-paciente">
         <button type="submit" class="btn btn-success btn-lg btn-afunda">
           Salvar Paciente
         </button>
@@ -1238,6 +1259,39 @@ document.addEventListener('DOMContentLoaded', function() {
   var statusSelect = document.getElementById('id_servico_status');
   var servicoAtivo = document.getElementById('id_servico_ativo');
   var blocoInativacao = document.getElementById('campos-inativacao');
+  var painelOrientacoes = document.getElementById('painel-orientacoes-cadastro');
+  var toggleOrientacoesText = document.getElementById('toggleOrientacoesCadastroText');
+  var toggleOrientacoesIcon = document.getElementById('toggleOrientacoesCadastroIcon');
+  var orientacoesExtras = document.querySelectorAll('.orientacoes-cadastro-extra');
+
+  function alternarOrientacoesExtras(expandido) {
+    orientacoesExtras.forEach(function(el) {
+      el.classList.toggle('d-none', !expandido);
+    });
+  }
+
+  function atualizarBotaoOrientacoes(expandido) {
+    if (toggleOrientacoesText) {
+      toggleOrientacoesText.textContent = expandido ? 'Ocultar orientações' : 'Exibir orientações';
+    }
+    if (toggleOrientacoesIcon) {
+      toggleOrientacoesIcon.className = expandido ? 'bi bi-eye-slash me-1' : 'bi bi-eye me-1';
+    }
+  }
+
+  if (painelOrientacoes) {
+    painelOrientacoes.addEventListener('shown.bs.collapse', function() {
+      atualizarBotaoOrientacoes(true);
+      alternarOrientacoesExtras(true);
+    });
+    painelOrientacoes.addEventListener('hidden.bs.collapse', function() {
+      atualizarBotaoOrientacoes(false);
+      alternarOrientacoesExtras(false);
+    });
+    var orientacoesAbertas = painelOrientacoes.classList.contains('show');
+    atualizarBotaoOrientacoes(orientacoesAbertas);
+    alternarOrientacoesExtras(orientacoesAbertas);
+  }
 
   function atualizarCamposStatus() {
     if (!statusSelect || !blocoInativacao) return;
@@ -1256,6 +1310,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   var modoRapidoSwitch = document.getElementById('modoRapidoSwitch');
+  var modoRapidoAviso = document.getElementById('modoRapidoAviso');
+  var modoRapidoStatusBadge = document.getElementById('modoRapidoStatusBadge');
   var cardsComplementares = [
     document.getElementById('card-contato-referencia'),
     document.getElementById('card-condicoes-especiais'),
@@ -1265,10 +1321,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function aplicarModoRapido() {
     if (!modoRapidoSwitch) return;
-    var mostrarTudo = !modoRapidoSwitch.checked;
+    var modoAtivo = !!modoRapidoSwitch.checked;
+    var mostrarTudo = !modoAtivo;
     cardsComplementares.forEach(function(card) {
       card.style.display = mostrarTudo ? '' : 'none';
     });
+
+    if (modoRapidoStatusBadge) {
+      modoRapidoStatusBadge.className = modoAtivo
+        ? 'badge text-bg-warning text-dark'
+        : 'badge text-bg-secondary';
+      modoRapidoStatusBadge.textContent = modoAtivo ? 'Ativado' : 'Desativado';
+    }
+
+    if (modoRapidoAviso) {
+      modoRapidoAviso.className = modoAtivo
+        ? 'alert alert-warning py-2 px-3 mt-2 mb-0 small'
+        : 'alert alert-secondary py-2 px-3 mt-2 mb-0 small';
+      modoRapidoAviso.textContent = modoAtivo
+        ? 'Modo rápido ativado: campos complementares ficaram ocultos para agilizar o atendimento.'
+        : 'Modo rápido desativado: todos os blocos do formulário estão visíveis.';
+    }
   }
 
   if (modoRapidoSwitch && cardsComplementares.length) {
@@ -1278,6 +1351,59 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <style>
+  .cadastro-hero-title {
+    font-weight: 800;
+    color: #0f4c81;
+    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    border-bottom: 3px solid #d7e9f8;
+  }
+
+  .section-card {
+    border-radius: 0.85rem;
+    border-color: #cfe3f5 !important;
+    box-shadow: 0 10px 24px rgba(15, 76, 129, 0.08) !important;
+    overflow: hidden;
+  }
+
+  .section-reuse-card {
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 45%);
+  }
+
+  .section-manual-card {
+    background: linear-gradient(180deg, #ffffff 0%, #fcfeff 100%);
+  }
+
+  .section-card .card-body {
+    padding: 1rem 1.1rem;
+  }
+
+  .section-fieldset {
+    border-radius: 0.85rem;
+    border: 1px solid rgba(15, 76, 129, 0.12);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .section-fieldset .card-header {
+    border-bottom: 1px solid rgba(15, 76, 129, 0.12);
+  }
+
+  .guide-alert {
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 10px rgba(15, 76, 129, 0.06);
+  }
+
+  .cadastro-actions-bar {
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    border-top: 1px solid #d7e9f8 !important;
+    border-radius: 0 0 0.75rem 0.75rem;
+    padding-top: 0.95rem !important;
+    padding-bottom: 0.35rem;
+  }
+
   #cadastrar-paciente-form .card {
     border: 1px solid rgba(13, 110, 253, 0.12);
     box-shadow: 0 0.4rem 1rem rgba(15, 23, 42, 0.04);
@@ -1398,6 +1524,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   @media (max-width: 768px) {
+    .cadastro-hero-title {
+      display: block;
+      font-size: 1.45rem;
+      line-height: 1.3;
+      margin-bottom: 0.85rem !important;
+    }
+
+    .section-card,
+    .section-fieldset {
+      border-radius: 0.7rem;
+    }
+
     #barra-acoes-cadastro-paciente {
       position: sticky;
       bottom: 0;

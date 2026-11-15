@@ -28,6 +28,59 @@
     line-height: 1.15;
   }
 
+  .tabela-pacientes-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabela-pacientes {
+    min-width: 1120px;
+    margin-bottom: 0;
+  }
+
+  .tabela-pacientes th,
+  .tabela-pacientes td {
+    vertical-align: middle;
+  }
+
+  .tabela-pacientes td.col-endereco {
+    min-width: 250px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .tabela-pacientes td.col-condicoes {
+    min-width: 170px;
+  }
+
+  @media (max-width: 992px) {
+    .col-secundaria {
+      display: none !important;
+    }
+
+    .tabela-pacientes {
+      min-width: 760px;
+      font-size: 0.9rem;
+    }
+
+    .tabela-pacientes th,
+    .tabela-pacientes td {
+      padding: 0.38rem 0.42rem;
+    }
+
+    .tabela-pacientes td.col-endereco {
+      min-width: 190px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tabela-pacientes {
+      min-width: 640px;
+      font-size: 0.86rem;
+    }
+  }
+
   @media (max-width: 1200px) {
     .acoes-paciente-btn .rotulo-acao {
       display: none;
@@ -64,8 +117,11 @@
           <b>Excluir</b> para gerenciar pacientes.
         </span>
       </div>
-      <div class="table-responsive">
-        <table class="table table-striped table-hover mb-0">
+      <div class="alert alert-secondary py-2 px-3 mb-2 small">
+        Em telas menores, algumas colunas secundárias são ocultadas para facilitar a visualização.
+      </div>
+      <div class="table-responsive tabela-pacientes-wrap">
+        <table class="table table-striped table-hover table-sm tabela-pacientes">
           <thead class="table-light">
             <tr>
               <th><input type="checkbox" id="checkAllPacientes" onclick="toggleAllPacientes(this)"></th>
@@ -74,10 +130,10 @@
               <th>Peso</th>
               <th>Telefone</th>
               <th>Endereço</th>
-              <th>Cidade</th>
-              <th>Bairro</th>
-              <th>Condições</th>
-              <th>Data Cadastro</th>
+              <th class="col-secundaria">Cidade</th>
+              <th class="col-secundaria">Bairro</th>
+              <th class="col-secundaria">Condições</th>
+              <th class="col-secundaria">Data Cadastro</th>
               <th class="coluna-acoes">Ações</th>
             </tr>
           </thead>
@@ -89,16 +145,16 @@
                   <td>{{ paciente.idade }}</td>
                   <td>{{ paciente.peso }} kg</td>
                   <td>{{ paciente.telefone }}</td>
-                  <td>{{ paciente.logradouro_formatado|default:'-' }}</td>
-                  <td>{{ paciente.cidade }}</td>
-                  <td>{{ paciente.bairro }}</td>
-                  <td>
+                  <td class="col-endereco">{{ paciente.logradouro_formatado|default:'-' }}</td>
+                  <td class="col-secundaria">{{ paciente.cidade }}</td>
+                  <td class="col-secundaria">{{ paciente.bairro }}</td>
+                  <td class="col-condicoes col-secundaria">
                     {% if paciente.oxigenio %}<span class="badge bg-info">O2{% if paciente.oxigenio_litros_min %} {{ paciente.oxigenio_litros_min }}L/min{% endif %}</span>{% endif %}
                     {% if paciente.maca %}<span class="badge bg-warning">Maca</span>{% endif %}
                     {% if paciente.cadeirante %}<span class="badge bg-danger">Cadeirante</span>{% endif %}
                     {% if paciente.acompanhante %}<span class="badge bg-success">Acompanhante</span>{% endif %}
                   </td>
-                  <td>{{ paciente.data_cadastro|date:'d/m/Y H:i'|default:'-' }}</td>
+                  <td class="col-secundaria">{{ paciente.data_cadastro|date:'d/m/Y H:i'|default:'-' }}</td>
                   <td class="coluna-acoes">
                     <div class="acoes-paciente-group">
                       <a
