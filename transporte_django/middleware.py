@@ -1,6 +1,8 @@
 from django.shortcuts import redirect
 from django.conf import settings
 from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib.auth import logout
+from django.utils import timezone
 
 # URLs que ficam abertas sem login (login, logout, admin, webhook WhatsApp, API token)
 URLS_PUBLICAS = [
@@ -63,5 +65,19 @@ class LoginObrigatorioMiddleware:
                     {"sucesso": False, "erro": "nao_autenticado"}, status=401
                 )
             return redirect(f"{settings.LOGIN_URL}?next={path}")
+
+        timeout = int(getattr(settings, "IDLE_LOGOUT_SECONDS", 0) or 0)
+        if timeout > 0:
+            now_ts = int(timezone.now().timestamp())
+            last_activity = request.session.get("_last_activity_ts")
+            if last_activity and now_ts - int(last_activity) > timeout:
+                logout(request)
+                request.session.flush()
+                if path.startswith("/api/"):
+                    return JsonResponse(
+                        {"sucesso": False, "erro": "sessao_expirada"}, status=401
+                    )
+                return redirect(f"{settings.LOGIN_URL}?next={path}")
+            request.session["_last_activity_ts"] = now_ts
 
         return self.get_response(request)

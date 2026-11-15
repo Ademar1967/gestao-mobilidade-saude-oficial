@@ -272,18 +272,21 @@ ADMIN_ALLOWED_IPS = [ip.strip() for ip in _admin_ips_env.split(",") if ip.strip(
 # Sessão salva no banco de dados — persiste mesmo quando Render reinicia o servidor
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 try:
-    SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", "1800"))  # 30 minutos
+    SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", "600"))  # 10 minutos
 except (TypeError, ValueError):
-    SESSION_COOKIE_AGE = 1800
-SESSION_SAVE_EVERY_REQUEST = True
+    SESSION_COOKIE_AGE = 600
+SESSION_SAVE_EVERY_REQUEST = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # A sessão expira ao fechar o navegador
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_AGE = 1800
-SESSION_SAVE_EVERY_REQUEST = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = not DEBUG
+
+try:
+    IDLE_LOGOUT_SECONDS = int(os.environ.get("IDLE_LOGOUT_SECONDS", "600"))
+except (TypeError, ValueError):
+    IDLE_LOGOUT_SECONDS = 600
 
 # Evita conflito de sessão entre múltiplos projetos Django rodando no mesmo host
 # (ex.: localhost:8000 e localhost:8001 compartilham escopo de cookie por domínio).
